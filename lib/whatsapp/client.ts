@@ -1,9 +1,9 @@
 import { WhatsAppButtonReply, WhatsAppListSection } from './types'
 
-const GRAPH_API_URL = 'https://graph.facebook.com/v18.0'
+const GRAPH_API_URL = 'https://graph.facebook.com/v20.0'
 
 export async function sendWhatsAppTextMessage(to: string, bodyText: string) {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN
+  const token = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN
   const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID
 
   if (!token || !phoneId) {
@@ -44,7 +44,7 @@ export async function sendWhatsAppButtonsMessage(
   bodyText: string,
   buttons: WhatsAppButtonReply[]
 ) {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN
+  const token = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN
   const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID
 
   if (!token || !phoneId) {
@@ -99,7 +99,7 @@ export async function sendWhatsAppListMessage(
   buttonTitle: string,
   sections: WhatsAppListSection[]
 ) {
-  const token = process.env.WHATSAPP_ACCESS_TOKEN
+  const token = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN
   const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID
 
   if (!token || !phoneId) {
