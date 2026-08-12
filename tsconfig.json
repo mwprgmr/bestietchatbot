@@ -37,7 +37,9 @@
   "exclude": [
     "node_modules",
     "supabase/functions",
-    "bestietfresh-web-build",
+    "bestietfresh-web-build*",
+    "bestietfresh-web-build 2",
+    "bestietfresh-web-build 3",
     "production-build"
   ]
 }
