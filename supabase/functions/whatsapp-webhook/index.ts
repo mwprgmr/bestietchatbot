@@ -1,6 +1,43 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
+async function sendWhatsAppTextMessage(toPhoneNumber: string, textResponse: string) {
+  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID") || "1126837613855957"
+  const token = Deno.env.get("WHATSAPP_ACCESS_TOKEN") || Deno.env.get("WHATSAPP_TOKEN")
+
+  if (!phoneNumberId || !token) {
+    console.error("Missing WHATSAPP_PHONE_NUMBER_ID or WHATSAPP_ACCESS_TOKEN in Supabase Secrets")
+    return
+  }
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: toPhoneNumber,
+          type: "text",
+          text: { body: textResponse },
+        }),
+      }
+    )
+
+    const data = await response.json()
+    if (!response.ok) {
+      console.error("WhatsApp API Send Error:", JSON.stringify(data, null, 2))
+    }
+    return data
+  } catch (err: any) {
+    console.error("WhatsApp API Network Failure:", err.message)
+  }
+}
+
 serve(async (req) => {
   const url = new URL(req.url)
 
@@ -10,7 +47,6 @@ serve(async (req) => {
     const token = url.searchParams.get("hub.verify_token")
     const challenge = url.searchParams.get("hub.challenge")
 
-    // Get verify token set in Supabase Secrets or fallback
     const expectedToken = Deno.env.get("WHATSAPP_VERIFY_TOKEN") || "bestiet_fresh_verify_token_2026"
 
     if (mode === "subscribe" && token === expectedToken) {
@@ -30,46 +66,50 @@ serve(async (req) => {
       const body = await req.json()
       console.log("Incoming Webhook Event:", JSON.stringify(body, null, 2))
 
-      const message = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]
+      const entry = body?.entry?.[0]
+      const changes = entry?.changes?.[0]
+      const value = changes?.value
+      const message = value?.messages?.[0]
 
-      if (!message) {
-        return new Response(JSON.stringify({ status: "success", message: "No actionable message" }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        })
-      }
+      if (message) {
+        const from = message.from // Sender phone number
+        const messageId = message.id
+        const type = message.type
+        const userText = (message.text?.body || "").trim()
 
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")
-      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+        console.log(`Received message from ${from}: "${userText}"`)
 
-      if (supabaseUrl && supabaseServiceKey) {
-        const supabase = createClient(supabaseUrl, supabaseServiceKey)
+        // Save Inbound Record to Database
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")
+        const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
 
-        // Deduplication Check
-        const { data: existing } = await supabase
-          .from("whatsapp_messages")
-          .select("id")
-          .eq("whatsapp_message_id", message.id)
-          .single()
-
-        if (existing) {
-          return new Response(JSON.stringify({ status: "duplicate_ignored" }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          })
+        if (supabaseUrl && supabaseServiceKey) {
+          const supabase = createClient(supabaseUrl, supabaseServiceKey)
+          await supabase.from("whatsapp_messages").insert([
+            {
+              whatsapp_message_id: messageId,
+              phone: from,
+              direction: "INBOUND",
+              message_type: type,
+              payload: message,
+              status: "PROCESSED",
+            },
+          ])
         }
 
-        // Log Inbound Message
-        await supabase.from("whatsapp_messages").insert([
-          {
-            whatsapp_message_id: message.id,
-            phone: message.from,
-            direction: "INBOUND",
-            message_type: message.type,
-            payload: message,
-            status: "PROCESSED",
-          },
-        ])
+        // Generate Bot Response Greeting/Catalog
+        let botReplyText = ""
+
+        if (["hi", "hello", "start", "menu"].includes(userText.toLowerCase())) {
+          botReplyText = `👋 *Welcome to Bestiet Fresh!* 🐟💚\n"Your Fresh Friend At The Door"\n\nHow can we serve you fresh fish today?\n\n1. 🛒 *Order Fresh Fish*\n2. 📦 *Track Order*\n3. 🔄 *Previous Orders*\n\nReply with item name or number to start!`
+        } else {
+          botReplyText = `🐟 *Bestiet Fresh Catch Today*\n1. Ayala — ₹33/kg\n2. Mathi — ₹40/kg\n\nReply with the fish name or quantity (e.g., "1kg Ayala") to order!`
+        }
+
+        // Dispatch outbound text back to WhatsApp user
+        if (from && botReplyText) {
+          await sendWhatsAppTextMessage(from, botReplyText)
+        }
       }
 
       return new Response(JSON.stringify({ status: "success" }), {
