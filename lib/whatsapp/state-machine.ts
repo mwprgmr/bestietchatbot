@@ -302,29 +302,37 @@ async function showDailyFishMenu(phone: string, session: any, supabase: any, bra
   const today = new Date().toISOString().split('T')[0]
   const branchId = branchIdOverride || session?.selected_branch_id || 'b1111111-1111-1111-1111-111111111111'
 
-  // Query Today's Inventory for Branch
-  let { data: inventoryItems } = await supabase
+  // Fetch branch details
+  let branchName = 'Bestiet Fresh'
+  const { data: bData } = await supabase.from('branches').select('name').eq('id', branchId).single()
+  if (bData?.name) branchName = bData.name
+
+  // Query Today's Inventory strictly for selected Branch
+  const MARINE_DRIVE_ID = 'b1111111-1111-1111-1111-111111111111'
+  const FORT_KOCHI_ID = 'b2222222-2222-2222-2222-222222222222'
+  const targetBranchId = branchId === FORT_KOCHI_ID ? FORT_KOCHI_ID : MARINE_DRIVE_ID
+
+  const { data: inventoryItems } = await supabase
     .from('inventory')
     .select('*, product:products(*)')
     .eq('inventory_date', today)
+    .eq('branch_id', targetBranchId)
     .gt('available_stock', 0)
 
-  if (inventoryItems && inventoryItems.length > 0) {
-    const branchSpecific = inventoryItems.filter((inv: any) => inv.branch_id === branchId || !inv.branch_id)
-    if (branchSpecific.length > 0) {
-      inventoryItems = branchSpecific
-    }
-  }
+  // Filter out any items with 0 or negative available stock
+  const activeStockItems = (inventoryItems || []).filter(
+    (inv: any) => Number(inv.available_stock || 0) > 0
+  )
 
-  if (!inventoryItems || inventoryItems.length === 0) {
+  if (activeStockItems.length === 0) {
     await updateSessionState(supabase, session, 'MAIN_MENU')
     return await sendWhatsAppTextMessage(
       phone,
-      `⚠️ *Stock Update*\nOur fresh catch for today is sold out or being prepared at this branch. Please check back shortly!`
+      `⚠️ *Stock Update — ${branchName}*\nOur fresh catch for today is sold out or being prepared at this branch. Please check back shortly or try selecting another branch!`
     )
   }
 
-  const rows = inventoryItems.map((inv: any) => ({
+  const rows = activeStockItems.map((inv: any) => ({
     id: inv.product_id,
     title: inv.product?.name || 'Fresh Fish',
     description: `₹${inv.price_per_kg}/kg | ${inv.available_stock}kg left`,
@@ -334,7 +342,7 @@ async function showDailyFishMenu(phone: string, session: any, supabase: any, bra
 
   return await sendWhatsAppListMessage(
     phone,
-    `🐟 *Today's Fresh Catch*\nSelect the fish you'd like to order:`,
+    `🐟 *${branchName} — Today's Fresh Catch*\nSelect the fish you'd like to order:`,
     'Select Fish',
     [
       {
@@ -348,22 +356,20 @@ async function showDailyFishMenu(phone: string, session: any, supabase: any, bra
 async function handleFishSelection(phone: string, userInput: string, session: any, supabase: any) {
   const today = new Date().toISOString().split('T')[0]
   const cleanInput = userInput.trim()
+  const branchId = session?.selected_branch_id || 'b1111111-1111-1111-1111-111111111111'
+  const MARINE_DRIVE_ID = 'b1111111-1111-1111-1111-111111111111'
+  const FORT_KOCHI_ID = 'b2222222-2222-2222-2222-222222222222'
+  const targetBranchId = branchId === FORT_KOCHI_ID ? FORT_KOCHI_ID : MARINE_DRIVE_ID
 
-  // Query Today's Active Inventory
+  // Query Today's Active Inventory for Selected Branch
   const { data: inventoryItems } = await supabase
     .from('inventory')
     .select('*, product:products(*)')
     .eq('inventory_date', today)
-
-  if (!inventoryItems || inventoryItems.length === 0) {
-    return await sendWhatsAppTextMessage(
-      phone,
-      `❌ Sorry, no fish stock is listed for today. Please check back shortly.`
-    )
-  }
+    .eq('branch_id', targetBranchId)
 
   // Flexible matching by product_id UUID OR case-insensitive product name / partial text
-  const selectedInv = inventoryItems.find((inv: any) => {
+  const selectedInv = (inventoryItems || []).find((inv: any) => {
     const isIdMatch = inv.product_id === cleanInput || inv.id === cleanInput
     const pName = (inv.product?.name || '').toLowerCase().trim()
     const inp = cleanInput.toLowerCase().trim()
@@ -375,7 +381,7 @@ async function handleFishSelection(phone: string, userInput: string, session: an
   if (!selectedInv) {
     return await sendWhatsAppTextMessage(
       phone,
-      `⚠️ Item "${cleanInput}" not found in today's menu. Please select a fish from the list.`
+      `⚠️ Item "${cleanInput}" not found in today's menu for this branch. Please select a fish from the list.`
     )
   }
 
@@ -385,7 +391,7 @@ async function handleFishSelection(phone: string, userInput: string, session: an
   if (availableStock <= 0) {
     return await sendWhatsAppTextMessage(
       phone,
-      `❌ Sorry, ${selectedInv.product?.name || 'that item'} is currently out of stock. Please select another fish from the menu.`
+      `❌ Sorry, ${selectedInv.product?.name || 'that item'} is currently out of stock at this branch. Please select another fish from the menu.`
     )
   }
 
@@ -395,7 +401,7 @@ async function handleFishSelection(phone: string, userInput: string, session: an
 
   return await sendWhatsAppButtonsMessage(
     phone,
-    `⚖️ *Selected: ${selectedInv.product?.name || 'Fish'}*\nPrice: ₹${selectedInv.price_per_kg}/kg\nAvailable: ${availableStock}kg\n\nChoose quantity below or reply with your custom quantity in kg (e.g. 1.5, 2.5):`,
+    `⚖️ *Selected: ${selectedInv.product?.name || 'Fish'}*\nPrice: ₹${selectedInv.price_per_kg}/kg\nAvailable at branch: ${availableStock}kg\n\nChoose quantity below or reply with your custom quantity in kg (e.g. 1.5, 2.5):`,
     [
       { id: 'qty_0.5', title: '0.5 kg (500g)' },
       { id: 'qty_1.0', title: '1.0 kg (1000g)' },
@@ -440,12 +446,14 @@ async function handleQuantitySelection(phone: string, userText: string, session:
 
   const productId = session.selected_product_id
   const today = new Date().toISOString().split('T')[0]
+  const branchId = session?.selected_branch_id || 'b1111111-1111-1111-1111-111111111111'
 
   const { data: inv } = await supabase
     .from('inventory')
     .select('*, product:products(*)')
     .eq('product_id', productId)
     .eq('inventory_date', today)
+    .eq('branch_id', branchId)
     .single()
 
   const availableStock = inv ? Number(inv.available_stock || 0) : 999

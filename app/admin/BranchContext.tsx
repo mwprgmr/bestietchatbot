@@ -1,57 +1,71 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { getCurrentAdminUser, AdminUser } from '@/lib/auth/admin-auth'
 import { Branch } from '@/types/database'
 
+export const FIXED_BRANCHES: Branch[] = [
+  {
+    id: 'b1111111-1111-1111-1111-111111111111',
+    name: 'Marine Drive Branch',
+    location: 'Marine Drive, Kochi',
+    is_active: true,
+  },
+  {
+    id: 'b2222222-2222-2222-2222-222222222222',
+    name: 'Fort Kochi Branch',
+    location: 'Fort Kochi, Kochi',
+    is_active: true,
+  },
+]
+
 interface BranchContextType {
-  selectedBranchId: string // 'ALL' or specific branch UUID
-  setSelectedBranchId: (id: string) => void
+  selectedBranchId: string
+  activeBranch: Branch
   branches: Branch[]
-  loadingBranches: boolean
+  currentUser: AdminUser | null
+  loadingUser: boolean
 }
 
 const BranchContext = createContext<BranchContextType>({
-  selectedBranchId: 'ALL',
-  setSelectedBranchId: () => {},
-  branches: [],
-  loadingBranches: true,
+  selectedBranchId: FIXED_BRANCHES[0].id,
+  activeBranch: FIXED_BRANCHES[0],
+  branches: FIXED_BRANCHES,
+  currentUser: null,
+  loadingUser: true,
 })
 
 export function BranchProvider({ children }: { children: React.ReactNode }) {
-  const [selectedBranchId, setSelectedBranchId] = useState<string>('ALL')
-  const [branches, setBranches] = useState<Branch[]>([])
-  const [loadingBranches, setLoadingBranches] = useState<boolean>(true)
-  const supabase = createClient()
+  const [currentUser, setCurrentUser] = useState<AdminUser | null>(null)
+  const [loadingUser, setLoadingUser] = useState<boolean>(true)
 
   useEffect(() => {
-    async function loadBranches() {
+    async function loadUser() {
       try {
-        const { data, error } = await supabase.from('branches').select('*').eq('is_active', true)
-        if (!error && data && data.length > 0) {
-          setBranches(data)
-        } else {
-          setBranches([
-            { id: 'b1111111-1111-1111-1111-111111111111', name: 'Marine Drive Branch', location: 'Marine Drive, Kochi', is_active: true },
-            { id: 'b2222222-2222-2222-2222-222222222222', name: 'Fort Kochi Branch', location: 'Fort Kochi, Kochi', is_active: true },
-          ])
+        const user = await getCurrentAdminUser()
+        if (user) {
+          setCurrentUser(user)
         }
       } catch (err) {
-        console.error('Failed to load branches:', err)
+        console.error('Failed to load admin user profile:', err)
       } finally {
-        setLoadingBranches(false)
+        setLoadingUser(false)
       }
     }
-    loadBranches()
+    loadUser()
   }, [])
+
+  const selectedBranchId = currentUser?.branch_id || FIXED_BRANCHES[0].id
+  const activeBranch = FIXED_BRANCHES.find((b) => b.id === selectedBranchId) || FIXED_BRANCHES[0]
 
   return (
     <BranchContext.Provider
       value={{
         selectedBranchId,
-        setSelectedBranchId,
-        branches,
-        loadingBranches,
+        activeBranch,
+        branches: FIXED_BRANCHES,
+        currentUser,
+        loadingUser,
       }}
     >
       {children}

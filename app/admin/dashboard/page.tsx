@@ -50,21 +50,20 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     setLoading(true)
     const todayStr = new Date().toISOString().split('T')[0]
+    const MARINE_DRIVE_ID = 'b1111111-1111-1111-1111-111111111111'
+    const FORT_KOCHI_ID = 'b2222222-2222-2222-2222-222222222222'
 
     try {
+      const targetBranchId = selectedBranchId === FORT_KOCHI_ID ? FORT_KOCHI_ID : MARINE_DRIVE_ID
+
       // 1. Fetch Today's Orders for Sales KPI
-      let query = supabase
+      const { data: todayOrders, error: ordersErr } = await supabase
         .from('orders')
         .select('*, items:order_items(*, product:products(*))')
         .gte('created_at', `${todayStr}T00:00:00.000Z`)
         .lte('created_at', `${todayStr}T23:59:59.999Z`)
         .neq('status', 'CANCELLED')
-
-      if (selectedBranchId !== 'ALL') {
-        query = query.eq('branch_id', selectedBranchId)
-      }
-
-      const { data: todayOrders, error: ordersErr } = await query
+        .eq('branch_id', targetBranchId)
 
       if (ordersErr) console.error('Orders KPI error:', ordersErr)
 
@@ -87,20 +86,23 @@ export default function DashboardPage() {
         avgOrderValue: Math.round(avgOrder),
       })
 
-      // 2. Fetch Recent Orders list
+      // 2. Fetch Recent Orders list (branch filtered)
       const { data: recent, error: recentErr } = await supabase
         .from('orders')
         .select('*, customer:customers(*)')
+        .eq('branch_id', targetBranchId)
         .order('created_at', { ascending: false })
         .limit(5)
 
       if (!recentErr) setRecentOrders(recent || [])
 
-      // 3. Fetch Today's Inventory Status
+      // 3. Fetch Today's Inventory Status (branch filtered)
       const { data: invData, error: invErr } = await supabase
         .from('inventory')
         .select('*, product:products(*)')
         .eq('inventory_date', todayStr)
+        .eq('branch_id', targetBranchId)
+        .order('created_at', { ascending: false })
 
       if (!invErr && invData) {
         let inStk = 0

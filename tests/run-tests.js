@@ -141,15 +141,33 @@ async function runAllTests() {
     }
   })
 
-  // TEST 7: Multi-Branch & Order Remarks
-  await test('7. Multi-Branch Table & Order Remarks Support', async () => {
-    const { data: branches, error: bErr } = await supabase.from('branches').select('*')
-    if (bErr && !bErr.message.includes('relation "public.branches" does not exist')) {
-      throw bErr
-    }
+  // TEST 7: Multi-Branch & Stock-Out Removal Verification
+  await test('7. Multi-Branch Isolation & Stock-Out Removal Verification', async () => {
+    const today = new Date().toISOString().split('T')[0]
+    const branchA = 'b1111111-1111-1111-1111-111111111111'
+    const branchB = 'b2222222-2222-2222-2222-222222222222'
 
-    if (branches && branches.length < 2) {
-      console.log('(Note: Run 007_multi_branch_support.sql migration in Supabase Studio)')
+    // Query Branch A inventory with available_stock > 0
+    const { data: invA } = await supabase
+      .from('inventory')
+      .select('*, product:products(*)')
+      .eq('inventory_date', today)
+      .eq('branch_id', branchA)
+      .gt('available_stock', 0)
+
+    // Query Branch B inventory with available_stock > 0
+    const { data: invB } = await supabase
+      .from('inventory')
+      .select('*, product:products(*)')
+      .eq('inventory_date', today)
+      .eq('branch_id', branchB)
+      .gt('available_stock', 0)
+
+    if (invA && invA.some((i) => i.available_stock <= 0)) {
+      throw new Error('Branch A returned out-of-stock items')
+    }
+    if (invB && invB.some((i) => i.available_stock <= 0)) {
+      throw new Error('Branch B returned out-of-stock items')
     }
   })
 

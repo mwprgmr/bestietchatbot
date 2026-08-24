@@ -33,7 +33,7 @@ export interface Branch {
 export interface Inventory {
   id: string;
   product_id: string;
-  branch_id?: string | null;
+  branch_id: string;
   inventory_date: string;
   price_per_kg: number;
   opening_stock: number;

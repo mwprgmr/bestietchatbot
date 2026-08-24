@@ -3,9 +3,13 @@ import { createClient } from '@/lib/supabase/client'
 export interface AdminUser {
   id: string
   email: string
-  role: 'admin' | 'store_admin'
+  role: 'admin' | 'store_admin' | 'branch_admin'
   name?: string
+  branch_id: string
 }
+
+export const MARINE_DRIVE_BRANCH_ID = 'b1111111-1111-1111-1111-111111111111'
+export const FORT_KOCHI_BRANCH_ID = 'b2222222-2222-2222-2222-222222222222'
 
 export async function getCurrentAdminUser(): Promise<AdminUser | null> {
   const supabase = createClient()
@@ -17,29 +21,40 @@ export async function getCurrentAdminUser(): Promise<AdminUser | null> {
     return null
   }
 
-  // 2. Query profile role from database profiles table (not user_metadata)
+  // 2. Query profile role & branch_id from database profiles table
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .single()
 
-  const role = profile?.role || 'admin'
+  const role = profile?.role || 'branch_admin'
 
-  // Restrict to admin or store_admin roles only
-  if (role !== 'admin' && role !== 'store_admin') {
+  // Restrict to admin roles only
+  if (role !== 'admin' && role !== 'store_admin' && role !== 'branch_admin') {
     return null
+  }
+
+  // Determine branch_id from profile or user email
+  let branchId = profile?.branch_id
+  if (!branchId) {
+    if (user.email?.toLowerCase().includes('fort')) {
+      branchId = FORT_KOCHI_BRANCH_ID
+    } else {
+      branchId = MARINE_DRIVE_BRANCH_ID
+    }
   }
 
   return {
     id: user.id,
     email: user.email || '',
-    role: role as 'admin' | 'store_admin',
-    name: profile?.name || 'Store Admin',
+    role: role as 'admin' | 'store_admin' | 'branch_admin',
+    name: profile?.name || (branchId === FORT_KOCHI_BRANCH_ID ? 'Fort Kochi Admin' : 'Marine Drive Admin'),
+    branch_id: branchId,
   }
 }
 
-export async function signInAdminUser(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+export async function signInAdminUser(email: string, password: string): Promise<{ success: boolean; error?: string; branch_id?: string }> {
   const supabase = createClient()
 
   // Attempt login via Supabase Auth
@@ -77,18 +92,24 @@ export async function signInAdminUser(email: string, password: string): Promise<
     return { success: false, error: error.message }
   }
 
-  // Ensure admin profile exists in public.profiles table
+  // Determine target branch for this account
+  const isFortKochi = email.toLowerCase().includes('fort')
+  const assignedBranchId = isFortKochi ? FORT_KOCHI_BRANCH_ID : MARINE_DRIVE_BRANCH_ID
+  const adminName = isFortKochi ? 'Fort Kochi Branch Admin' : 'Marine Drive Branch Admin'
+
+  // Ensure admin profile exists in public.profiles table with branch_id
   if (data?.user) {
     await supabase.from('profiles').upsert([
       {
         id: data.user.id,
         email: data.user.email,
-        role: 'admin',
-        name: 'Store Admin',
+        role: 'branch_admin',
+        name: adminName,
+        branch_id: assignedBranchId,
         updated_at: new Date().toISOString(),
       },
     ], { onConflict: 'id' })
   }
 
-  return { success: true }
+  return { success: true, branch_id: assignedBranchId }
 }

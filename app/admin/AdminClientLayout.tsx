@@ -17,11 +17,12 @@ import {
   Menu,
   X,
   UserCheck,
-  ChevronRight
+  ChevronRight,
+  Store,
+  ShieldCheck,
 } from 'lucide-react'
 
 import { BranchProvider, useBranchContext } from './BranchContext'
-import { Store } from 'lucide-react'
 
 const navItems = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
@@ -40,10 +41,25 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
-  const { selectedBranchId, setSelectedBranchId, branches } = useBranchContext()
+  const { activeBranch, currentUser, loadingUser } = useBranchContext()
+
+  const [storeSettings, setStoreSettings] = useState({
+    brandName: 'BESTIET FRESH',
+    tagline: 'Your Fresh Friend At The Door',
+  })
 
   useEffect(() => {
-    // Check local admin session or Supabase session
+    try {
+      const saved = localStorage.getItem('bf_store_settings')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        setStoreSettings({
+          brandName: parsed.brandName || 'BESTIET FRESH',
+          tagline: parsed.tagline || 'Your Fresh Friend At The Door',
+        })
+      }
+    } catch (e) {}
+
     const checkAuth = async () => {
       const sessionFlag = localStorage.getItem('bf_admin_session')
       const { data: { session } } = await supabase.auth.getSession()
@@ -63,7 +79,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     router.push('/login')
   }
 
-  if (loading) {
+  if (loading || loadingUser) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -71,7 +87,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
             <Fish className="w-7 h-7" />
           </div>
           <p className="text-xs font-semibold text-slate-500 tracking-wide uppercase">
-            Loading Bestiet Fresh Dashboard...
+            Loading Bestiet Fresh Branch Workspace...
           </p>
         </div>
       </div>
@@ -85,8 +101,8 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-2.5">
           <img src="/logo.png" alt="Bestiet Fresh" className="w-10 h-10 object-contain shrink-0" />
           <div>
-            <h1 className="font-extrabold text-slate-900 text-base leading-none">BESTIET FRESH</h1>
-            <p className="text-[10px] font-medium text-emerald-600">Fresh Friend At The Door</p>
+            <h1 className="font-extrabold text-slate-900 text-base leading-none">{storeSettings.brandName}</h1>
+            <p className="text-[10px] font-medium text-emerald-600">{activeBranch.name}</p>
           </div>
         </div>
         <button
@@ -117,10 +133,10 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
             <img src="/logo.png" alt="Bestiet Fresh" className="w-11 h-11 object-contain shrink-0" />
             <div>
               <h1 className="font-extrabold text-slate-900 text-lg tracking-tight leading-none">
-                BESTIET FRESH
+                {storeSettings.brandName}
               </h1>
               <p className="text-[11px] font-semibold text-emerald-600 mt-1">
-                Your Fresh Friend At The Door
+                {storeSettings.tagline}
               </p>
             </div>
           </div>
@@ -160,8 +176,12 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                 <UserCheck className="w-4 h-4" />
               </div>
               <div className="truncate">
-                <p className="text-xs font-bold text-slate-900 truncate">Store Admin</p>
-                <p className="text-[10px] text-slate-500 truncate">admin@bestietfresh.com</p>
+                <p className="text-xs font-bold text-slate-900 truncate">
+                  {currentUser?.name || 'Branch Admin'}
+                </p>
+                <p className="text-[10px] text-slate-500 truncate">
+                  {currentUser?.email || 'admin@bestietfresh.com'}
+                </p>
               </div>
             </div>
           </div>
@@ -177,26 +197,21 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 flex flex-col min-h-screen">
-        {/* Top Branch Filter Bar */}
+        {/* Read-Only Top Branch Indicator Header */}
         <header className="bg-white border-b border-slate-200 px-4 md:px-8 py-3 flex items-center justify-between sticky top-0 z-30 shadow-xs">
           <div className="flex items-center gap-2 text-slate-700 font-semibold text-xs">
             <Store className="w-4 h-4 text-emerald-600" />
-            <span>Active Branch Filter:</span>
+            <span>Assigned Branch Context:</span>
           </div>
 
           <div className="flex items-center gap-2">
-            <select
-              value={selectedBranchId}
-              onChange={(e) => setSelectedBranchId(e.target.value)}
-              className="bg-slate-50 border border-slate-300 text-slate-800 text-xs font-bold px-3 py-1.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="ALL">🏢 All Branches (Global)</option>
-              {branches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  🏪 {b.name}
-                </option>
-              ))}
-            </select>
+            <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold px-3.5 py-1.5 rounded-xl shadow-2xs">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>🏪 {activeBranch.name}</span>
+              <span className="text-[10px] bg-emerald-200/60 text-emerald-900 px-2 py-0.5 rounded-md uppercase tracking-wider font-extrabold ml-1">
+                Isolated
+              </span>
+            </div>
           </div>
         </header>
 

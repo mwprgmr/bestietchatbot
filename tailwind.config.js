@@ -14,7 +14,6 @@ module.exports = {
           200: '#bbf7d0',
           300: '#86efac',
           400: '#4ade80',
-          50: '#f0fdf4',
           500: '#22c55e',
           600: '#16a34a', // Primary Fresh Green
           700: '#15803d',

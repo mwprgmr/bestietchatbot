@@ -13,12 +13,29 @@ import {
 } from 'lucide-react'
 
 export default function SettingsPage() {
+  const [brandName, setBrandName] = useState('BESTIET FRESH')
+  const [tagline, setTagline] = useState('Your Fresh Friend At The Door')
   const [lowStockThreshold, setLowStockThreshold] = useState('2')
   const [deliveryFee, setDeliveryFee] = useState('30')
   const [copied, setCopied] = useState(false)
   const [saved, setSaved] = useState(false)
 
   const webhookUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.vercel.app'}/api/whatsapp/webhook`
+
+  React.useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem('bf_store_settings')
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings)
+        if (parsed.brandName) setBrandName(parsed.brandName)
+        if (parsed.tagline) setTagline(parsed.tagline)
+        if (parsed.lowStockThreshold) setLowStockThreshold(parsed.lowStockThreshold)
+        if (parsed.deliveryFee) setDeliveryFee(parsed.deliveryFee)
+      }
+    } catch (err) {
+      console.error('Failed to parse store settings from localStorage:', err)
+    }
+  }, [])
 
   const handleCopyWebhook = () => {
     navigator.clipboard.writeText(webhookUrl)
@@ -28,8 +45,19 @@ export default function SettingsPage() {
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault()
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+    try {
+      const settingsPayload = {
+        brandName,
+        tagline,
+        lowStockThreshold,
+        deliveryFee,
+      }
+      localStorage.setItem('bf_store_settings', JSON.stringify(settingsPayload))
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (err) {
+      console.error('Failed to save settings:', err)
+    }
   }
 
   return (
@@ -67,9 +95,9 @@ export default function SettingsPage() {
               </label>
               <input
                 type="text"
-                disabled
-                value="BESTIET FRESH"
-                className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
+                value={brandName}
+                onChange={(e) => setBrandName(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
               />
             </div>
 
@@ -79,9 +107,9 @@ export default function SettingsPage() {
               </label>
               <input
                 type="text"
-                disabled
-                value="Your Fresh Friend At The Door"
-                className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-medium text-slate-600"
+                value={tagline}
+                onChange={(e) => setTagline(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
               />
             </div>
           </div>

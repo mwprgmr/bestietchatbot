@@ -25,12 +25,17 @@ VALUES
 ON CONFLICT (name) DO UPDATE
 SET location = EXCLUDED.location, is_active = EXCLUDED.is_active;
 
--- 2. Add branch_id to INVENTORY Table
+-- 2. Add branch_id to INVENTORY Table and Update Unique Constraint
 ALTER TABLE public.inventory 
 ADD COLUMN IF NOT EXISTS branch_id UUID REFERENCES public.branches(id) DEFAULT 'b1111111-1111-1111-1111-111111111111';
 
 -- Update existing inventory rows to default to Marine Drive Branch
 UPDATE public.inventory SET branch_id = 'b1111111-1111-1111-1111-111111111111' WHERE branch_id IS NULL;
+
+-- Drop old single-branch constraint and add branch-scoped composite unique constraint
+ALTER TABLE public.inventory DROP CONSTRAINT IF EXISTS unique_product_date;
+ALTER TABLE public.inventory DROP CONSTRAINT IF EXISTS unique_product_branch_date;
+ALTER TABLE public.inventory ADD CONSTRAINT unique_product_branch_date UNIQUE (product_id, branch_id, inventory_date);
 
 -- 3. Add branch_id and customer_remarks to ORDERS Table
 ALTER TABLE public.orders 
@@ -44,6 +49,42 @@ UPDATE public.orders SET branch_id = 'b1111111-1111-1111-1111-111111111111' WHER
 ALTER TABLE public.chat_sessions 
 ADD COLUMN IF NOT EXISTS selected_branch_id UUID REFERENCES public.branches(id),
 ADD COLUMN IF NOT EXISTS pending_remarks TEXT;
+
+-- 5. SECURITY DEFINER Helper: Upsert Branch Inventory
+CREATE OR REPLACE FUNCTION public.upsert_inventory_sec(
+    p_product_id UUID,
+    p_inventory_date DATE,
+    p_price_per_kg NUMERIC,
+    p_opening_stock NUMERIC,
+    p_low_stock_threshold NUMERIC DEFAULT 2.000,
+    p_branch_id UUID DEFAULT 'b1111111-1111-1111-1111-111111111111'
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_result RECORD;
+    v_target_branch UUID := COALESCE(p_branch_id, 'b1111111-1111-1111-1111-111111111111');
+BEGIN
+    INSERT INTO public.inventory (
+        product_id, inventory_date, price_per_kg, opening_stock, available_stock, sold_stock, reserved_stock, low_stock_threshold, branch_id, updated_at
+    ) VALUES (
+        p_product_id, p_inventory_date, p_price_per_kg, p_opening_stock, p_opening_stock, 0, 0, COALESCE(p_low_stock_threshold, 2.000), v_target_branch, NOW()
+    )
+    ON CONFLICT (product_id, branch_id, inventory_date) DO UPDATE
+    SET price_per_kg = EXCLUDED.price_per_kg,
+        opening_stock = EXCLUDED.opening_stock,
+        available_stock = EXCLUDED.opening_stock,
+        low_stock_threshold = EXCLUDED.low_stock_threshold,
+        updated_at = NOW()
+    RETURNING * INTO v_result;
+
+    RETURN to_jsonb(v_result);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.upsert_inventory_sec TO anon, authenticated, service_role;
 
 -- 5. Helper Function: SECURITY DEFINER Upsert Branch
 CREATE OR REPLACE FUNCTION public.upsert_branch_sec(
@@ -64,12 +105,13 @@ BEGIN
     END IF;
 
     IF p_id IS NOT NULL THEN
-        UPDATE public.branches
-        SET name = p_name,
-            location = p_location,
-            is_active = COALESCE(p_is_active, true),
+        INSERT INTO public.branches (id, name, location, is_active)
+        VALUES (p_id, p_name, p_location, COALESCE(p_is_active, true))
+        ON CONFLICT (id) DO UPDATE
+        SET name = EXCLUDED.name,
+            location = EXCLUDED.location,
+            is_active = EXCLUDED.is_active,
             updated_at = NOW()
-        WHERE id = p_id
         RETURNING * INTO v_result;
     ELSE
         INSERT INTO public.branches (name, location, is_active)

@@ -115,17 +115,33 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Quick Admin Helper */}
-          <div className="mt-6 pt-6 border-t border-slate-100 text-center">
-            <button
-              onClick={() => {
-                setEmail('admin@bestietfresh.com')
-                setPassword('admin123')
-              }}
-              className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold hover:underline inline-flex items-center gap-1"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" /> Fill Default Admin Credentials
-            </button>
+          {/* Quick Branch Admin Helpers */}
+          <div className="mt-6 pt-6 border-t border-slate-100 space-y-2 text-center">
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Select Branch Admin Account:</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('marinedrive@bestietfresh.com')
+                  setPassword('admin123')
+                }}
+                className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Marine Drive</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('fortkochi@bestietfresh.com')
+                  setPassword('admin123')
+                }}
+                className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold rounded-xl border border-blue-200 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                <span>Fort Kochi</span>
+              </button>
+            </div>
           </div>
         </div>
 

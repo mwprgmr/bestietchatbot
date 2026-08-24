@@ -36,7 +36,7 @@ export default function InventoryPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'ALL' | InventoryStatus>('ALL')
 
-  const { selectedBranchId, branches } = useBranchContext()
+  const { selectedBranchId, activeBranch, branches } = useBranchContext()
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -51,6 +51,7 @@ export default function InventoryPage() {
   // Add Inventory form
   const [addForm, setAddForm] = useState({
     product_id: '',
+    branch_id: selectedBranchId,
     price_per_kg: '',
     opening_stock: '',
     low_stock_threshold: '2',
@@ -74,7 +75,14 @@ export default function InventoryPage() {
 
   useEffect(() => {
     fetchInventory()
-  }, [selectedDate])
+  }, [selectedDate, selectedBranchId])
+
+  useEffect(() => {
+    setAddForm((prev) => ({
+      ...prev,
+      branch_id: selectedBranchId,
+    }))
+  }, [selectedBranchId])
 
   const fetchProducts = async () => {
     try {
@@ -82,8 +90,11 @@ export default function InventoryPage() {
       if (res.ok) {
         const data = await res.json()
         setProducts(data || [])
-        if (data && data.length > 0 && !addForm.product_id) {
-          setAddForm((prev) => ({ ...prev, product_id: data[0].id }))
+        if (data && data.length > 0) {
+          setAddForm((prev) => ({
+            ...prev,
+            product_id: prev.product_id || data[0].id,
+          }))
         }
         return
       }
@@ -96,8 +107,11 @@ export default function InventoryPage() {
 
       if (clientProducts) {
         setProducts(clientProducts)
-        if (clientProducts.length > 0 && !addForm.product_id) {
-          setAddForm((prev) => ({ ...prev, product_id: clientProducts[0].id }))
+        if (clientProducts.length > 0) {
+          setAddForm((prev) => ({
+            ...prev,
+            product_id: prev.product_id || clientProducts[0].id,
+          }))
         }
       }
     } catch (err) {
@@ -107,17 +121,30 @@ export default function InventoryPage() {
 
   const fetchInventory = async () => {
     setLoading(true)
-    try {
-      const res = await fetch(`/api/admin/inventory?date=${selectedDate}`)
-      if (!res.ok) {
-        const text = await res.text()
-        console.error('Server returned non-OK status for inventory fetch:', res.status, text)
+    const MARINE_DRIVE_ID = 'b1111111-1111-1111-1111-111111111111'
+    const FORT_KOCHI_ID = 'b2222222-2222-2222-2222-222222222222'
 
-        const { data: clientData, error: clientErr } = await supabase
+    try {
+      const activeBranchId = selectedBranchId === FORT_KOCHI_ID ? FORT_KOCHI_ID : MARINE_DRIVE_ID
+      const url = `/api/admin/inventory?date=${selectedDate}&branch_id=${activeBranchId}`
+
+      const res = await fetch(url)
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null)
+        console.error('Server returned non-OK status for inventory fetch:', res.status, errJson?.error)
+
+        let query = supabase
           .from('inventory')
-          .select('*, product:products(*)')
+          .select('*, product:products(*), branch:branches(*)')
           .eq('inventory_date', selectedDate)
-          .order('created_at', { ascending: false })
+
+        if (activeBranchId === FORT_KOCHI_ID) {
+          query = query.eq('branch_id', FORT_KOCHI_ID)
+        } else {
+          query = query.or(`branch_id.eq.${MARINE_DRIVE_ID},branch_id.is.null`)
+        }
+
+        const { data: clientData, error: clientErr } = await query.order('created_at', { ascending: false })
 
         if (clientErr) throw clientErr
         setInventoryList(clientData || [])
@@ -141,61 +168,87 @@ export default function InventoryPage() {
     return 'AVAILABLE'
   }
 
+  const handleOpenAddModal = () => {
+    const defaultBranchId = selectedBranchId || branches[0]?.id || 'b1111111-1111-1111-1111-111111111111'
+    const defaultProductId = products[0]?.id || ''
+    setAddForm({
+      branch_id: defaultBranchId,
+      product_id: defaultProductId,
+      price_per_kg: '',
+      opening_stock: '',
+      low_stock_threshold: '2',
+    })
+    setFormError(null)
+    setIsAddModalOpen(true)
+  }
+
   const handleAddInventory = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitting(true)
     setFormError(null)
 
+    // 1. Validate Branch Selection
+    const selectedBranch = branches.find((b) => b.id === addForm.branch_id)
+    if (!addForm.branch_id || !selectedBranch) {
+      setFormError('Please select a valid shop branch.')
+      return
+    }
+
+    // 2. Validate Fish Product Selection
+    const selectedProduct = products.find((p) => p.id === addForm.product_id)
+    if (!addForm.product_id || !selectedProduct) {
+      setFormError('Please select a valid fish product.')
+      return
+    }
+
+    // 3. Validate Price per kg
+    const price = parseFloat(addForm.price_per_kg)
+    if (isNaN(price) || price <= 0) {
+      setFormError('Please enter a valid price per kg (must be greater than ₹0).')
+      return
+    }
+
+    // 4. Validate Opening Stock
+    const stock = parseFloat(addForm.opening_stock)
+    if (isNaN(stock) || stock < 0) {
+      setFormError('Please enter a valid opening stock in kg (must be 0 or greater).')
+      return
+    }
+
+    // 5. Validate Low Stock Threshold
+    const threshold = parseFloat(addForm.low_stock_threshold || '2')
+    if (isNaN(threshold) || threshold < 0) {
+      setFormError('Please enter a valid low-stock threshold (must be 0 or greater).')
+      return
+    }
+
+    setSubmitting(true)
+
     try {
+      const payload = {
+        product_id: selectedProduct.id,
+        branch_id: selectedBranch.id, // Sends UUID of selected branch
+        inventory_date: selectedDate,
+        price_per_kg: price,
+        opening_stock: stock,
+        low_stock_threshold: threshold,
+      }
+
       const res = await fetch('/api/admin/inventory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          product_id: addForm.product_id,
-          inventory_date: selectedDate,
-          price_per_kg: addForm.price_per_kg,
-          opening_stock: addForm.opening_stock,
-          low_stock_threshold: addForm.low_stock_threshold,
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) {
-        const text = await res.text()
-        console.error('Server returned non-OK status:', res.status, text)
-
-        // Fallback to client RPC or direct upsert
-        const price = parseFloat(addForm.price_per_kg)
-        const stock = parseFloat(addForm.opening_stock)
-        const threshold = parseFloat(addForm.low_stock_threshold || '2')
-
-        const { data: rpcData, error: rpcErr } = await supabase.rpc('upsert_inventory_sec', {
-          p_product_id: addForm.product_id,
-          p_inventory_date: selectedDate,
-          p_price_per_kg: price,
-          p_opening_stock: stock,
-          p_low_stock_threshold: threshold,
-        })
-
-        if (rpcErr) {
-          const { error: directErr } = await supabase
-            .from('inventory')
-            .upsert({
-              product_id: addForm.product_id,
-              inventory_date: selectedDate,
-              price_per_kg: price,
-              opening_stock: stock,
-              available_stock: stock,
-              sold_stock: 0,
-              reserved_stock: 0,
-              low_stock_threshold: threshold,
-              updated_at: new Date().toISOString(),
-            })
-          if (directErr) throw directErr
-        }
+        const errJson = await res.json().catch(() => null)
+        const errorMsg = errJson?.error || 'Failed to save inventory.'
+        throw new Error(errorMsg)
       }
 
+      // Success! Close modal, refresh list, preserve selected date and branch filter
       setIsAddModalOpen(false)
-      fetchInventory()
+      setFormError(null)
+      await fetchInventory()
     } catch (err: any) {
       setFormError(err.message || 'Failed to save inventory')
     } finally {
@@ -271,7 +324,7 @@ export default function InventoryPage() {
   }
 
   const filteredInventory = inventoryList.filter((inv) => {
-    const matchesBranch = selectedBranchId === 'ALL' || inv.branch_id === selectedBranchId || (!inv.branch_id && selectedBranchId === 'b1111111-1111-1111-1111-111111111111')
+    const matchesBranch = inv.branch_id === selectedBranchId
     const pName = inv.product?.name || ''
     const matchesSearch = pName.toLowerCase().includes(search.toLowerCase())
     const status = calculateStatus(inv)
@@ -338,7 +391,7 @@ export default function InventoryPage() {
           </div>
 
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={handleOpenAddModal}
             className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-xs transition-all shrink-0"
           >
             <Plus className="w-4 h-4" />
@@ -419,7 +472,7 @@ export default function InventoryPage() {
             Click "+ Add Fish Stock" to configure prices and opening inventory for this date.
           </p>
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={handleOpenAddModal}
             className="inline-flex items-center gap-2 bg-emerald-600 text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-emerald-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -445,6 +498,7 @@ export default function InventoryPage() {
               <tbody className="divide-y divide-slate-100 text-xs font-medium">
                 {filteredInventory.map((inv) => {
                   const status = calculateStatus(inv)
+                  const branchObj = inv.branch || branches.find((b) => b.id === inv.branch_id)
                   return (
                     <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="py-3.5 px-4">
@@ -462,7 +516,13 @@ export default function InventoryPage() {
                           </div>
                           <div>
                             <p className="font-bold text-slate-900 text-sm">{inv.product?.name}</p>
-                            <p className="text-[11px] text-slate-500">{inv.product?.category || 'Fish'}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[11px] text-slate-500">{inv.product?.category || 'Fish'}</span>
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-blue-50 text-blue-700 border border-blue-100">
+                                <Store className="w-3 h-3 text-blue-600" />
+                                {branchObj?.name || 'Main Branch'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -564,6 +624,16 @@ export default function InventoryPage() {
                   <span>{formError}</span>
                 </div>
               )}
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Target Branch
+                </label>
+                <div className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 flex items-center gap-2">
+                  <Store className="w-4 h-4 text-emerald-600" />
+                  <span>{activeBranch.name}</span>
+                </div>
+              </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
