@@ -146,7 +146,10 @@ export default function OrdersPage() {
   }
 
   const filteredOrders = orders.filter((ord) => {
-    const matchesBranch = selectedBranchId === 'ALL' || ord.branch_id === selectedBranchId
+    const matchesBranch =
+      selectedBranchId === 'ALL' ||
+      ord.branch_id === selectedBranchId ||
+      (!ord.branch_id && selectedBranchId === 'b1111111-1111-1111-1111-111111111111')
     const matchesTab = activeTab === 'ALL' || ord.status === activeTab
     const q = search.toLowerCase()
     const matchesSearch =

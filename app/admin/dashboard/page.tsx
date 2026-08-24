@@ -57,13 +57,20 @@ export default function DashboardPage() {
       const targetBranchId = selectedBranchId === FORT_KOCHI_ID ? FORT_KOCHI_ID : MARINE_DRIVE_ID
 
       // 1. Fetch Today's Orders for Sales KPI
-      const { data: todayOrders, error: ordersErr } = await supabase
+      let ordersQuery = supabase
         .from('orders')
         .select('*, items:order_items(*, product:products(*))')
         .gte('created_at', `${todayStr}T00:00:00.000Z`)
         .lte('created_at', `${todayStr}T23:59:59.999Z`)
         .neq('status', 'CANCELLED')
-        .eq('branch_id', targetBranchId)
+
+      if (targetBranchId === MARINE_DRIVE_ID) {
+        ordersQuery = ordersQuery.or(`branch_id.eq.${targetBranchId},branch_id.is.null`)
+      } else {
+        ordersQuery = ordersQuery.eq('branch_id', targetBranchId)
+      }
+
+      const { data: todayOrders, error: ordersErr } = await ordersQuery
 
       if (ordersErr) console.error('Orders KPI error:', ordersErr)
 
@@ -87,12 +94,19 @@ export default function DashboardPage() {
       })
 
       // 2. Fetch Recent Orders list (branch filtered)
-      const { data: recent, error: recentErr } = await supabase
+      let recentQuery = supabase
         .from('orders')
         .select('*, customer:customers(*)')
-        .eq('branch_id', targetBranchId)
         .order('created_at', { ascending: false })
         .limit(5)
+
+      if (targetBranchId === MARINE_DRIVE_ID) {
+        recentQuery = recentQuery.or(`branch_id.eq.${targetBranchId},branch_id.is.null`)
+      } else {
+        recentQuery = recentQuery.eq('branch_id', targetBranchId)
+      }
+
+      const { data: recent, error: recentErr } = await recentQuery
 
       if (!recentErr) setRecentOrders(recent || [])
 

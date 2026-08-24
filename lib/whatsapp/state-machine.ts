@@ -238,14 +238,12 @@ async function handleMainMenuRouter(phone: string, userText: string, session: an
 }
 
 async function showBranchSelection(phone: string, session: any, supabase: any) {
-  const { data: branches } = await supabase
-    .from('branches')
-    .select('*')
-    .eq('is_active', true)
+  const MARINE_DRIVE_ID = 'b1111111-1111-1111-1111-111111111111'
+  const FORT_KOCHI_ID = 'b2222222-2222-2222-2222-222222222222'
 
-  const activeBranches = branches && branches.length > 0 ? branches : [
-    { id: 'b1111111-1111-1111-1111-111111111111', name: 'Marine Drive Branch', location: 'Marine Drive' },
-    { id: 'b2222222-2222-2222-2222-222222222222', name: 'Fort Kochi Branch', location: 'Fort Kochi' }
+  const activeBranches = [
+    { id: MARINE_DRIVE_ID, name: 'Marine Drive Branch', location: 'Marine Drive, Kochi' },
+    { id: FORT_KOCHI_ID, name: 'Fort Kochi Branch', location: 'Fort Kochi, Kochi' }
   ]
 
   const today = new Date().toISOString().split('T')[0]
@@ -255,11 +253,11 @@ async function showBranchSelection(phone: string, session: any, supabase: any) {
     .eq('inventory_date', today)
     .gt('available_stock', 0)
 
-  const rows = activeBranches.map((b: any, idx: number) => {
-    const count = invCounts ? invCounts.filter((i: any) => i.branch_id === b.id || (!i.branch_id && idx === 0)).length : 8
+  const rows = activeBranches.map((b: any) => {
+    const count = invCounts ? invCounts.filter((i: any) => i.branch_id === b.id || (!i.branch_id && b.id === MARINE_DRIVE_ID)).length : 0
     return {
       id: b.id,
-      title: b.name.slice(0, 24),
+      title: b.name,
       description: `${count} fish varieties available today`,
     }
   })
@@ -812,8 +810,10 @@ async function handleOrderReview(
       p_customer_remarks: customerRemarks,
     })
 
-    if (orderErr || !result?.success) {
-      const errMsg = result?.error || orderErr?.message || 'Stock allocation failed'
+    const resObj = typeof result === 'string' ? JSON.parse(result) : result
+
+    if (orderErr || !resObj?.success) {
+      const errMsg = resObj?.error || orderErr?.message || 'Stock allocation failed'
       await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [] })
       return await sendWhatsAppTextMessage(
         phone,
@@ -823,7 +823,10 @@ async function handleOrderReview(
 
     await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [], selected_branch_id: null, pending_remarks: null })
 
-    const confirmationText = `🎉 *CONGRATULATIONS! ORDER PLACED!* 🎉\n\nOrder Number: *#${result.order_number}*\nTotal Amount: *₹${result.total_amount}*\n\nYour fresh fish order is being prepared and will be delivered shortly!\nThank you for choosing Bestiet Fresh! 🐟💚`
+    const orderNumber = resObj?.order_number || resObj?.order_id?.slice(0, 8) || 'BF-SUCCESS'
+    const totalAmount = resObj?.total_amount ?? 0
+
+    const confirmationText = `🎉 *CONGRATULATIONS! ORDER PLACED!* 🎉\n\nOrder Number: *#${orderNumber}*\nTotal Amount: *₹${totalAmount}*\n\nYour fresh fish order is being prepared and will be delivered shortly!\nThank you for choosing Bestiet Fresh! 🐟💚`
 
     return await sendWhatsAppButtonsMessage(phone, confirmationText, [
       { id: 'btn_track_order', title: '📦 Track Order' },
