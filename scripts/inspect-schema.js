@@ -24,13 +24,22 @@ const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
 async function inspectSchema() {
-  console.log('--- Inspecting Products Schema ---')
-  const { data: prodData, error: prodErr } = await supabase.from('products').select('*').limit(1)
-  console.log('Products sample:', prodData, prodErr)
+  console.log('--- Calling upsert_address_sec RPC (4 params) ---')
+  const { data: rpcRes, error: rpcErr } = await supabase.rpc('upsert_address_sec', {
+    p_customer_id: '77499c2e-e534-48f7-995c-25ab77d5bd34',
+    p_address_line1: 'Flat 4B, Marine Drive, Kochi 682031',
+    p_title: 'Home',
+    p_city: 'Kochi',
+  })
+  console.log('upsert_address_sec 4-param result:', rpcRes, rpcErr)
 
   console.log('--- Inspecting Profiles Schema ---')
   const { data: profData, error: profErr } = await supabase.from('profiles').select('*').limit(1)
   console.log('Profiles sample:', profData, profErr)
+
+  console.log('--- Inspecting Products Schema ---')
+  const { data: prodData, error: prodErr } = await supabase.from('products').select('*').limit(1)
+  console.log('Products sample:', prodData, prodErr)
 
   console.log('--- Inspecting Customers Schema ---')
   const { data: custData, error: custErr } = await supabase.from('customers').select('*').limit(1)

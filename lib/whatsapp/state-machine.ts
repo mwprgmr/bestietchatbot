@@ -722,28 +722,13 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
   }
 
   const pincode = pincodeMatch[0]
-  let newAddr: any = null
+  let addressIdToSave: string | null = null
   const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
 
   if (isUuid(customerId)) {
-    const { data: directData, error: directErr } = await supabase
-      .from('addresses')
-      .insert([
-        {
-          customer_id: customerId,
-          title: 'Home',
-          address_line1: trimmedAddress,
-          city: 'Kochi',
-          pincode: pincode,
-          is_default: true,
-        },
-      ])
-      .select()
-      .single()
-
-    if (directErr) {
-      console.warn('[Address Direct Insert Warning, attempting RPC]:', directErr.message)
-      const { data: rpcData, error: rpcErr } = await supabase.rpc('upsert_address_sec', {
+    // 1. Try SECURITY DEFINER helper upsert_address_sec RPC
+    try {
+      const { data: rpcAddr } = await supabase.rpc('upsert_address_sec', {
         p_customer_id: customerId,
         p_address_line1: trimmedAddress,
         p_title: 'Home',
@@ -751,15 +736,50 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
         p_pincode: pincode,
       })
 
-      if (!rpcErr && rpcData) {
-        newAddr = rpcData
+      const parsed = typeof rpcAddr === 'string' ? JSON.parse(rpcAddr) : rpcAddr
+      if (parsed?.id && isUuid(parsed.id)) {
+        addressIdToSave = parsed.id
+      } else if (isUuid(rpcAddr)) {
+        addressIdToSave = rpcAddr
       }
-    } else {
-      newAddr = directData
+    } catch (e) {}
+
+    // 2. Direct insert fallback
+    if (!addressIdToSave) {
+      const { data: directData } = await supabase
+        .from('addresses')
+        .insert([
+          {
+            customer_id: customerId,
+            title: 'Home',
+            address_line1: trimmedAddress,
+            city: 'Kochi',
+            pincode: pincode,
+            is_default: true,
+          },
+        ])
+        .select('id')
+        .single()
+
+      if (directData?.id && isUuid(directData.id)) {
+        addressIdToSave = directData.id
+      }
+    }
+
+    // 3. Fallback: select most recent address for this customer
+    if (!addressIdToSave) {
+      const { data: latestAddrs } = await supabase
+        .from('addresses')
+        .select('id')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (latestAddrs && latestAddrs.length > 0 && isUuid(latestAddrs[0].id)) {
+        addressIdToSave = latestAddrs[0].id
+      }
     }
   }
-
-  const addressIdToSave = newAddr?.id && isUuid(newAddr.id) ? newAddr.id : null
 
   // Save selected_address_id and transition to CONFIRMING_ORDER
   await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER', {
@@ -780,8 +800,9 @@ async function renderOrderReview(phone: string, session: any, addressId: string 
       .eq('id', addressId)
       .single()
 
-    if (addr?.address_line1) {
-      addressText = `${addr.address_line1}, ${addr.city || 'Kochi'} ${addr.pincode || ''}`
+    const line = addr?.address_line || addr?.address_line1 || addr?.address
+    if (line) {
+      addressText = `${line}, ${addr.city || 'Kochi'} ${addr.pincode || ''}`
     }
   }
 
