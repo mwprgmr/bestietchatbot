@@ -238,13 +238,10 @@ async function handleMainMenuRouter(phone: string, userText: string, session: an
 }
 
 async function showBranchSelection(phone: string, session: any, supabase: any) {
-  const MARINE_DRIVE_ID = 'b1111111-1111-1111-1111-111111111111'
-  const FORT_KOCHI_ID = 'b2222222-2222-2222-2222-222222222222'
-
-  const activeBranches = [
-    { id: MARINE_DRIVE_ID, name: 'Marine Drive Branch', location: 'Marine Drive, Kochi' },
-    { id: FORT_KOCHI_ID, name: 'Fort Kochi Branch', location: 'Fort Kochi, Kochi' }
-  ]
+  const { data: branches } = await supabase
+    .from('branches')
+    .select('*')
+    .eq('is_active', true)
 
   const today = new Date().toISOString().split('T')[0]
   const { data: invCounts } = await supabase
@@ -253,8 +250,8 @@ async function showBranchSelection(phone: string, session: any, supabase: any) {
     .eq('inventory_date', today)
     .gt('available_stock', 0)
 
-  const rows = activeBranches.map((b: any) => {
-    const count = invCounts ? invCounts.filter((i: any) => i.branch_id === b.id || (!i.branch_id && b.id === MARINE_DRIVE_ID)).length : 0
+  const rows = (branches || []).map((b: any) => {
+    const count = invCounts ? invCounts.filter((i: any) => i.branch_id === b.id).length : 0
     return {
       id: b.id,
       title: b.name,
@@ -279,7 +276,7 @@ async function showBranchSelection(phone: string, session: any, supabase: any) {
 
 async function handleBranchSelection(phone: string, userInput: string, session: any, supabase: any) {
   const cleanInput = userInput.trim().toLowerCase()
-  const { data: branches } = await supabase.from('branches').select('*')
+  const { data: branches } = await supabase.from('branches').select('*').eq('is_active', true)
 
   const matchedBranch = branches?.find((b: any) => {
     const isId = b.id === cleanInput
@@ -287,34 +284,34 @@ async function handleBranchSelection(phone: string, userInput: string, session: 
     return isId || isName
   })
 
-  const branchIdToSave = matchedBranch?.id || (cleanInput.includes('fort') ? 'b2222222-2222-2222-2222-222222222222' : 'b1111111-1111-1111-1111-111111111111')
+  const selectedBranchId = matchedBranch?.id || cleanInput
 
   await updateSessionState(supabase, session, 'SELECTING_FISH', {
-    selected_branch_id: branchIdToSave,
+    selected_branch_id: selectedBranchId,
   })
 
-  return await showDailyFishMenu(phone, session, supabase, branchIdToSave)
+  return await showDailyFishMenu(phone, session, supabase, selectedBranchId)
 }
 
 async function showDailyFishMenu(phone: string, session: any, supabase: any, branchIdOverride?: string) {
   const today = new Date().toISOString().split('T')[0]
-  const branchId = branchIdOverride || session?.selected_branch_id || 'b1111111-1111-1111-1111-111111111111'
+  const branchId = branchIdOverride || session?.selected_branch_id
+
+  if (!branchId) {
+    return await showBranchSelection(phone, session, supabase)
+  }
 
   // Fetch branch details
   let branchName = 'Bestiet Fresh'
   const { data: bData } = await supabase.from('branches').select('name').eq('id', branchId).single()
   if (bData?.name) branchName = bData.name
 
-  // Query Today's Inventory strictly for selected Branch
-  const MARINE_DRIVE_ID = 'b1111111-1111-1111-1111-111111111111'
-  const FORT_KOCHI_ID = 'b2222222-2222-2222-2222-222222222222'
-  const targetBranchId = branchId === FORT_KOCHI_ID ? FORT_KOCHI_ID : MARINE_DRIVE_ID
-
+  // Query Today's Inventory strictly for selected Branch (NO fallbacks)
   const { data: inventoryItems } = await supabase
     .from('inventory')
     .select('*, product:products(*)')
     .eq('inventory_date', today)
-    .eq('branch_id', targetBranchId)
+    .eq('branch_id', branchId)
     .gt('available_stock', 0)
 
   // Filter out any items with 0 or negative available stock
@@ -323,10 +320,10 @@ async function showDailyFishMenu(phone: string, session: any, supabase: any, bra
   )
 
   if (activeStockItems.length === 0) {
-    await updateSessionState(supabase, session, 'MAIN_MENU')
+    await updateSessionState(supabase, session, 'SELECTING_BRANCH')
     return await sendWhatsAppTextMessage(
       phone,
-      `⚠️ *Stock Update — ${branchName}*\nOur fresh catch for today is sold out or being prepared at this branch. Please check back shortly or try selecting another branch!`
+      `⚠️ *Stock Update — ${branchName}*\nOur fresh catch for today is sold out or being prepared at this branch. Please select another branch!`
     )
   }
 
@@ -354,17 +351,18 @@ async function showDailyFishMenu(phone: string, session: any, supabase: any, bra
 async function handleFishSelection(phone: string, userInput: string, session: any, supabase: any) {
   const today = new Date().toISOString().split('T')[0]
   const cleanInput = userInput.trim()
-  const branchId = session?.selected_branch_id || 'b1111111-1111-1111-1111-111111111111'
-  const MARINE_DRIVE_ID = 'b1111111-1111-1111-1111-111111111111'
-  const FORT_KOCHI_ID = 'b2222222-2222-2222-2222-222222222222'
-  const targetBranchId = branchId === FORT_KOCHI_ID ? FORT_KOCHI_ID : MARINE_DRIVE_ID
+  const branchId = session?.selected_branch_id
 
-  // Query Today's Active Inventory for Selected Branch
+  if (!branchId) {
+    return await showBranchSelection(phone, session, supabase)
+  }
+
+  // Query Today's Active Inventory strictly for Selected Branch
   const { data: inventoryItems } = await supabase
     .from('inventory')
     .select('*, product:products(*)')
     .eq('inventory_date', today)
-    .eq('branch_id', targetBranchId)
+    .eq('branch_id', branchId)
 
   // Flexible matching by product_id UUID OR case-insensitive product name / partial text
   const selectedInv = (inventoryItems || []).find((inv: any) => {
@@ -444,41 +442,25 @@ async function handleQuantitySelection(phone: string, userText: string, session:
 
   const productId = session.selected_product_id
   const today = new Date().toISOString().split('T')[0]
-  const branchId = session?.selected_branch_id || 'b1111111-1111-1111-1111-111111111111'
+  const branchId = session?.selected_branch_id
+
+  if (!branchId || !productId) {
+    return await showBranchSelection(phone, session, supabase)
+  }
 
   const { data: inv } = await supabase
     .from('inventory')
-    .select('*, product:products(*)')
+    .select('available_stock, product:products(name)')
     .eq('product_id', productId)
     .eq('inventory_date', today)
     .eq('branch_id', branchId)
     .single()
 
-  const availableStock = inv ? Number(inv.available_stock || 0) : 999
-  const productName = inv?.product?.name || 'this fish'
-
-  // Calculate total quantity of this fish already in cart
-  const currentCart = Array.isArray(session.cart) ? session.cart : []
-  const existingCartQty = currentCart
-    .filter((cartItem: any) => cartItem.product_id === productId)
-    .reduce((sum: number, cartItem: any) => sum + Number(cartItem.quantity_kg || 0), 0)
-
-  const totalProposedQty = existingCartQty + qty
-
-  // Prevent adding if combined total exceeds current inventory
-  if (inv && totalProposedQty > availableStock) {
-    const remainingAllowed = Math.max(0, availableStock - existingCartQty)
-
-    if (remainingAllowed <= 0) {
-      return await sendWhatsAppTextMessage(
-        phone,
-        `⚠️ Cannot add more ${productName}. You already have the maximum available stock (${availableStock}kg) in your cart!`
-      )
-    }
-
+  const availableStock = Number(inv?.available_stock || 0)
+  if (qty > availableStock) {
     return await sendWhatsAppTextMessage(
       phone,
-      `⚠️ Only ${availableStock}kg available in total! You already have ${existingCartQty}kg in your cart. You can only add up to ${remainingAllowed}kg more.`
+      `⚠️ Requested ${qty}kg exceeds available stock (${availableStock}kg left). Please enter a smaller quantity.`
     )
   }
 
@@ -488,11 +470,11 @@ async function handleQuantitySelection(phone: string, userText: string, session:
 
   return await sendWhatsAppButtonsMessage(
     phone,
-    `🔪 *Selected: ${qty} kg*\nSelect Cutting Style:\nHow would you like your fish prepared?`,
+    `🔪 *Select Cutting Preference for ${inv?.product?.name || 'Fish'} (${qty}kg)*:`,
     [
-      { id: 'cut_whole', title: 'Whole (Uncut)' },
-      { id: 'cut_curry_cut', title: 'Curry Cut 🍛' },
-      { id: 'cut_fry_cut', title: 'Fry Cut 🍳' },
+      { id: 'cut_whole', title: '🐟 Whole (Cleaned)' },
+      { id: 'cut_curry', title: '🍲 Curry Cut' },
+      { id: 'cut_fry', title: '🍳 Fry Cut / Slices' },
     ]
   )
 }
@@ -512,12 +494,18 @@ async function handleCutSelection(phone: string, userText: string, session: any,
   const productId = session.selected_product_id
   const qty = Number(session.selected_quantity || 1.0)
   const today = new Date().toISOString().split('T')[0]
+  const branchId = session.selected_branch_id
+
+  if (!branchId || !productId) {
+    return await showBranchSelection(phone, session, supabase)
+  }
 
   const { data: inv } = await supabase
     .from('inventory')
     .select('*, product:products(*)')
     .eq('product_id', productId)
     .eq('inventory_date', today)
+    .eq('branch_id', branchId)
     .single()
 
   if (!inv) {
@@ -562,7 +550,7 @@ async function handleCutSelection(phone: string, userText: string, session: any,
 
 async function handleCartRouter(phone: string, userText: string, session: any, supabase: any) {
   if (userText === 'btn_add_more') {
-    return await showDailyFishMenu(phone, session.id, supabase)
+    return await showDailyFishMenu(phone, session, supabase)
   }
   if (userText === 'btn_clear_cart') {
     await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [] })
@@ -610,7 +598,7 @@ async function handleCartRouter(phone: string, userText: string, session: any, s
 
 async function handleAddressSelection(phone: string, userText: string, session: any, supabase: any) {
   if (userText === 'addr_new') {
-    await updateSessionState(supabase, session, 'ADDING_ADDRESS')
+    await updateSessionState(supabase, session.id, 'ADDING_ADDRESS')
     return await sendWhatsAppTextMessage(
       phone,
       `📍 Please reply with your full delivery address and pincode:`
@@ -626,7 +614,7 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
   const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
 
   if (isUuid(customerId)) {
-    // 1. Direct insert
+    // Direct insert to public.addresses
     const { data: directData, error: directErr } = await supabase
       .from('addresses')
       .insert([
@@ -643,7 +631,6 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
 
     if (directErr) {
       console.warn('[Address Direct Insert Warning, attempting RPC]:', directErr.message)
-      // 2. RPC SECURITY DEFINER fallback
       const { data: rpcData, error: rpcErr } = await supabase.rpc('upsert_address_sec', {
         p_customer_id: customerId,
         p_address_line1: trimmedAddress,
@@ -652,23 +639,12 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
       })
 
       if (rpcErr) {
-        console.warn('[Address RPC Warning, using fallback memory address]:', rpcErr.message)
-        newAddr = {
-          id: null,
-          address_line1: trimmedAddress,
-          city: 'Kochi',
-        }
+        console.error('[Address RPC Error]:', rpcErr.message)
       } else {
         newAddr = rpcData
       }
     } else {
       newAddr = directData
-    }
-  } else {
-    newAddr = {
-      id: null,
-      address_line1: trimmedAddress,
-      city: 'Kochi',
     }
   }
 
@@ -677,7 +653,7 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
 }
 
 async function promptOrderRemarks(phone: string, session: any, addressId: string | null, supabase: any, fallbackAddressText?: string) {
-  await updateSessionState(supabase, session, 'ADDING_REMARKS', {
+  await updateSessionState(supabase, session.id, 'ADDING_REMARKS', {
     selected_address_id: addressId,
   })
 
@@ -696,7 +672,7 @@ async function handleAddingRemarks(phone: string, remarksInput: string, session:
 
   const finalRemarks = isSkip ? null : clean
 
-  await updateSessionState(supabase, session, 'ORDER_REVIEW', {
+  await updateSessionState(supabase, session.id, 'ORDER_REVIEW', {
     pending_remarks: finalRemarks,
   })
 
@@ -718,7 +694,7 @@ async function renderOrderReview(phone: string, session: any, addressId: string 
     }
   }
 
-  let branchName = 'Marine Drive Branch'
+  let branchName = 'Bestiet Fresh'
   const branchId = session?.selected_branch_id
   if (branchId) {
     const { data: bData } = await supabase.from('branches').select('name').eq('id', branchId).single()
@@ -796,16 +772,21 @@ async function handleOrderReview(
 
     const validAddressId = isUuid(rawAddressId) ? rawAddressId : null
     const validCustomerId = isUuid(customerId) ? customerId : null
-    const validBranchId = isUuid(session.selected_branch_id) ? session.selected_branch_id : 'b1111111-1111-1111-1111-111111111111'
+    const validBranchId = isUuid(session.selected_branch_id) ? session.selected_branch_id : null
     const customerRemarks = session.pending_remarks || null
 
-    // Call Atomic RPC Order Placement Function
+    if (!validBranchId) {
+      return await showBranchSelection(phone, session, supabase)
+    }
+
+    // Call Production Canonical create_order_atomic RPC Function
     const { data: result, error: orderErr } = await supabase.rpc('create_order_atomic', {
       p_customer_id: validCustomerId,
       p_address_id: validAddressId,
       p_items: cart,
       p_inventory_date: today,
       p_idempotency_key: idempotencyKey || `sim_${Date.now()}`,
+      p_delivery_fee: 30.00,
       p_branch_id: validBranchId,
       p_customer_remarks: customerRemarks,
     })
@@ -814,13 +795,19 @@ async function handleOrderReview(
 
     if (orderErr || !resObj?.success) {
       const errMsg = resObj?.error || orderErr?.message || 'Stock allocation failed'
-      await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [] })
-      return await sendWhatsAppTextMessage(
+      // DO NOT clear cart & DO NOT reset state on failure; allow retry
+      await updateSessionState(supabase, session.id, 'ORDER_REVIEW')
+      return await sendWhatsAppButtonsMessage(
         phone,
-        `🚫 *Order Placement Failed*\nReason: ${errMsg}\n\nYour cart has been cleared. Please try again.`
+        `🚫 *Order Placement Failed*\nReason: ${errMsg}\n\nYour cart is preserved. Would you like to retry or cancel?`,
+        [
+          { id: 'btn_confirm_order', title: '🔁 Retry Order' },
+          { id: 'btn_cancel_order', title: '❌ Cancel Order' },
+        ]
       )
     }
 
+    // Clear cart ONLY after success
     await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [], selected_branch_id: null, pending_remarks: null })
 
     const orderNumber = resObj?.order_number || resObj?.order_id?.slice(0, 8) || 'BF-SUCCESS'
