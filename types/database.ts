@@ -58,10 +58,12 @@ export interface Customer {
 export interface Address {
   id: string;
   customer_id: string;
-  title: string;
-  address_line1: string;
+  title?: string | null;
+  label?: string | null;
+  address_line?: string | null;
+  address_line1?: string | null;
   address_line2?: string | null;
-  city: string;
+  city?: string | null;
   pincode?: string | null;
   is_default: boolean;
   created_at: string;
@@ -86,8 +88,13 @@ export interface Order {
   address_id?: string | null;
   branch_id?: string | null;
   customer_remarks?: string | null;
-  total_amount: number;
-  delivery_fee: number;
+  delivery_address?: string | null;
+  total_amount?: number;
+  total?: number;
+  delivery_fee?: number;
+  delivery_charge?: number;
+  payment_method?: string | null;
+  idempotency_key?: string | null;
   status: OrderStatus;
   payment_status: PaymentStatus;
   cancellation_reason?: string | null;

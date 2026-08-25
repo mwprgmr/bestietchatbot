@@ -138,11 +138,7 @@ export default function InventoryPage() {
           .select('*, product:products(*), branch:branches(*)')
           .eq('inventory_date', selectedDate)
 
-        if (activeBranchId === FORT_KOCHI_ID) {
-          query = query.eq('branch_id', FORT_KOCHI_ID)
-        } else {
-          query = query.or(`branch_id.eq.${MARINE_DRIVE_ID},branch_id.is.null`)
-        }
+        query = query.eq('branch_id', activeBranchId)
 
         const { data: clientData, error: clientErr } = await query.order('created_at', { ascending: false })
 

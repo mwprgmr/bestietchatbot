@@ -7,8 +7,6 @@ import { sendWhatsAppStatusUpdate } from '@/lib/whatsapp/client'
 import {
   ShoppingBag,
   Search,
-  Filter,
-  Eye,
   CheckCircle2,
   Clock,
   Package,
@@ -20,12 +18,13 @@ import {
   Calendar,
   AlertCircle,
   Fish,
-  DollarSign
+  Store,
+  MessageSquare,
+  Eye,
+  RefreshCw,
 } from 'lucide-react'
 import { format } from 'date-fns'
-
 import { useBranchContext } from '../BranchContext'
-import { Store, MessageSquare } from 'lucide-react'
 
 const statusTabs: { label: string; value: 'ALL' | OrderStatus }[] = [
   { label: 'All Orders', value: 'ALL' },
@@ -41,6 +40,7 @@ const statusTabs: { label: string; value: 'ALL' | OrderStatus }[] = [
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [queryError, setQueryError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'ALL' | OrderStatus>('ALL')
   const [search, setSearch] = useState('')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
@@ -49,6 +49,8 @@ export default function OrdersPage() {
 
   const supabase = createClient()
   const { selectedBranchId, currentUser } = useBranchContext()
+
+  const assignedBranchId = currentUser?.branch_id || selectedBranchId
 
   useEffect(() => {
     fetchOrders()
@@ -67,10 +69,11 @@ export default function OrdersPage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [selectedBranchId, currentUser?.branch_id])
+  }, [assignedBranchId])
 
   const fetchOrders = async () => {
     setLoading(true)
+    setQueryError(null)
     try {
       let query = supabase
         .from('orders')
@@ -81,22 +84,33 @@ export default function OrdersPage() {
           branch:branches(*),
           items:order_items(*, product:products(*))
         `)
-        .order('created_at', { ascending: false })
+
+      if (assignedBranchId && assignedBranchId !== 'ALL') {
+        query = query.eq('branch_id', assignedBranchId)
+      }
+
+      query = query.order('created_at', { ascending: false })
 
       const { data, error } = await query
 
       if (error) {
-        console.error('Supabase Orders Query Error:', error)
-        throw error
+        console.error('[Supabase Orders Query Error]:', error)
+        setQueryError(error.message || 'Database query error fetching orders.')
+        setOrders([])
+        return
       }
 
-      if (!data || data.length === 0) {
-        console.log(`[Dev Log]: Query returned 0 orders for user branch scope: ${currentUser?.branch_id || selectedBranchId || 'RLS'}`)
+      if (!data || !Array.isArray(data)) {
+        console.log(`[Dev Log]: Query returned non-array or 0 orders for branch scope: ${assignedBranchId}`)
+        setOrders([])
+        return
       }
 
-      setOrders(data || [])
+      setOrders(data)
     } catch (err: any) {
-      console.error('Error fetching orders:', err?.message || err)
+      console.error('[Unhandled error fetching orders]:', err?.message || err)
+      setQueryError(err?.message || 'An unexpected error occurred while fetching orders.')
+      setOrders([])
     } finally {
       setLoading(false)
     }
@@ -107,13 +121,13 @@ export default function OrdersPage() {
     try {
       const statusLower = newStatus.toLowerCase()
       if (newStatus === 'CANCELLED' || statusLower === 'cancelled') {
-        const { data, error } = await supabase.rpc('cancel_order_atomic', {
+        const { error } = await supabase.rpc('cancel_order_atomic', {
           p_order_id: orderId,
           p_reason: 'Cancelled by admin',
         })
         if (error) throw error
       } else {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('orders')
           .update({ status: statusLower, updated_at: new Date().toISOString() })
           .eq('id', orderId)
@@ -121,7 +135,6 @@ export default function OrdersPage() {
         if (error) throw error
       }
 
-      // Send WhatsApp status notification
       if (selectedOrder?.customer?.phone) {
         try {
           await sendWhatsAppStatusUpdate({
@@ -130,7 +143,7 @@ export default function OrdersPage() {
             newStatus,
           })
         } catch (waErr) {
-          console.error('WhatsApp notification failed:', waErr)
+          console.error('WhatsApp notification error:', waErr)
         }
       }
 
@@ -139,7 +152,7 @@ export default function OrdersPage() {
         setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null))
       }
     } catch (err: any) {
-      alert('Error updating status: ' + err.message)
+      alert('Error updating status: ' + (err?.message || 'Update failed'))
     } finally {
       setUpdating(false)
     }
@@ -150,20 +163,27 @@ export default function OrdersPage() {
     setIsDrawerOpen(true)
   }
 
-  const filteredOrders = orders.filter((ord) => {
-    const matchesBranch =
-      selectedBranchId === 'ALL' ||
-      ord.branch_id === selectedBranchId ||
-      (!ord.branch_id && selectedBranchId === 'b1111111-1111-1111-1111-111111111111')
-    const ordStatusUpper = (ord.status || '').toUpperCase()
-    const matchesTab = activeTab === 'ALL' || ordStatusUpper === activeTab
-    const q = search.toLowerCase()
-    const matchesSearch =
-      ord.order_number.toLowerCase().includes(q) ||
-      (ord.customer?.phone && ord.customer.phone.includes(q)) ||
-      (ord.customer?.name && ord.customer.name.toLowerCase().includes(q))
-    return matchesBranch && matchesTab && matchesSearch
-  })
+  const filteredOrders = Array.isArray(orders)
+    ? orders.filter((ord) => {
+        if (!ord) return false
+        const matchesBranch =
+          !assignedBranchId ||
+          assignedBranchId === 'ALL' ||
+          ord.branch_id === assignedBranchId ||
+          (!ord.branch_id && assignedBranchId === 'b1111111-1111-1111-1111-111111111111')
+
+        const ordStatusUpper = (ord.status || '').toUpperCase()
+        const matchesTab = activeTab === 'ALL' || ordStatusUpper === activeTab
+        const q = (search || '').toLowerCase()
+        const matchesSearch =
+          (ord.order_number || '').toLowerCase().includes(q) ||
+          (ord.customer?.phone && ord.customer.phone.includes(q)) ||
+          (ord.customer?.name && ord.customer.name.toLowerCase().includes(q)) ||
+          (ord.delivery_address && ord.delivery_address.toLowerCase().includes(q))
+
+        return matchesBranch && matchesTab && matchesSearch
+      })
+    : []
 
   const getStatusBadge = (status: OrderStatus | string) => {
     const s = (status || '').toUpperCase()
@@ -211,7 +231,11 @@ export default function OrdersPage() {
           </span>
         )
       default:
-        return null
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-50 text-slate-700 border border-slate-200">
+            {status || 'Unknown'}
+          </span>
+        )
     }
   }
 
@@ -225,10 +249,35 @@ export default function OrdersPage() {
             Order Management
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Monitor incoming WhatsApp customer orders, update statuses, and send live customer notifications.
+            Monitor incoming WhatsApp customer orders for your assigned branch, update statuses, and send notifications.
           </p>
         </div>
+        <button
+          onClick={fetchOrders}
+          disabled={loading}
+          className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors self-start sm:self-auto"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span>Refresh</span>
+        </button>
       </div>
+
+      {/* Database Error Alert if query fails */}
+      {queryError && (
+        <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-2xl flex items-start gap-3 text-xs font-medium">
+          <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-bold text-red-900">Database Query Error</p>
+            <p className="mt-0.5">{queryError}</p>
+          </div>
+          <button
+            onClick={fetchOrders}
+            className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-900 rounded-lg text-xs font-bold transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Tabs Bar */}
       <div className="bg-white rounded-2xl p-2 border border-slate-200/80 shadow-xs overflow-x-auto flex items-center gap-1">
@@ -255,7 +304,7 @@ export default function OrdersPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search order number (BF-...), customer name or phone..."
+            placeholder="Search order number (BF-...), customer name, phone or address..."
             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
@@ -265,7 +314,7 @@ export default function OrdersPage() {
       {loading ? (
         <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
           <div className="inline-block w-8 h-8 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin mb-3"></div>
-          <p className="text-xs text-slate-500 font-medium">Loading orders from database...</p>
+          <p className="text-xs text-slate-500 font-medium">Loading branch orders from database...</p>
         </div>
       ) : filteredOrders.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 space-y-3">
@@ -276,7 +325,7 @@ export default function OrdersPage() {
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             {search
               ? 'No orders match your search parameters.'
-              : 'WhatsApp orders will automatically appear here when customers complete checkout.'}
+              : 'WhatsApp orders for this branch will automatically appear here when customers complete checkout.'}
           </p>
         </div>
       ) : (
@@ -296,64 +345,74 @@ export default function OrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs font-medium">
-                {filteredOrders.map((ord) => (
-                  <tr key={ord.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-slate-900">
-                      <span className="font-mono text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md text-[11px]">
-                        {ord.order_number}
-                      </span>
-                    </td>
+                {filteredOrders.map((ord) => {
+                  const branchName =
+                    ord.branch?.name ||
+                    (ord.branch_id === 'b2222222-2222-2222-2222-222222222222'
+                      ? 'Fort Kochi Branch'
+                      : 'Marine Drive Branch')
 
-                    <td className="py-3.5 px-4">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
-                        <Store className="w-3 h-3 text-blue-600" />
-                        {ord.branch?.name || 'Marine Drive Branch'}
-                      </span>
-                    </td>
+                  const totalAmt = ord.total_amount ?? ord.total ?? 0
 
-                    <td className="py-3.5 px-4">
-                      <p className="font-bold text-slate-900">{ord.customer?.name || 'Customer'}</p>
-                      <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                        <Phone className="w-3 h-3 text-slate-400" />
-                        {ord.customer?.phone}
-                      </p>
-                    </td>
+                  return (
+                    <tr key={ord.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-slate-900">
+                        <span className="font-mono text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md text-[11px]">
+                          {ord.order_number || 'N/A'}
+                        </span>
+                      </td>
 
-                    <td className="py-3.5 px-4">
-                      <p className="font-semibold text-slate-800">
-                        {ord.items && ord.items.length > 0
-                          ? ord.items.map((i) => `${i.product?.name || 'Fish'} (${i.quantity_kg}kg)`).join(', ')
-                          : '1 item'}
-                      </p>
-                      {ord.customer_remarks && (
-                        <p className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
-                          <MessageSquare className="w-2.5 h-2.5" /> {ord.customer_remarks}
+                      <td className="py-3.5 px-4">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
+                          <Store className="w-3 h-3 text-blue-600" />
+                          {branchName}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <p className="font-bold text-slate-900">{ord.customer?.name || 'WhatsApp Customer'}</p>
+                        <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                          <Phone className="w-3 h-3 text-slate-400" />
+                          {ord.customer?.phone || 'N/A'}
                         </p>
-                      )}
-                    </td>
+                      </td>
 
-                    <td className="py-3.5 px-4">
-                      <span className="font-extrabold text-slate-900 text-sm">₹{ord.total_amount}</span>
-                      <span className="text-[10px] text-slate-400 block">{ord.payment_status}</span>
-                    </td>
+                      <td className="py-3.5 px-4">
+                        <p className="font-semibold text-slate-800">
+                          {Array.isArray(ord.items) && ord.items.length > 0
+                            ? ord.items.map((i) => `${i.product?.name || 'Fish'} (${i.quantity_kg || 1}kg)`).join(', ')
+                            : '1 item'}
+                        </p>
+                        {ord.customer_remarks && (
+                          <p className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
+                            <MessageSquare className="w-2.5 h-2.5" /> {ord.customer_remarks}
+                          </p>
+                        )}
+                      </td>
 
-                    <td className="py-3.5 px-4">{getStatusBadge(ord.status)}</td>
+                      <td className="py-3.5 px-4">
+                        <span className="font-extrabold text-slate-900 text-sm">₹{totalAmt}</span>
+                        <span className="text-[10px] text-slate-400 block">{ord.payment_status || 'COD'}</span>
+                      </td>
 
-                    <td className="py-3.5 px-4 text-slate-500">
-                      {format(new Date(ord.created_at), 'dd MMM yyyy, hh:mm a')}
-                    </td>
+                      <td className="py-3.5 px-4">{getStatusBadge(ord.status)}</td>
 
-                    <td className="py-3.5 px-4 text-right">
-                      <button
-                        onClick={() => handleOpenDrawer(ord)}
-                        className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 font-semibold text-xs transition-all flex items-center gap-1.5 ml-auto"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>View Details</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      <td className="py-3.5 px-4 text-slate-500">
+                        {ord.created_at ? format(new Date(ord.created_at), 'dd MMM yyyy, hh:mm a') : 'Recent'}
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right">
+                        <button
+                          onClick={() => handleOpenDrawer(ord)}
+                          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 font-semibold text-xs transition-all flex items-center gap-1.5 ml-auto"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>View Details</span>
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -367,15 +426,15 @@ export default function OrdersPage() {
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <span className="font-mono text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg text-xs">
-                  {selectedOrder.order_number}
+                  {selectedOrder.order_number || 'Order Details'}
                 </span>
                 <p className="text-xs text-slate-500 mt-1">
-                  Placed on {format(new Date(selectedOrder.created_at), 'dd MMM yyyy, hh:mm a')}
+                  Placed on {selectedOrder.created_at ? format(new Date(selectedOrder.created_at), 'dd MMM yyyy, hh:mm a') : 'Recent'}
                 </p>
               </div>
               <button
                 onClick={() => setIsDrawerOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 font-bold text-sm"
               >
                 ✕
               </button>
@@ -393,7 +452,7 @@ export default function OrdersPage() {
                 <div className="pt-2 border-t border-slate-200/60">
                   <p className="text-[11px] font-bold text-slate-600 uppercase mb-2">Update Status Workflow:</p>
                   <div className="grid grid-cols-2 gap-2">
-                    {selectedOrder.status === 'PENDING' && (
+                    {selectedOrder.status?.toUpperCase() === 'PENDING' && (
                       <button
                         disabled={updating}
                         onClick={() => handleUpdateStatus(selectedOrder.id, 'ACCEPTED')}
@@ -403,7 +462,7 @@ export default function OrdersPage() {
                       </button>
                     )}
 
-                    {['PENDING', 'ACCEPTED'].includes(selectedOrder.status) && (
+                    {['PENDING', 'ACCEPTED'].includes((selectedOrder.status || '').toUpperCase()) && (
                       <button
                         disabled={updating}
                         onClick={() => handleUpdateStatus(selectedOrder.id, 'PREPARING')}
@@ -413,7 +472,7 @@ export default function OrdersPage() {
                       </button>
                     )}
 
-                    {['PREPARING'].includes(selectedOrder.status) && (
+                    {['PREPARING'].includes((selectedOrder.status || '').toUpperCase()) && (
                       <button
                         disabled={updating}
                         onClick={() => handleUpdateStatus(selectedOrder.id, 'PACKED')}
@@ -423,7 +482,7 @@ export default function OrdersPage() {
                       </button>
                     )}
 
-                    {['PACKED'].includes(selectedOrder.status) && (
+                    {['PACKED'].includes((selectedOrder.status || '').toUpperCase()) && (
                       <button
                         disabled={updating}
                         onClick={() => handleUpdateStatus(selectedOrder.id, 'OUT_FOR_DELIVERY')}
@@ -433,7 +492,7 @@ export default function OrdersPage() {
                       </button>
                     )}
 
-                    {['OUT_FOR_DELIVERY'].includes(selectedOrder.status) && (
+                    {['OUT_FOR_DELIVERY'].includes((selectedOrder.status || '').toUpperCase()) && (
                       <button
                         disabled={updating}
                         onClick={() => handleUpdateStatus(selectedOrder.id, 'DELIVERED')}
@@ -443,7 +502,7 @@ export default function OrdersPage() {
                       </button>
                     )}
 
-                    {selectedOrder.status !== 'CANCELLED' && selectedOrder.status !== 'DELIVERED' && (
+                    {selectedOrder.status?.toUpperCase() !== 'CANCELLED' && selectedOrder.status?.toUpperCase() !== 'DELIVERED' && (
                       <button
                         disabled={updating}
                         onClick={() => {
@@ -469,7 +528,7 @@ export default function OrdersPage() {
                     <span className="text-slate-500 font-medium">Fulfilling Branch:</span>
                     <span className="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
                       <Store className="w-3.5 h-3.5 text-blue-600" />
-                      {selectedOrder.branch?.name || 'Marine Drive Branch'}
+                      {selectedOrder.branch?.name || (selectedOrder.branch_id === 'b2222222-2222-2222-2222-222222222222' ? 'Fort Kochi Branch' : 'Marine Drive Branch')}
                     </span>
                   </div>
 
@@ -477,21 +536,24 @@ export default function OrdersPage() {
                     <span className="font-bold text-slate-800">{selectedOrder.customer?.name || 'WhatsApp Customer'}</span>
                     <span className="text-slate-500 font-mono flex items-center gap-1">
                       <Phone className="w-3 h-3 text-slate-400" />
-                      {selectedOrder.customer?.phone}
+                      {selectedOrder.customer?.phone || 'N/A'}
                     </span>
                   </div>
 
-                  {selectedOrder.address && (
-                    <div className="pt-2 border-t border-slate-200/60 text-slate-600 flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-semibold text-slate-800">{selectedOrder.address.title || 'Delivery Address'}</p>
-                        <p>{selectedOrder.address.address_line1}</p>
-                        {selectedOrder.address.address_line2 && <p>{selectedOrder.address.address_line2}</p>}
-                        <p>{selectedOrder.address.city} - {selectedOrder.address.pincode}</p>
-                      </div>
+                  {/* Delivery Address with safe fallbacks */}
+                  <div className="pt-2 border-t border-slate-200/60 text-slate-600 flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-slate-800">{selectedOrder.address?.label || selectedOrder.address?.title || 'Delivery Address'}</p>
+                      <p>
+                        {selectedOrder.delivery_address ||
+                          selectedOrder.address?.address_line ||
+                          selectedOrder.address?.address_line1 ||
+                          'Address not specified'}
+                      </p>
+                      {selectedOrder.address?.pincode && <p className="text-slate-500 text-[11px]">Pincode: {selectedOrder.address.pincode}</p>}
                     </div>
-                  )}
+                  </div>
 
                   {selectedOrder.customer_remarks && (
                     <div className="pt-2 border-t border-slate-200/60 text-slate-700 flex items-start gap-2 bg-amber-50/80 p-2.5 rounded-xl border border-amber-200/80 mt-2">
@@ -510,42 +572,46 @@ export default function OrdersPage() {
                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Order Items</h4>
                 <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                   <div className="divide-y divide-slate-100">
-                    {selectedOrder.items?.map((item) => (
-                      <div key={item.id} className="p-3.5 flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
-                            <Fish className="w-4 h-4 text-emerald-600" />
+                    {Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? (
+                      selectedOrder.items.map((item) => (
+                        <div key={item.id || item.product_id} className="p-3.5 flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+                              <Fish className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-slate-900">{item.product?.name || 'Fresh Fish'}</p>
+                              <p className="text-[11px] text-slate-500 capitalize">
+                                Cut: <span className="font-semibold text-slate-700">{(item.cutting_type || 'whole').replace('_', ' ')}</span>
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-bold text-slate-900">{item.product?.name || 'Fish'}</p>
-                            <p className="text-[11px] text-slate-500 capitalize">
-                              Cut: <span className="font-semibold text-slate-700">{item.cutting_type.replace('_', ' ')}</span>
+
+                          <div className="text-right">
+                            <p className="font-extrabold text-slate-900">₹{item.subtotal || 0}</p>
+                            <p className="text-[10px] text-slate-400">
+                              {item.quantity_kg} kg × ₹{item.unit_price}/kg
                             </p>
                           </div>
                         </div>
-
-                        <div className="text-right">
-                          <p className="font-extrabold text-slate-900">₹{item.subtotal}</p>
-                          <p className="text-[10px] text-slate-400">
-                            {item.quantity_kg} kg × ₹{item.unit_price}/kg
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-xs text-slate-500">No items specified for this order</div>
+                    )}
                   </div>
 
                   <div className="p-3.5 bg-slate-50 border-t border-slate-200 space-y-1.5 text-xs">
                     <div className="flex justify-between text-slate-600">
                       <span>Subtotal:</span>
-                      <span>₹{(Number(selectedOrder.total_amount) - Number(selectedOrder.delivery_fee)).toFixed(2)}</span>
+                      <span>₹{(Number(selectedOrder.total_amount || selectedOrder.total || 0) - Number(selectedOrder.delivery_fee || selectedOrder.delivery_charge || 30)).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-slate-600">
                       <span>Delivery Fee:</span>
-                      <span>₹{selectedOrder.delivery_fee}</span>
+                      <span>₹{selectedOrder.delivery_fee || selectedOrder.delivery_charge || 30}</span>
                     </div>
                     <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
                       <span>Total Paid:</span>
-                      <span className="text-emerald-700">₹{selectedOrder.total_amount}</span>
+                      <span className="text-emerald-700">₹{selectedOrder.total_amount || selectedOrder.total || 0}</span>
                     </div>
                   </div>
                 </div>
