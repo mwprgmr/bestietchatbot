@@ -4,10 +4,39 @@ import {
   sendWhatsAppButtonsMessage,
   sendWhatsAppListMessage,
 } from './client'
-import { IncomingMessagePayload, BotState, ChatSessionData } from './types'
+import { IncomingMessagePayload, BotState } from './types'
 import { normalizePhoneNumber } from './phone-utils'
 
 const processedMessageIds = new Set<string>()
+
+async function isDuplicateMessage(supabase: any, messageId: string | undefined): Promise<boolean> {
+  if (!messageId) return false
+
+  if (processedMessageIds.has(messageId)) {
+    return true
+  }
+  processedMessageIds.add(messageId)
+
+  if (processedMessageIds.size > 10000) {
+    const firstKey = processedMessageIds.values().next().value
+    if (firstKey) processedMessageIds.delete(firstKey)
+  }
+
+  try {
+    const { error } = await supabase.from('whatsapp_messages').insert([
+      {
+        whatsapp_message_id: messageId,
+        direction: 'INBOUND',
+        status: 'PROCESSED',
+      },
+    ])
+    if (error && error.code === '23505') {
+      return true
+    }
+  } catch (e) {}
+
+  return false
+}
 
 function isLikelyAddressText(text: string): boolean {
   const clean = text.toLowerCase().trim()
@@ -44,19 +73,14 @@ function normalizeCart(cart: any[]) {
 }
 
 export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
-  if (payload.messageId) {
-    if (processedMessageIds.has(payload.messageId)) {
-      console.log(`[Duplicate webhook message suppressed]: ${payload.messageId}`)
-      return { status: 'duplicate_suppressed' }
-    }
-    processedMessageIds.add(payload.messageId)
-    if (processedMessageIds.size > 5000) {
-      const firstKey = processedMessageIds.values().next().value
-      if (firstKey) processedMessageIds.delete(firstKey)
-    }
+  const supabase = createAdminClient()
+
+  // Webhook message deduplication check
+  if (payload.messageId && (await isDuplicateMessage(supabase, payload.messageId))) {
+    console.log(`[Duplicate webhook message suppressed]: ${payload.messageId}`)
+    return { status: 'duplicate_suppressed' }
   }
 
-  const supabase = createAdminClient()
   const rawPhone = payload.from
   const phone = normalizePhoneNumber(rawPhone)
 
@@ -165,10 +189,9 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
 
   // 1. Check Global Confirmation / Cancellation Overrides
   if (isConfirmIntent) {
-    await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER')
     botResponse = await handleOrderReview(phone, userText, session, customer.id, payload.messageId, supabase)
   } else if (isCancelIntent) {
-    await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [], selected_branch_id: null })
+    await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [], selected_branch_id: null, selected_address_id: null, pending_remarks: null, idempotency_key: null })
     botResponse = await sendWhatsAppTextMessage(phone, '❌ Order cancelled. Returned to main menu.')
   } 
   // 2. Check Address Detection Before Fallback or Generic Commands
@@ -225,7 +248,7 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
 
       case 'SELECTING_ADDRESS':
       case 'ADDING_ADDRESS':
-        botResponse = await handleAddingAddress(phone, userText, session, customer.id, supabase)
+        botResponse = await handleAddingAddress(phone, rawText, session, customer.id, supabase)
         break
 
       case 'ORDER_REVIEW':
@@ -644,7 +667,7 @@ async function handleCartRouter(phone: string, userText: string, session: any, s
     return await showDailyFishMenu(phone, session, supabase)
   }
   if (userText === 'btn_clear_cart') {
-    await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [], selected_branch_id: null })
+    await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [], selected_branch_id: null, selected_address_id: null, pending_remarks: null, idempotency_key: null })
     return await sendWhatsAppTextMessage(phone, '🗑️ Cart cleared. Returned to main menu.')
   }
 
@@ -665,7 +688,7 @@ async function handleCartRouter(phone: string, userText: string, session: any, s
     const rows = addresses.map((addr: any) => ({
       id: addr.id,
       title: addr.title || 'Address',
-      description: `${addr.address_line1}, ${addr.city} ${addr.pincode || ''}`,
+      description: `${addr.address_line1 || addr.address_line || addr.address || ''}, ${addr.city || 'Kochi'} ${addr.pincode || ''}`,
     }))
     rows.push({ id: 'addr_new', title: '+ Add New Address', description: 'Enter a new delivery address' })
 
@@ -713,7 +736,6 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
   // Validate 6-digit pincode
   const pincodeMatch = trimmedAddress.match(/\b\d{6}\b/)
   if (!pincodeMatch) {
-    // DO NOT clear cart, DO NOT reset branch, DO NOT return to MAIN_MENU
     await updateSessionState(supabase, session.id, 'SELECTING_ADDRESS')
     return await sendWhatsAppTextMessage(
       phone,
@@ -725,35 +747,24 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
   let addressIdToSave: string | null = null
   const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
 
-  if (isUuid(customerId)) {
-    // 1. Try SECURITY DEFINER helper upsert_address_sec RPC
+  let realCustomerId = customerId
+  if (!isUuid(realCustomerId)) {
+    const { data: cData } = await supabase.from('customers').select('id').eq('phone', phone).single()
+    if (cData?.id && isUuid(cData.id)) {
+      realCustomerId = cData.id
+    }
+  }
+
+  if (isUuid(realCustomerId)) {
+    // 1. Direct insert using actual database schema columns (address_line, label, pincode)
     try {
-      const { data: rpcAddr } = await supabase.rpc('upsert_address_sec', {
-        p_customer_id: customerId,
-        p_address_line1: trimmedAddress,
-        p_title: 'Home',
-        p_city: 'Kochi',
-        p_pincode: pincode,
-      })
-
-      const parsed = typeof rpcAddr === 'string' ? JSON.parse(rpcAddr) : rpcAddr
-      if (parsed?.id && isUuid(parsed.id)) {
-        addressIdToSave = parsed.id
-      } else if (isUuid(rpcAddr)) {
-        addressIdToSave = rpcAddr
-      }
-    } catch (e) {}
-
-    // 2. Direct insert fallback
-    if (!addressIdToSave) {
       const { data: directData } = await supabase
         .from('addresses')
         .insert([
           {
-            customer_id: customerId,
-            title: 'Home',
-            address_line1: trimmedAddress,
-            city: 'Kochi',
+            customer_id: realCustomerId,
+            label: 'Home',
+            address_line: trimmedAddress,
             pincode: pincode,
             is_default: true,
           },
@@ -764,6 +775,26 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
       if (directData?.id && isUuid(directData.id)) {
         addressIdToSave = directData.id
       }
+    } catch (e) {}
+
+    // 2. Try SECURITY DEFINER helper upsert_address_sec RPC fallback
+    if (!addressIdToSave) {
+      try {
+        const { data: rpcAddr } = await supabase.rpc('upsert_address_sec', {
+          p_customer_id: realCustomerId,
+          p_address_line1: trimmedAddress,
+          p_title: 'Home',
+          p_city: 'Kochi',
+          p_pincode: pincode,
+        })
+
+        const parsed = typeof rpcAddr === 'string' ? JSON.parse(rpcAddr) : rpcAddr
+        if (parsed?.id && isUuid(parsed.id)) {
+          addressIdToSave = parsed.id
+        } else if (isUuid(rpcAddr)) {
+          addressIdToSave = rpcAddr
+        }
+      } catch (e) {}
     }
 
     // 3. Fallback: select most recent address for this customer
@@ -771,7 +802,7 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
       const { data: latestAddrs } = await supabase
         .from('addresses')
         .select('id')
-        .eq('customer_id', customerId)
+        .eq('customer_id', realCustomerId)
         .order('created_at', { ascending: false })
         .limit(1)
 
@@ -784,6 +815,7 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
   // Save selected_address_id and transition to CONFIRMING_ORDER
   await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER', {
     selected_address_id: addressIdToSave,
+    delivery_address: trimmedAddress,
   })
 
   // Display Order Confirmation Summary immediately
@@ -791,7 +823,7 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
 }
 
 async function renderOrderReview(phone: string, session: any, addressId: string | null, supabase: any, fallbackAddressText?: string) {
-  let addressText = fallbackAddressText || 'Saved Delivery Address, Kochi'
+  let addressText = fallbackAddressText || session?.delivery_address || 'Saved Delivery Address, Kochi'
 
   if (addressId) {
     const { data: addr } = await supabase
@@ -802,7 +834,7 @@ async function renderOrderReview(phone: string, session: any, addressId: string 
 
     const line = addr?.address_line || addr?.address_line1 || addr?.address
     if (line) {
-      addressText = `${line}, ${addr.city || 'Kochi'} ${addr.pincode || ''}`
+      addressText = `${line}, ${addr.pincode || ''}`.trim()
     }
   }
 
@@ -847,7 +879,7 @@ async function handleOrderReview(
   userText: string,
   session: any,
   customerId: string,
-  idempotencyKey: string | undefined,
+  incomingMessageId: string | undefined,
   supabase: any
 ) {
   const normalizedInput = userText.toLowerCase().trim()
@@ -857,85 +889,164 @@ async function handleOrderReview(
     normalizedInput.includes('cancel') ||
     normalizedInput.includes('❌')
 
-  const isConfirm =
-    normalizedInput === 'btn_confirm_order' ||
-    normalizedInput.includes('confirm & order') ||
-    normalizedInput.includes('confirm') ||
-    normalizedInput.includes('order') ||
-    normalizedInput.includes('✅') ||
-    session.state === 'ORDER_REVIEW' ||
-    session.state === 'CONFIRMING_ORDER'
-
   if (isCancel) {
-    await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [], selected_branch_id: null })
+    await updateSessionState(supabase, session.id, 'MAIN_MENU', {
+      cart: [],
+      selected_branch_id: null,
+      selected_address_id: null,
+      pending_remarks: null,
+      idempotency_key: null,
+    })
     return await sendWhatsAppTextMessage(phone, '❌ Order cancelled. Returned to main menu.')
   }
 
-  if (isConfirm) {
-    const cart = normalizeCart(session.cart)
-    if (cart.length === 0) {
-      await updateSessionState(supabase, session.id, 'MAIN_MENU')
-      return await sendWhatsAppTextMessage(phone, '⚠️ Cart is empty. Order could not be placed.')
-    }
+  // 1. ALWAYS RELOAD THE LATEST CHAT SESSION FROM SUPABASE
+  let { data: latestSession } = await supabase
+    .from('chat_sessions')
+    .select('*')
+    .eq('customer_id', customerId)
+    .single()
 
-    const today = new Date().toISOString().split('T')[0]
-    const rawAddressId = session.selected_address_id
-    const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
-
-    const validAddressId = isUuid(rawAddressId) ? rawAddressId : null
-    const validCustomerId = isUuid(customerId) ? customerId : null
-    const validBranchId = isUuid(session.selected_branch_id) ? session.selected_branch_id : null
-    const customerRemarks = session.pending_remarks || null
-
-    if (!validBranchId) {
-      return await showBranchSelection(phone, session, supabase)
-    }
-
-    await updateSessionState(supabase, session.id, 'PROCESSING_ORDER')
-
-    // Call Production Canonical create_order_atomic RPC Function
-    const { data: result, error: orderErr } = await supabase.rpc('create_order_atomic', {
-      p_customer_id: validCustomerId,
-      p_address_id: validAddressId,
-      p_items: cart,
-      p_inventory_date: today,
-      p_idempotency_key: idempotencyKey || `sim_${Date.now()}`,
-      p_delivery_fee: 30.00,
-      p_branch_id: validBranchId,
-      p_customer_remarks: customerRemarks,
-    })
-
-    const resObj = typeof result === 'string' ? JSON.parse(result) : result
-
-    if (orderErr || !resObj?.success) {
-      const errMsg = resObj?.error || orderErr?.message || 'Stock allocation failed'
-      // DO NOT clear cart & DO NOT reset state on failure; allow retry
-      await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER')
-      return await sendWhatsAppButtonsMessage(
-        phone,
-        `🚫 *Order Placement Failed*\nReason: ${errMsg}\n\nYour cart is preserved. Would you like to retry or cancel?`,
-        [
-          { id: 'btn_confirm_order', title: '🔁 Retry Order' },
-          { id: 'btn_cancel_order', title: '❌ Cancel Order' },
-        ]
-      )
-    }
-
-    // Clear cart ONLY after successful order placement
-    await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [], selected_branch_id: null, pending_remarks: null })
-
-    const orderNumber = resObj?.order_number || resObj?.order_id?.slice(0, 8) || 'BF-SUCCESS'
-    const totalAmount = resObj?.total_amount ?? 0
-
-    const confirmationText = `🎉 *CONGRATULATIONS! ORDER PLACED!* 🎉\n\nOrder Number: *#${orderNumber}*\nTotal Amount: *₹${totalAmount}*\n\nYour fresh fish order is being prepared and will be delivered shortly!\nThank you for choosing Bestiet Fresh! 🐟💚`
-
-    return await sendWhatsAppButtonsMessage(phone, confirmationText, [
-      { id: 'btn_track_order', title: '📦 Track Order' },
-      { id: 'btn_main_menu', title: '🐟 Menu' },
-    ])
+  if (!latestSession && session?.id) {
+    const { data: byId } = await supabase.from('chat_sessions').select('*').eq('id', session.id).single()
+    if (byId) latestSession = byId
   }
 
-  return await sendWhatsAppTextMessage(phone, 'Please click "Confirm & Order" or "Cancel Order".')
+  const activeSession = latestSession || session
+  const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+
+  let realCustomerId = customerId
+  if (!isUuid(realCustomerId)) {
+    const { data: cData } = await supabase.from('customers').select('id').eq('phone', phone).single()
+    if (cData?.id && isUuid(cData.id)) {
+      realCustomerId = cData.id
+    }
+  }
+
+  let validAddressId: string | null = isUuid(activeSession.selected_address_id) ? activeSession.selected_address_id : null
+
+  // 2. ADDRESS ID FALLBACK / RESOLUTION
+  if (!validAddressId && isUuid(realCustomerId)) {
+    // A. Check if an address already exists in DB for this customer
+    const { data: customerAddrs } = await supabase
+      .from('addresses')
+      .select('id')
+      .eq('customer_id', realCustomerId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (customerAddrs && customerAddrs.length > 0 && isUuid(customerAddrs[0].id)) {
+      validAddressId = customerAddrs[0].id
+    }
+
+    // B. If still null, create address from delivery_address text
+    const addrStringToUse = activeSession.delivery_address
+    if (!validAddressId && addrStringToUse) {
+      const trimmedAddr = addrStringToUse.trim()
+      const pincodeMatch = trimmedAddr.match(/\b\d{6}\b/)
+      const pincode = pincodeMatch ? pincodeMatch[0] : '682031'
+
+      const { data: directData } = await supabase
+        .from('addresses')
+        .insert([
+          {
+            customer_id: realCustomerId,
+            label: 'Home',
+            address_line: trimmedAddr,
+            pincode: pincode,
+            is_default: true,
+          },
+        ])
+        .select('id')
+        .single()
+
+      if (directData?.id && isUuid(directData.id)) {
+        validAddressId = directData.id
+      }
+    }
+
+    if (validAddressId) {
+      await updateSessionState(supabase, activeSession.id, 'CONFIRMING_ORDER', {
+        selected_address_id: validAddressId,
+      })
+    }
+  }
+
+  // 3. NEVER CALL create_order_atomic WITH NULL ADDRESS
+  if (!validAddressId) {
+    await updateSessionState(supabase, activeSession.id, 'SELECTING_ADDRESS')
+    return await sendWhatsAppTextMessage(
+      phone,
+      `⚠️ Your delivery address could not be loaded.\nPlease reply with your full delivery address and 6-digit pincode (e.g., "Flat 4B, Marine Drive, Kochi 682031").`
+    )
+  }
+
+  // 4. RELOAD EVERYTHING BEFORE ORDER (Cart, Branch, Address, Customer)
+  const cart = normalizeCart(activeSession.cart)
+  if (cart.length === 0) {
+    await updateSessionState(supabase, activeSession.id, 'MAIN_MENU')
+    return await sendWhatsAppTextMessage(phone, '⚠️ Cart is empty. Order could not be placed.')
+  }
+
+  const validBranchId = isUuid(activeSession.selected_branch_id) ? activeSession.selected_branch_id : null
+  if (!validBranchId) {
+    return await showBranchSelection(phone, activeSession, supabase)
+  }
+
+  // 5. STABLE IDEMPOTENCY KEY (Deterministic per session & branch)
+  const stableIdempotencyKey = `wa:${customerId}:${activeSession.id}:${activeSession.selected_branch_id}`
+  await updateSessionState(supabase, activeSession.id, 'PROCESSING_ORDER')
+
+  const today = new Date().toISOString().split('T')[0]
+  const validCustomerId = isUuid(customerId) ? customerId : null
+  const customerRemarks = activeSession.pending_remarks || null
+
+  // 6. CALL CANONICAL PRODUCTION RPC (using Service Role client)
+  const { data: result, error: orderErr } = await supabase.rpc('create_order_atomic', {
+    p_customer_id: validCustomerId,
+    p_address_id: validAddressId,
+    p_items: cart,
+    p_inventory_date: today,
+    p_idempotency_key: stableIdempotencyKey,
+    p_delivery_fee: 30.00,
+    p_branch_id: validBranchId,
+    p_customer_remarks: customerRemarks,
+  })
+
+  const resObj = typeof result === 'string' ? JSON.parse(result) : result
+
+  // 7. CART MUST NOT BE CLEARED ON FAILURE
+  if (orderErr || !resObj?.success) {
+    const errMsg = resObj?.error || orderErr?.message || 'Stock allocation failed'
+    // Preserve cart, branch, address on error
+    await updateSessionState(supabase, activeSession.id, 'CONFIRMING_ORDER')
+    return await sendWhatsAppButtonsMessage(
+      phone,
+      `🚫 *Order Placement Failed*\nReason: ${errMsg}\n\nYour cart is preserved. Would you like to retry or cancel?`,
+      [
+        { id: 'btn_confirm_order', title: '🔁 Retry Order' },
+        { id: 'btn_cancel_order', title: '❌ Cancel Order' },
+      ]
+    )
+  }
+
+  // 8. CLEAR CART & SESSION ONLY AFTER SUCCESSFUL RPC ORDER CREATION
+  await updateSessionState(supabase, activeSession.id, 'MAIN_MENU', {
+    cart: [],
+    selected_branch_id: null,
+    selected_address_id: null,
+    pending_remarks: null,
+  })
+
+  const orderNumber = resObj?.order_number || resObj?.order_id?.slice(0, 8) || 'BF-SUCCESS'
+  const totalAmount = resObj?.total_amount ?? 0
+
+  const confirmationText = `🎉 *CONGRATULATIONS! ORDER PLACED!* 🎉\n\nOrder Number: *#${orderNumber}*\nTotal Amount: *₹${totalAmount}*\n\nYour fresh fish order is being prepared and will be delivered shortly!\nThank you for choosing Bestiet Fresh! 🐟💚`
+
+  return await sendWhatsAppButtonsMessage(phone, confirmationText, [
+    { id: 'btn_track_order', title: '📦 Track Order' },
+    { id: 'btn_main_menu', title: '🐟 Menu' },
+  ])
 }
 
 async function handleTrackOrder(phone: string, customerId: string, supabase: any) {

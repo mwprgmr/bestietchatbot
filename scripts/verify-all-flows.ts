@@ -2,9 +2,9 @@ import fs from 'fs'
 import path from 'path'
 import { createClient } from '@supabase/supabase-js'
 
-async function testCheckoutAddressFlow() {
+async function testExactUserCheckoutFlow() {
   console.log('===========================================================')
-  console.log('TESTING COMPLETE END-TO-END ORDER CREATION WITH SERVICE ROLE')
+  console.log('TESTING EXACT USER CHECKOUT FLOW & BRANCH ISOLATION')
   console.log('===========================================================')
 
   const envPath = path.join(__dirname, '..', '.env.local')
@@ -28,30 +28,58 @@ async function testCheckoutAddressFlow() {
     serviceRoleKey
   )
 
+  const MARINE_DRIVE_ID = 'b1111111-1111-1111-1111-111111111111'
   const FORT_KOCHI_ID = 'b2222222-2222-2222-2222-222222222222'
   const today = new Date().toISOString().split('T')[0]
 
-  // Seed Ayala product in Fort Kochi inventory for today
+  // Seed Ayala product in both branches
   const { data: prods } = await supabase.from('products').select('*')
   const ayala = prods?.find((p: any) => p.name.toLowerCase().includes('ayala')) || prods?.[0]
 
-  if (ayala) {
-    await supabase.from('inventory').upsert([
-      {
-        product_id: ayala.id,
-        branch_id: FORT_KOCHI_ID,
-        inventory_date: today,
-        price_per_kg: 220,
-        opening_stock: 50,
-        available_stock: 50,
-        low_stock_threshold: 2,
-      },
-    ])
-    console.log(`Seeded inventory for ${ayala.name} at Fort Kochi Branch for ${today}`)
+  if (!ayala) {
+    console.error('No product found for test!')
+    return
   }
 
+  // Delete old test inventory for today to start fresh at 50kg
+  await supabase.from('inventory').delete().eq('product_id', ayala.id).eq('inventory_date', today)
+
+  // Seed 50kg in Marine Drive Branch
+  await supabase.from('inventory').insert([
+    {
+      product_id: ayala.id,
+      branch_id: MARINE_DRIVE_ID,
+      inventory_date: today,
+      price_per_kg: 220,
+      opening_stock: 50,
+      available_stock: 50,
+      low_stock_threshold: 2,
+    },
+  ])
+
+  // Seed 50kg in Fort Kochi Branch
+  await supabase.from('inventory').insert([
+    {
+      product_id: ayala.id,
+      branch_id: FORT_KOCHI_ID,
+      inventory_date: today,
+      price_per_kg: 220,
+      opening_stock: 50,
+      available_stock: 50,
+      low_stock_threshold: 2,
+    },
+  ])
+
+  // Reset test customer session
+  const testPhone = '919876543210'
+  const { data: cust } = await supabase.from('customers').select('id').eq('phone', testPhone).single()
+  if (cust?.id) {
+    await supabase.from('chat_sessions').delete().eq('customer_id', cust.id)
+  }
+
+  console.log(`Freshly seeded inventory for ${ayala.name}: 50kg Marine Drive, 50kg Fort Kochi.`)
+
   const { processWhatsAppMessage } = require('../lib/whatsapp/state-machine')
-  const testPhone = '+919999999999'
 
   // Step 1: Send "Hi"
   console.log('\n--- Step 1: Send "Hi" ---')
@@ -70,12 +98,12 @@ async function testCheckoutAddressFlow() {
     messageId: `msg_${Date.now()}_2`,
   })
 
-  // Step 3: Select Fort Kochi Branch
-  console.log('\n--- Step 3: Select "Fort Kochi Branch" ---')
+  // Step 3: Select Marine Drive Branch
+  console.log('\n--- Step 3: Select "Marine Drive Branch" ---')
   await processWhatsAppMessage({
     from: testPhone,
-    text: FORT_KOCHI_ID,
-    listId: FORT_KOCHI_ID,
+    text: MARINE_DRIVE_ID,
+    listId: MARINE_DRIVE_ID,
     messageId: `msg_${Date.now()}_3`,
   })
 
@@ -124,7 +152,7 @@ async function testCheckoutAddressFlow() {
   console.log('Step 8 Summary Rendered:', (step8?.text || '').includes('ORDER CONFIRMATION SUMMARY'))
 
   // Step 9: Click "btn_confirm_order" -> Invokes create_order_atomic using service_role
-  console.log('\n--- Step 9: Click "Confirm & Order" (Invokes create_order_atomic via Service Role) ---')
+  console.log('\n--- Step 9: Click "Confirm & Order" ---')
   const step9 = await processWhatsAppMessage({
     from: testPhone,
     text: 'btn_confirm_order',
@@ -137,10 +165,37 @@ async function testCheckoutAddressFlow() {
 
   const isOrderPlaced = (step9?.text || '').includes('CONGRATULATIONS! ORDER PLACED!')
 
+  // Verify inventory deduction for Marine Drive Branch & Fort Kochi Branch
+  const { data: marineInv } = await supabase
+    .from('inventory')
+    .select('available_stock')
+    .eq('product_id', ayala.id)
+    .eq('branch_id', MARINE_DRIVE_ID)
+    .eq('inventory_date', today)
+    .single()
+
+  const { data: fortInv } = await supabase
+    .from('inventory')
+    .select('available_stock')
+    .eq('product_id', ayala.id)
+    .eq('branch_id', FORT_KOCHI_ID)
+    .eq('inventory_date', today)
+    .single()
+
+  console.log('\n--- INVENTORY DEDUCTION VERIFICATION ---')
+  console.log('Marine Drive Available Stock:', marineInv?.available_stock, '(Expected: 49)')
+  console.log('Fort Kochi Available Stock:', fortInv?.available_stock, '(Expected: 50)')
+
+  const marineDeducted = Number(marineInv?.available_stock) === 49
+  const fortUnchanged = Number(fortInv?.available_stock) === 50
+
   console.log('\n===========================================================')
   console.log('TEST RESULT:')
-  console.log('Order Placed Successfully via Service Role RPC?', isOrderPlaced ? '🎉 PASS (SUCCESS!)' : '❌ FAIL')
+  console.log('Order Placed Successfully?', isOrderPlaced ? 'YES' : 'NO')
+  console.log('Marine Drive Stock Deducted by 1kg?', marineDeducted ? 'YES' : 'NO')
+  console.log('Fort Kochi Stock Unchanged?', fortUnchanged ? 'YES' : 'NO')
+  console.log('OVERALL TEST:', (isOrderPlaced && marineDeducted && fortUnchanged) ? '🎉 PASS (100% SUCCESS!)' : '❌ FAIL')
   console.log('===========================================================')
 }
 
-testCheckoutAddressFlow()
+testExactUserCheckoutFlow()
