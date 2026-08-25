@@ -48,7 +48,7 @@ export default function OrdersPage() {
   const [updating, setUpdating] = useState(false)
 
   const supabase = createClient()
-  const { selectedBranchId } = useBranchContext()
+  const { selectedBranchId, currentUser } = useBranchContext()
 
   useEffect(() => {
     fetchOrders()
@@ -67,12 +67,12 @@ export default function OrdersPage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [selectedBranchId, currentUser?.branch_id])
 
   const fetchOrders = async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('orders')
         .select(`
           *,
@@ -83,10 +83,20 @@ export default function OrdersPage() {
         `)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      const { data, error } = await query
+
+      if (error) {
+        console.error('Supabase Orders Query Error:', error)
+        throw error
+      }
+
+      if (!data || data.length === 0) {
+        console.log(`[Dev Log]: Query returned 0 orders for user branch scope: ${currentUser?.branch_id || selectedBranchId || 'RLS'}`)
+      }
+
       setOrders(data || [])
-    } catch (err) {
-      console.error('Error fetching orders:', err)
+    } catch (err: any) {
+      console.error('Error fetching orders:', err?.message || err)
     } finally {
       setLoading(false)
     }
@@ -95,25 +105,20 @@ export default function OrdersPage() {
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
     setUpdating(true)
     try {
-      let updatedObj: any = null
-
-      if (newStatus === 'CANCELLED') {
+      const statusLower = newStatus.toLowerCase()
+      if (newStatus === 'CANCELLED' || statusLower === 'cancelled') {
         const { data, error } = await supabase.rpc('cancel_order_atomic', {
           p_order_id: orderId,
           p_reason: 'Cancelled by admin',
         })
         if (error) throw error
-        updatedObj = data
       } else {
         const { data, error } = await supabase
           .from('orders')
-          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .update({ status: statusLower, updated_at: new Date().toISOString() })
           .eq('id', orderId)
-          .select('*, customer:customers(*)')
-          .single()
 
         if (error) throw error
-        updatedObj = data
       }
 
       // Send WhatsApp status notification
@@ -150,7 +155,8 @@ export default function OrdersPage() {
       selectedBranchId === 'ALL' ||
       ord.branch_id === selectedBranchId ||
       (!ord.branch_id && selectedBranchId === 'b1111111-1111-1111-1111-111111111111')
-    const matchesTab = activeTab === 'ALL' || ord.status === activeTab
+    const ordStatusUpper = (ord.status || '').toUpperCase()
+    const matchesTab = activeTab === 'ALL' || ordStatusUpper === activeTab
     const q = search.toLowerCase()
     const matchesSearch =
       ord.order_number.toLowerCase().includes(q) ||
@@ -159,8 +165,9 @@ export default function OrdersPage() {
     return matchesBranch && matchesTab && matchesSearch
   })
 
-  const getStatusBadge = (status: OrderStatus) => {
-    switch (status) {
+  const getStatusBadge = (status: OrderStatus | string) => {
+    const s = (status || '').toUpperCase()
+    switch (s) {
       case 'PENDING':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">

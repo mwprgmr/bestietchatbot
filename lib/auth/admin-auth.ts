@@ -21,7 +21,14 @@ export async function getCurrentAdminUser(): Promise<AdminUser | null> {
     return null
   }
 
-  // 2. Query profile role & branch_id from database profiles table
+  // 2. Query admin_branch_assignments for the authenticated user
+  const { data: assignment } = await supabase
+    .from('admin_branch_assignments')
+    .select('branch_id')
+    .eq('user_id', user.id)
+    .single()
+
+  // 3. Query profile role & fallback branch_id from database profiles table
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
@@ -35,8 +42,8 @@ export async function getCurrentAdminUser(): Promise<AdminUser | null> {
     return null
   }
 
-  // Determine branch_id from profile or user email
-  let branchId = profile?.branch_id
+  // Determine branch_id from admin_branch_assignments -> profiles -> email fallback
+  let branchId = assignment?.branch_id || profile?.branch_id
   if (!branchId) {
     if (user.email?.toLowerCase().includes('fort')) {
       branchId = FORT_KOCHI_BRANCH_ID
