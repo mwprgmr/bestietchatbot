@@ -1,5 +1,6 @@
-const fs = require('fs')
-const path = require('path')
+import fs from 'fs'
+import path from 'path'
+import { createClient } from '@supabase/supabase-js'
 
 async function testCheckoutAddressFlow() {
   console.log('===========================================================')
@@ -19,6 +20,33 @@ async function testCheckoutAddressFlow() {
         }
       }
     })
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || ''
+  )
+
+  const FORT_KOCHI_ID = 'b2222222-2222-2222-2222-222222222222'
+  const today = new Date().toISOString().split('T')[0]
+
+  // Seed Ayala product in Fort Kochi inventory for today
+  const { data: prods } = await supabase.from('products').select('*')
+  const ayala = prods?.find((p: any) => p.name.toLowerCase().includes('ayala')) || prods?.[0]
+
+  if (ayala) {
+    await supabase.from('inventory').upsert([
+      {
+        product_id: ayala.id,
+        branch_id: FORT_KOCHI_ID,
+        inventory_date: today,
+        price_per_kg: 220,
+        opening_stock: 50,
+        available_stock: 50,
+        low_stock_threshold: 2,
+      },
+    ])
+    console.log(`Seeded inventory for ${ayala.name} at Fort Kochi Branch for ${today}`)
   }
 
   const { processWhatsAppMessage } = require('../lib/whatsapp/state-machine')
@@ -47,13 +75,13 @@ async function testCheckoutAddressFlow() {
   console.log('\n--- Step 3: Select "Fort Kochi Branch" ---')
   const step3 = await processWhatsAppMessage({
     from: testPhone,
-    text: 'b2222222-2222-2222-2222-222222222222',
-    listId: 'b2222222-2222-2222-2222-222222222222',
+    text: FORT_KOCHI_ID,
+    listId: FORT_KOCHI_ID,
     messageId: `msg_${Date.now()}_3`,
   })
   console.log('Step 3 Output:', step3?.text?.slice(0, 60))
 
-  // Step 4: Select Fish (ayala or choora)
+  // Step 4: Select Fish ("ayala")
   console.log('\n--- Step 4: Select Fish "ayala" ---')
   const step4 = await processWhatsAppMessage({
     from: testPhone,

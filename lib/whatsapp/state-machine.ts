@@ -7,7 +7,55 @@ import {
 import { IncomingMessagePayload, BotState, ChatSessionData } from './types'
 import { normalizePhoneNumber } from './phone-utils'
 
+const processedMessageIds = new Set<string>()
+
+function isLikelyAddressText(text: string): boolean {
+  const clean = text.toLowerCase().trim()
+  if (clean.length < 5) return false
+
+  const hasPincode = /\b\d{6}\b/.test(clean)
+  const addressKeywords = [
+    'flat', 'house', 'building', 'apartment', 'villa', 'floor',
+    'road', 'street', 'st', 'lane', 'nagar', 'colony', 'junction',
+    'kochi', 'ernakulam', 'kerala', 'marine drive', 'kakkanad', 'edappally',
+    'fort kochi', 'aluva', 'vytila', 'palarivattom', 'thrippunithura', 'pincode', 'pin'
+  ]
+
+  const hasKeyword = addressKeywords.some((kw) => clean.includes(kw))
+  return hasPincode || hasKeyword
+}
+
+function normalizeCart(cart: any[]) {
+  if (!Array.isArray(cart)) return []
+  return cart.map((item: any) => {
+    const qty = Number(item.quantity_kg ?? item.quantity ?? 1.0)
+    const price = Number(item.unit_price ?? item.price ?? 0)
+    const subtotal = Number(item.subtotal ?? Math.round(price * qty * 100) / 100)
+    return {
+      product_id: item.product_id,
+      product_name: item.product_name || item.name || 'Fish',
+      quantity_kg: qty,
+      quantity: qty,
+      unit_price: price,
+      cutting_type: item.cutting_type || item.cut_type || 'whole',
+      subtotal,
+    }
+  })
+}
+
 export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
+  if (payload.messageId) {
+    if (processedMessageIds.has(payload.messageId)) {
+      console.log(`[Duplicate webhook message suppressed]: ${payload.messageId}`)
+      return { status: 'duplicate_suppressed' }
+    }
+    processedMessageIds.add(payload.messageId)
+    if (processedMessageIds.size > 5000) {
+      const firstKey = processedMessageIds.values().next().value
+      if (firstKey) processedMessageIds.delete(firstKey)
+    }
+  }
+
   const supabase = createAdminClient()
   const rawPhone = payload.from
   const phone = normalizePhoneNumber(rawPhone)
@@ -73,6 +121,9 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
     }
   }
 
+  // Normalize session cart for backward compatibility
+  session.cart = normalizeCart(session.cart)
+
   const buttonOrListId = (payload.buttonId || payload.listId || '').trim()
   const rawText = (payload.text || '').trim()
   const userText = buttonOrListId || rawText
@@ -81,14 +132,15 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
   const isConfirmIntent =
     userText === 'btn_confirm_order' ||
     payload.buttonId === 'btn_confirm_order' ||
-    cleanGlobal.includes('btn_confirm_order') ||
-    cleanGlobal.includes('confirm') ||
-    cleanGlobal.includes('✅')
+    cleanGlobal === 'btn_confirm_order' ||
+    cleanGlobal === 'confirm' ||
+    cleanGlobal.includes('confirm & order') ||
+    cleanGlobal.includes('✅ confirm')
 
   const isCancelIntent =
     userText === 'btn_cancel_order' ||
     payload.buttonId === 'btn_cancel_order' ||
-    cleanGlobal.includes('btn_cancel_order') ||
+    cleanGlobal === 'btn_cancel_order' ||
     (cleanGlobal.includes('cancel') && cleanGlobal.includes('order'))
 
   // Save User Incoming Message to chat_messages Table
@@ -106,25 +158,46 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
     }
   }
 
+  const hasActiveCart = Array.isArray(session.cart) && session.cart.length > 0 && !!session.selected_branch_id
+  const currentState: BotState = session.state || 'MAIN_MENU'
+
   let botResponse: any = null
 
-  // Global Navigation Overrides
+  // 1. Check Global Confirmation / Cancellation Overrides
   if (isConfirmIntent) {
-    await updateSessionState(supabase, session, 'ORDER_REVIEW')
+    await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER')
     botResponse = await handleOrderReview(phone, userText, session, customer.id, payload.messageId, supabase)
   } else if (isCancelIntent) {
-    await updateSessionState(supabase, session, 'MAIN_MENU', { cart: [] })
+    await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [], selected_branch_id: null })
     botResponse = await sendWhatsAppTextMessage(phone, '❌ Order cancelled. Returned to main menu.')
-  } else if (['hi', 'hello', 'start', 'menu', 'main_menu', 'btn_main_menu'].some((cmd) => cleanGlobal.includes(cmd))) {
-    await updateSessionState(supabase, session, 'MAIN_MENU')
-    botResponse = await handleMainMenu(phone)
-  } else if (userText === 'cancel_flow') {
-    await updateSessionState(supabase, session, 'MAIN_MENU', { cart: [] })
-    botResponse = await sendWhatsAppTextMessage(phone, '❌ Order cancelled. Returned to main menu.')
+  } 
+  // 2. Check Address Detection Before Fallback or Generic Commands
+  else if (
+    (currentState === 'SELECTING_ADDRESS' || currentState === 'ADDING_ADDRESS' || isLikelyAddressText(rawText)) &&
+    hasActiveCart &&
+    !buttonOrListId.startsWith('btn_') &&
+    !buttonOrListId.startsWith('qty_') &&
+    !buttonOrListId.startsWith('cut_')
+  ) {
+    botResponse = await handleAddingAddress(phone, rawText, session, customer.id, supabase)
+  }
+  // 3. Strict Word-Boundary Menu Command Check
+  else if (/^(hi|hello|hey|start|menu|main_menu)$/i.test(rawText.trim()) || buttonOrListId === 'btn_main_menu') {
+    if (hasActiveCart) {
+      botResponse = await sendWhatsAppButtonsMessage(
+        phone,
+        `🛒 *You have an active cart!*\nWould you like to continue with checkout or clear your cart?`,
+        [
+          { id: 'btn_checkout', title: '🚀 Proceed Checkout' },
+          { id: 'btn_clear_cart', title: '🗑️ Clear Cart & Restart' },
+        ]
+      )
+    } else {
+      await updateSessionState(supabase, session.id, 'MAIN_MENU')
+      botResponse = await handleMainMenu(phone)
+    }
   } else {
-    // Router based on Current State
-    const currentState: BotState = session.state || 'MAIN_MENU'
-
+    // 4. Router based on Current State
     switch (currentState) {
       case 'MAIN_MENU':
         botResponse = await handleMainMenuRouter(phone, userText, session, supabase)
@@ -151,19 +224,13 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
         break
 
       case 'SELECTING_ADDRESS':
-        botResponse = await handleAddressSelection(phone, userText, session, supabase)
-        break
-
       case 'ADDING_ADDRESS':
         botResponse = await handleAddingAddress(phone, userText, session, customer.id, supabase)
         break
 
-      case 'ADDING_REMARKS':
-        botResponse = await handleAddingRemarks(phone, userText, session, supabase)
-        break
-
       case 'ORDER_REVIEW':
       case 'CONFIRMING_ORDER':
+      case 'PROCESSING_ORDER':
         botResponse = await handleOrderReview(phone, userText, session, customer.id, payload.messageId, supabase)
         break
 
@@ -176,10 +243,38 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
         break
 
       default:
-        await updateSessionState(supabase, session.id, 'MAIN_MENU')
-        botResponse = await handleMainMenu(phone)
+        if (hasActiveCart) {
+          botResponse = await sendWhatsAppButtonsMessage(
+            phone,
+            `🤔 I didn't quite understand that. Your cart is still active!\nWould you like to continue checkout?`,
+            [
+              { id: 'btn_checkout', title: '🚀 Proceed Checkout' },
+              { id: 'btn_add_more', title: '➕ Add More Fish' },
+              { id: 'btn_clear_cart', title: '🗑️ Clear Cart' },
+            ]
+          )
+        } else {
+          await updateSessionState(supabase, session.id, 'MAIN_MENU')
+          botResponse = await handleMainMenu(phone)
+        }
         break
     }
+  }
+
+  // 5. Fallback for unrecognized text when cart is active
+  if (!botResponse && hasActiveCart) {
+    botResponse = await sendWhatsAppButtonsMessage(
+      phone,
+      `🤔 I didn't quite understand that. Your cart is still active!\nWould you like to continue checkout?`,
+      [
+        { id: 'btn_checkout', title: '🚀 Proceed Checkout' },
+        { id: 'btn_add_more', title: '➕ Add More Fish' },
+        { id: 'btn_clear_cart', title: '🗑️ Clear Cart' },
+      ]
+    )
+  } else if (!botResponse) {
+    await updateSessionState(supabase, session.id, 'MAIN_MENU')
+    botResponse = await handleMainMenu(phone)
   }
 
   // Save Bot Outbound Response to chat_messages Table
@@ -226,11 +321,11 @@ async function handleMainMenuRouter(phone: string, userText: string, session: an
     return await showBranchSelection(phone, session, supabase)
   }
   if (userText === 'btn_track_order' || userText.toLowerCase().includes('track')) {
-    await updateSessionState(supabase, session, 'TRACK_ORDER')
+    await updateSessionState(supabase, session.id, 'TRACK_ORDER')
     return await handleTrackOrder(phone, session.customer_id, supabase)
   }
   if (userText === 'btn_previous_orders' || userText.toLowerCase().includes('previous')) {
-    await updateSessionState(supabase, session, 'PREVIOUS_ORDERS')
+    await updateSessionState(supabase, session.id, 'PREVIOUS_ORDERS')
     return await handlePreviousOrders(phone, session.customer_id, supabase)
   }
 
@@ -259,7 +354,7 @@ async function showBranchSelection(phone: string, session: any, supabase: any) {
     }
   })
 
-  await updateSessionState(supabase, session, 'SELECTING_BRANCH')
+  await updateSessionState(supabase, session.id, 'SELECTING_BRANCH')
 
   return await sendWhatsAppListMessage(
     phone,
@@ -286,7 +381,7 @@ async function handleBranchSelection(phone: string, userInput: string, session: 
 
   const selectedBranchId = matchedBranch?.id || cleanInput
 
-  await updateSessionState(supabase, session, 'SELECTING_FISH', {
+  await updateSessionState(supabase, session.id, 'SELECTING_FISH', {
     selected_branch_id: selectedBranchId,
   })
 
@@ -301,7 +396,6 @@ async function showDailyFishMenu(phone: string, session: any, supabase: any, bra
     return await showBranchSelection(phone, session, supabase)
   }
 
-  // Fetch branch details
   let branchName = 'Bestiet Fresh'
   const { data: bData } = await supabase.from('branches').select('name').eq('id', branchId).single()
   if (bData?.name) branchName = bData.name
@@ -314,13 +408,12 @@ async function showDailyFishMenu(phone: string, session: any, supabase: any, bra
     .eq('branch_id', branchId)
     .gt('available_stock', 0)
 
-  // Filter out any items with 0 or negative available stock
   const activeStockItems = (inventoryItems || []).filter(
     (inv: any) => Number(inv.available_stock || 0) > 0
   )
 
   if (activeStockItems.length === 0) {
-    await updateSessionState(supabase, session, 'SELECTING_BRANCH')
+    await updateSessionState(supabase, session.id, 'SELECTING_BRANCH')
     return await sendWhatsAppTextMessage(
       phone,
       `⚠️ *Stock Update — ${branchName}*\nOur fresh catch for today is sold out or being prepared at this branch. Please select another branch!`
@@ -333,7 +426,7 @@ async function showDailyFishMenu(phone: string, session: any, supabase: any, bra
     description: `₹${inv.price_per_kg}/kg | ${inv.available_stock}kg left`,
   }))
 
-  await updateSessionState(supabase, session, 'SELECTING_FISH')
+  await updateSessionState(supabase, session.id, 'SELECTING_FISH')
 
   return await sendWhatsAppListMessage(
     phone,
@@ -357,14 +450,12 @@ async function handleFishSelection(phone: string, userInput: string, session: an
     return await showBranchSelection(phone, session, supabase)
   }
 
-  // Query Today's Active Inventory strictly for Selected Branch
   const { data: inventoryItems } = await supabase
     .from('inventory')
     .select('*, product:products(*)')
     .eq('inventory_date', today)
     .eq('branch_id', branchId)
 
-  // Flexible matching by product_id UUID OR case-insensitive product name / partial text
   const selectedInv = (inventoryItems || []).find((inv: any) => {
     const isIdMatch = inv.product_id === cleanInput || inv.id === cleanInput
     const pName = (inv.product?.name || '').toLowerCase().trim()
@@ -381,7 +472,6 @@ async function handleFishSelection(phone: string, userInput: string, session: an
     )
   }
 
-  // Check remaining available stock accurately
   const availableStock = Number(selectedInv.available_stock ?? selectedInv.opening_stock ?? 0)
 
   if (availableStock <= 0) {
@@ -516,11 +606,12 @@ async function handleCutSelection(phone: string, userText: string, session: any,
   const unitPrice = Number(inv.price_per_kg)
   const subtotal = Math.round(unitPrice * qty * 100) / 100
 
-  const currentCart = Array.isArray(session.cart) ? [...session.cart] : []
+  const currentCart = normalizeCart(session.cart)
   currentCart.push({
     product_id: productId,
     product_name: inv.product?.name || 'Fish',
     quantity_kg: qty,
+    quantity: qty,
     cutting_type: cutType,
     unit_price: unitPrice,
     subtotal,
@@ -553,7 +644,7 @@ async function handleCartRouter(phone: string, userText: string, session: any, s
     return await showDailyFishMenu(phone, session, supabase)
   }
   if (userText === 'btn_clear_cart') {
-    await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [] })
+    await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [], selected_branch_id: null })
     return await sendWhatsAppTextMessage(phone, '🗑️ Cart cleared. Returned to main menu.')
   }
 
@@ -564,10 +655,10 @@ async function handleCartRouter(phone: string, userText: string, session: any, s
       .eq('customer_id', session.customer_id)
 
     if (!addresses || addresses.length === 0) {
-      await updateSessionState(supabase, session.id, 'ADDING_ADDRESS')
+      await updateSessionState(supabase, session.id, 'SELECTING_ADDRESS')
       return await sendWhatsAppTextMessage(
         phone,
-        `📍 *Delivery Address Required*\nPlease reply with your full delivery address and pincode (e.g., "Flat 4B, Marine Drive, Kochi 682031"):`
+        `📍 *Delivery Address Required*\nPlease reply with your full delivery address and 6-digit pincode (e.g., "Flat 4B, Marine Drive, Kochi 682031"):`
       )
     }
 
@@ -593,7 +684,15 @@ async function handleCartRouter(phone: string, userText: string, session: any, s
     )
   }
 
-  return await handleMainMenu(phone)
+  return await sendWhatsAppButtonsMessage(
+    phone,
+    `🛒 *Your Cart is Active*\nWould you like to proceed to checkout or manage your cart?`,
+    [
+      { id: 'btn_checkout', title: '🚀 Proceed Checkout' },
+      { id: 'btn_add_more', title: '➕ Add More Fish' },
+      { id: 'btn_clear_cart', title: '🗑️ Clear Cart' },
+    ]
+  )
 }
 
 async function handleAddressSelection(phone: string, userText: string, session: any, supabase: any) {
@@ -601,20 +700,32 @@ async function handleAddressSelection(phone: string, userText: string, session: 
     await updateSessionState(supabase, session.id, 'ADDING_ADDRESS')
     return await sendWhatsAppTextMessage(
       phone,
-      `📍 Please reply with your full delivery address and pincode:`
+      `📍 Please reply with your full delivery address and 6-digit pincode (e.g., "Flat 4B, Marine Drive, Kochi 682031"):`
     )
   }
 
-  return await promptOrderRemarks(phone, session, userText, supabase)
+  return await handleAddingAddress(phone, userText, session, session.customer_id, supabase)
 }
 
 async function handleAddingAddress(phone: string, addressText: string, session: any, customerId: string, supabase: any) {
   const trimmedAddress = addressText.trim()
+
+  // Validate 6-digit pincode
+  const pincodeMatch = trimmedAddress.match(/\b\d{6}\b/)
+  if (!pincodeMatch) {
+    // DO NOT clear cart, DO NOT reset branch, DO NOT return to MAIN_MENU
+    await updateSessionState(supabase, session.id, 'SELECTING_ADDRESS')
+    return await sendWhatsAppTextMessage(
+      phone,
+      `⚠️ Please include your 6-digit pincode in the delivery address (e.g., "Flat 4B, Marine Drive, Kochi 682031").`
+    )
+  }
+
+  const pincode = pincodeMatch[0]
   let newAddr: any = null
   const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
 
   if (isUuid(customerId)) {
-    // Direct insert to public.addresses
     const { data: directData, error: directErr } = await supabase
       .from('addresses')
       .insert([
@@ -623,6 +734,7 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
           title: 'Home',
           address_line1: trimmedAddress,
           city: 'Kochi',
+          pincode: pincode,
           is_default: true,
         },
       ])
@@ -636,11 +748,10 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
         p_address_line1: trimmedAddress,
         p_title: 'Home',
         p_city: 'Kochi',
+        p_pincode: pincode,
       })
 
-      if (rpcErr) {
-        console.error('[Address RPC Error]:', rpcErr.message)
-      } else {
+      if (!rpcErr && rpcData) {
         newAddr = rpcData
       }
     } else {
@@ -649,34 +760,14 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
   }
 
   const addressIdToSave = newAddr?.id && isUuid(newAddr.id) ? newAddr.id : null
-  return await promptOrderRemarks(phone, session, addressIdToSave, supabase, trimmedAddress)
-}
 
-async function promptOrderRemarks(phone: string, session: any, addressId: string | null, supabase: any, fallbackAddressText?: string) {
-  await updateSessionState(supabase, session.id, 'ADDING_REMARKS', {
-    selected_address_id: addressId,
+  // Save selected_address_id and transition to CONFIRMING_ORDER
+  await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER', {
+    selected_address_id: addressIdToSave,
   })
 
-  return await sendWhatsAppButtonsMessage(
-    phone,
-    `📝 *Special Instructions / Remarks*\nWould you like to add any special instructions or remarks for your order?\n(e.g., "Clean cut required", "Deliver before 5 PM")\n\nReply with your remarks, or click below to skip:`,
-    [
-      { id: 'btn_skip_remarks', title: '⏩ Skip Remarks' },
-    ]
-  )
-}
-
-async function handleAddingRemarks(phone: string, remarksInput: string, session: any, supabase: any) {
-  const clean = remarksInput.trim()
-  const isSkip = clean === 'btn_skip_remarks' || clean.toLowerCase() === 'skip' || clean.toLowerCase() === 'none'
-
-  const finalRemarks = isSkip ? null : clean
-
-  await updateSessionState(supabase, session.id, 'ORDER_REVIEW', {
-    pending_remarks: finalRemarks,
-  })
-
-  return await renderOrderReview(phone, session, session?.selected_address_id || null, supabase)
+  // Display Order Confirmation Summary immediately
+  return await renderOrderReview(phone, session, addressIdToSave, supabase, trimmedAddress)
 }
 
 async function renderOrderReview(phone: string, session: any, addressId: string | null, supabase: any, fallbackAddressText?: string) {
@@ -690,7 +781,7 @@ async function renderOrderReview(phone: string, session: any, addressId: string 
       .single()
 
     if (addr?.address_line1) {
-      addressText = `${addr.address_line1}, ${addr.city || 'Kochi'}`
+      addressText = `${addr.address_line1}, ${addr.city || 'Kochi'} ${addr.pincode || ''}`
     }
   }
 
@@ -701,7 +792,7 @@ async function renderOrderReview(phone: string, session: any, addressId: string 
     if (bData?.name) branchName = bData.name
   }
 
-  const cart = session?.cart || []
+  const cart = normalizeCart(session?.cart)
   let itemsTotal = 0
   let reviewText = `📋 *ORDER CONFIRMATION SUMMARY*\n\n`
   reviewText += `🏪 *Branch:* ${branchName}\n\n`
@@ -755,12 +846,12 @@ async function handleOrderReview(
     session.state === 'CONFIRMING_ORDER'
 
   if (isCancel) {
-    await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [] })
+    await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [], selected_branch_id: null })
     return await sendWhatsAppTextMessage(phone, '❌ Order cancelled. Returned to main menu.')
   }
 
   if (isConfirm) {
-    const cart = session.cart || []
+    const cart = normalizeCart(session.cart)
     if (cart.length === 0) {
       await updateSessionState(supabase, session.id, 'MAIN_MENU')
       return await sendWhatsAppTextMessage(phone, '⚠️ Cart is empty. Order could not be placed.')
@@ -779,6 +870,8 @@ async function handleOrderReview(
       return await showBranchSelection(phone, session, supabase)
     }
 
+    await updateSessionState(supabase, session.id, 'PROCESSING_ORDER')
+
     // Call Production Canonical create_order_atomic RPC Function
     const { data: result, error: orderErr } = await supabase.rpc('create_order_atomic', {
       p_customer_id: validCustomerId,
@@ -796,7 +889,7 @@ async function handleOrderReview(
     if (orderErr || !resObj?.success) {
       const errMsg = resObj?.error || orderErr?.message || 'Stock allocation failed'
       // DO NOT clear cart & DO NOT reset state on failure; allow retry
-      await updateSessionState(supabase, session.id, 'ORDER_REVIEW')
+      await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER')
       return await sendWhatsAppButtonsMessage(
         phone,
         `🚫 *Order Placement Failed*\nReason: ${errMsg}\n\nYour cart is preserved. Would you like to retry or cancel?`,
@@ -807,7 +900,7 @@ async function handleOrderReview(
       )
     }
 
-    // Clear cart ONLY after success
+    // Clear cart ONLY after successful order placement
     await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [], selected_branch_id: null, pending_remarks: null })
 
     const orderNumber = resObj?.order_number || resObj?.order_id?.slice(0, 8) || 'BF-SUCCESS'
