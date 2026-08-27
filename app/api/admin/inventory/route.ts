@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
     const supabase = createAdminClient()
 
-    // Query inventory strictly for targetBranchId
+    // 1. Query inventory strictly for targetBranchId and target date
     const { data: branchItems, error } = await supabase
       .from('inventory')
       .select('*, product:products(*), branch:branches(*)')
@@ -22,7 +22,69 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return NextResponse.json(branchItems || [])
+
+    if (branchItems && branchItems.length > 0) {
+      return NextResponse.json(branchItems)
+    }
+
+    // 2. If no entries exist for date, carry forward latest active stock <= date
+    const { data: latestItems, error: latestErr } = await supabase
+      .from('inventory')
+      .select('*, product:products(*), branch:branches(*)')
+      .eq('branch_id', targetBranchId)
+      .lte('inventory_date', date)
+      .order('inventory_date', { ascending: false })
+      .order('created_at', { ascending: false })
+
+    if (latestErr) throw latestErr
+
+    const productMap = new Map<string, any>()
+    for (const item of (latestItems || [])) {
+      const avail = Number(item.available_stock ?? item.opening_stock ?? 0)
+      if (!productMap.has(item.product_id) && avail > 0) {
+        productMap.set(item.product_id, item)
+      }
+    }
+
+    const rolledForward: any[] = Array.from(productMap.values())
+
+    // Auto-insert carry-forward records for the requested date
+    const resultItems: any[] = []
+    for (const item of rolledForward) {
+      if (item.inventory_date !== date) {
+        try {
+          const avail = Number(item.available_stock ?? item.opening_stock ?? 0)
+          const { data: created } = await supabase
+            .from('inventory')
+            .insert([
+              {
+                product_id: item.product_id,
+                branch_id: targetBranchId,
+                inventory_date: date,
+                price_per_kg: item.price_per_kg,
+                opening_stock: avail,
+                available_stock: avail,
+                available_stock_kg: avail,
+                low_stock_threshold: item.low_stock_threshold || 2,
+              },
+            ])
+            .select('*, product:products(*), branch:branches(*)')
+            .single()
+
+          if (created) {
+            resultItems.push(created)
+          } else {
+            resultItems.push(item)
+          }
+        } catch (e) {
+          resultItems.push(item)
+        }
+      } else {
+        resultItems.push(item)
+      }
+    }
+
+    return NextResponse.json(resultItems)
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Failed to fetch inventory' }, { status: 500 })
   }

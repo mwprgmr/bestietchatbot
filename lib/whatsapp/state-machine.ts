@@ -44,7 +44,7 @@ function isLikelyAddressText(text: string): boolean {
 
   const hasPincode = /\b\d{6}\b/.test(clean)
   const addressKeywords = [
-    'flat', 'house', 'building', 'apartment', 'villa', 'floor',
+    'address', 'flat', 'house', 'building', 'apartment', 'villa', 'floor',
     'road', 'street', 'st', 'lane', 'nagar', 'colony', 'junction',
     'kochi', 'ernakulam', 'kerala', 'marine drive', 'kakkanad', 'edappally',
     'fort kochi', 'aluva', 'vytila', 'palarivattom', 'thrippunithura', 'pincode', 'pin'
@@ -202,7 +202,7 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
     !buttonOrListId.startsWith('qty_') &&
     !buttonOrListId.startsWith('cut_')
   ) {
-    botResponse = await handleAddingAddress(phone, rawText, session, customer.id, supabase)
+    botResponse = await handleAddressSelection(phone, userText, session, supabase, rawText)
   }
   // 3. Strict Word-Boundary Menu Command Check
   else if (/^(hi|hello|hey|start|menu|main_menu)$/i.test(rawText.trim()) || buttonOrListId === 'btn_main_menu') {
@@ -248,7 +248,7 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
 
       case 'SELECTING_ADDRESS':
       case 'ADDING_ADDRESS':
-        botResponse = await handleAddingAddress(phone, rawText, session, customer.id, supabase)
+        botResponse = await handleAddressSelection(phone, userText, session, supabase, rawText)
         break
 
       case 'ORDER_REVIEW':
@@ -355,6 +355,77 @@ async function handleMainMenuRouter(phone: string, userText: string, session: an
   return await handleMainMenu(phone)
 }
 
+async function getOrRollForwardBranchInventory(supabase: any, branchId: string, targetDate?: string) {
+  const today = targetDate || new Date().toISOString().split('T')[0]
+
+  // 1. Fetch inventory items for today
+  const { data: todayItems } = await supabase
+    .from('inventory')
+    .select('*, product:products(*)')
+    .eq('inventory_date', today)
+    .eq('branch_id', branchId)
+
+  const activeToday = (todayItems || []).filter((i: any) => Number(i.available_stock ?? i.opening_stock ?? 0) > 0)
+  if (activeToday.length > 0) {
+    return activeToday
+  }
+
+  // 2. If today has 0 records for this branch, query the LATEST inventory entries <= today for this branch!
+  const { data: latestItems } = await supabase
+    .from('inventory')
+    .select('*, product:products(*)')
+    .eq('branch_id', branchId)
+    .lte('inventory_date', today)
+    .order('inventory_date', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (!latestItems || latestItems.length === 0) {
+    return []
+  }
+
+  // Deduplicate by product_id keeping the latest row for each product
+  const productMap = new Map<string, any>()
+  for (const item of latestItems) {
+    const avail = Number(item.available_stock ?? item.opening_stock ?? 0)
+    if (!productMap.has(item.product_id) && avail > 0) {
+      productMap.set(item.product_id, item)
+    }
+  }
+
+  const rolledForward: any[] = Array.from(productMap.values())
+
+  // Automatically insert carried-forward records for today so future updates & orders hit today's row seamlessly!
+  for (const item of rolledForward) {
+    if (item.inventory_date !== today) {
+      try {
+        const avail = Number(item.available_stock ?? item.opening_stock ?? 0)
+        const { data: created } = await supabase
+          .from('inventory')
+          .insert([
+            {
+              product_id: item.product_id,
+              branch_id: branchId,
+              inventory_date: today,
+              price_per_kg: item.price_per_kg,
+              opening_stock: avail,
+              available_stock: avail,
+              available_stock_kg: avail,
+              low_stock_threshold: item.low_stock_threshold || 2,
+            },
+          ])
+          .select('*, product:products(*)')
+          .single()
+
+        if (created) {
+          productMap.set(item.product_id, created)
+        }
+      } catch (e) {}
+    }
+  }
+
+  return Array.from(productMap.values())
+}
+
 async function showBranchSelection(phone: string, session: any, supabase: any) {
   const { data: branches } = await supabase
     .from('branches')
@@ -362,20 +433,18 @@ async function showBranchSelection(phone: string, session: any, supabase: any) {
     .eq('is_active', true)
 
   const today = new Date().toISOString().split('T')[0]
-  const { data: invCounts } = await supabase
-    .from('inventory')
-    .select('branch_id, product_id')
-    .eq('inventory_date', today)
-    .gt('available_stock', 0)
 
-  const rows = (branches || []).map((b: any) => {
-    const count = invCounts ? invCounts.filter((i: any) => i.branch_id === b.id).length : 0
-    return {
-      id: b.id,
-      title: b.name,
-      description: `${count} fish varieties available today`,
-    }
-  })
+  const rows = await Promise.all(
+    (branches || []).map(async (b: any) => {
+      const invItems = await getOrRollForwardBranchInventory(supabase, b.id, today)
+      const count = invItems.length
+      return {
+        id: b.id,
+        title: b.name,
+        description: `${count} fish varieties available today`,
+      }
+    })
+  )
 
   await updateSessionState(supabase, session.id, 'SELECTING_BRANCH')
 
@@ -423,17 +492,8 @@ async function showDailyFishMenu(phone: string, session: any, supabase: any, bra
   const { data: bData } = await supabase.from('branches').select('name').eq('id', branchId).single()
   if (bData?.name) branchName = bData.name
 
-  // Query Today's Inventory strictly for selected Branch (NO fallbacks)
-  const { data: inventoryItems } = await supabase
-    .from('inventory')
-    .select('*, product:products(*)')
-    .eq('inventory_date', today)
-    .eq('branch_id', branchId)
-    .gt('available_stock', 0)
-
-  const activeStockItems = (inventoryItems || []).filter(
-    (inv: any) => Number(inv.available_stock || 0) > 0
-  )
+  // Query Active Inventory with automatic carry forward
+  const activeStockItems = await getOrRollForwardBranchInventory(supabase, branchId, today)
 
   if (activeStockItems.length === 0) {
     await updateSessionState(supabase, session.id, 'SELECTING_BRANCH')
@@ -449,15 +509,17 @@ async function showDailyFishMenu(phone: string, session: any, supabase: any, bra
     description: `₹${inv.price_per_kg}/kg | ${inv.available_stock}kg left`,
   }))
 
-  await updateSessionState(supabase, session.id, 'SELECTING_FISH')
+  await updateSessionState(supabase, session.id, 'SELECTING_FISH', {
+    selected_branch_id: branchId,
+  })
 
   return await sendWhatsAppListMessage(
     phone,
-    `🐟 *${branchName} — Today's Fresh Catch*\nSelect the fish you'd like to order:`,
+    `🐟 *Fresh Fish Catalogue — ${branchName}*\nSelect a fish to choose quantity & cut:`,
     'Select Fish',
     [
       {
-        title: 'Fresh Catch Available Today',
+        title: 'Today Fresh Catch',
         rows,
       },
     ]
@@ -465,19 +527,15 @@ async function showDailyFishMenu(phone: string, session: any, supabase: any, bra
 }
 
 async function handleFishSelection(phone: string, userInput: string, session: any, supabase: any) {
-  const today = new Date().toISOString().split('T')[0]
   const cleanInput = userInput.trim()
+  const today = new Date().toISOString().split('T')[0]
   const branchId = session?.selected_branch_id
 
   if (!branchId) {
     return await showBranchSelection(phone, session, supabase)
   }
 
-  const { data: inventoryItems } = await supabase
-    .from('inventory')
-    .select('*, product:products(*)')
-    .eq('inventory_date', today)
-    .eq('branch_id', branchId)
+  const inventoryItems = await getOrRollForwardBranchInventory(supabase, branchId, today)
 
   const selectedInv = (inventoryItems || []).find((inv: any) => {
     const isIdMatch = inv.product_id === cleanInput || inv.id === cleanInput
@@ -561,15 +619,10 @@ async function handleQuantitySelection(phone: string, userText: string, session:
     return await showBranchSelection(phone, session, supabase)
   }
 
-  const { data: inv } = await supabase
-    .from('inventory')
-    .select('available_stock, product:products(name)')
-    .eq('product_id', productId)
-    .eq('inventory_date', today)
-    .eq('branch_id', branchId)
-    .single()
+  const inventoryItems = await getOrRollForwardBranchInventory(supabase, branchId, today)
+  const inv = inventoryItems.find((i: any) => i.product_id === productId)
 
-  const availableStock = Number(inv?.available_stock || 0)
+  const availableStock = Number(inv?.available_stock ?? inv?.opening_stock ?? 0)
   if (qty > availableStock) {
     return await sendWhatsAppTextMessage(
       phone,
@@ -613,13 +666,8 @@ async function handleCutSelection(phone: string, userText: string, session: any,
     return await showBranchSelection(phone, session, supabase)
   }
 
-  const { data: inv } = await supabase
-    .from('inventory')
-    .select('*, product:products(*)')
-    .eq('product_id', productId)
-    .eq('inventory_date', today)
-    .eq('branch_id', branchId)
-    .single()
+  const inventoryItems = await getOrRollForwardBranchInventory(supabase, branchId, today)
+  const inv = inventoryItems.find((i: any) => i.product_id === productId)
 
   if (!inv) {
     await updateSessionState(supabase, session.id, 'MAIN_MENU')
@@ -718,8 +766,13 @@ async function handleCartRouter(phone: string, userText: string, session: any, s
   )
 }
 
-async function handleAddressSelection(phone: string, userText: string, session: any, supabase: any) {
-  if (userText === 'addr_new') {
+async function handleAddressSelection(phone: string, userText: string, session: any, supabase: any, rawText?: string) {
+  const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+  const inputClean = (userText || '').trim()
+  const rawClean = (rawText || '').trim()
+
+  // 1. Check if user selected "+ Add New Address" list row or button
+  if (inputClean === 'addr_new' || inputClean.toLowerCase().includes('add new address') || rawClean.toLowerCase().includes('add new address')) {
     await updateSessionState(supabase, session.id, 'ADDING_ADDRESS')
     return await sendWhatsAppTextMessage(
       phone,
@@ -727,11 +780,75 @@ async function handleAddressSelection(phone: string, userText: string, session: 
     )
   }
 
-  return await handleAddingAddress(phone, userText, session, session.customer_id, supabase)
+  // 2. Check if userText or rawText is a direct UUID of a saved address
+  const targetId = isUuid(inputClean) ? inputClean : isUuid(rawClean) ? rawClean : null
+
+  if (targetId) {
+    const { data: matchedAddr } = await supabase
+      .from('addresses')
+      .select('*')
+      .eq('id', targetId)
+      .single()
+
+    if (matchedAddr) {
+      const line = matchedAddr.address_line || matchedAddr.address_line1 || matchedAddr.address || ''
+      const fullText = `${line}${matchedAddr.pincode ? ', ' + matchedAddr.pincode : ''}`.trim()
+      await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER', {
+        selected_address_id: matchedAddr.id,
+        delivery_address: fullText,
+      })
+      return await renderOrderReview(phone, session, matchedAddr.id, supabase, fullText)
+    }
+  }
+
+  // 3. Query saved addresses for this customer to check if text matches a saved address row
+  let realCustomerId = session.customer_id
+  if (!isUuid(realCustomerId)) {
+    const { data: cData } = await supabase.from('customers').select('id').eq('phone', phone).single()
+    if (cData?.id && isUuid(cData.id)) {
+      realCustomerId = cData.id
+    }
+  }
+
+  if (isUuid(realCustomerId)) {
+    const { data: customerAddrs } = await supabase
+      .from('addresses')
+      .select('*')
+      .eq('customer_id', realCustomerId)
+
+    if (customerAddrs && customerAddrs.length > 0) {
+      const addressSearchText = rawClean.replace(/^Address[\s\n]*/i, '').trim().toLowerCase()
+      const inputSearchText = inputClean.replace(/^Address[\s\n]*/i, '').trim().toLowerCase()
+
+      const matched = customerAddrs.find((a: any) => {
+        if (a.id === inputClean || a.id === rawClean) return true
+        const line = (a.address_line || a.address_line1 || a.address || '').toLowerCase()
+        const pin = (a.pincode || '').toLowerCase()
+        if (line && (addressSearchText.includes(line) || line.includes(addressSearchText))) return true
+        if (line && (inputSearchText.includes(line) || line.includes(inputSearchText))) return true
+        if (pin && addressSearchText.includes(pin) && addressSearchText.length > 8) return true
+        return false
+      })
+
+      if (matched) {
+        const line = matched.address_line || matched.address_line1 || matched.address || ''
+        const fullText = `${line}${matched.pincode ? ', ' + matched.pincode : ''}`.trim()
+        await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER', {
+          selected_address_id: matched.id,
+          delivery_address: fullText,
+        })
+        return await renderOrderReview(phone, session, matched.id, supabase, fullText)
+      }
+    }
+  }
+
+  // 4. Fallback: treat user text as a newly entered address string
+  return await handleAddingAddress(phone, rawClean || inputClean, session, realCustomerId, supabase)
 }
 
 async function handleAddingAddress(phone: string, addressText: string, session: any, customerId: string, supabase: any) {
-  const trimmedAddress = addressText.trim()
+  // Strip leading "Address\n" or "Address " prefix if present from WhatsApp quotes
+  const trimmedAddress = addressText.replace(/^Address[\s\n]*/i, '').trim()
 
   // Validate 6-digit pincode
   const pincodeMatch = trimmedAddress.match(/\b\d{6}\b/)
@@ -756,58 +873,73 @@ async function handleAddingAddress(phone: string, addressText: string, session: 
   }
 
   if (isUuid(realCustomerId)) {
-    // 1. Direct insert using actual database schema columns (address_line, label, pincode)
-    try {
-      const { data: directData } = await supabase
-        .from('addresses')
-        .insert([
-          {
-            customer_id: realCustomerId,
-            label: 'Home',
-            address_line: trimmedAddress,
-            pincode: pincode,
-            is_default: true,
-          },
-        ])
-        .select('id')
-        .single()
+    // Check if exact address already exists for this customer to prevent duplicate insertion
+    const { data: existingAddrs } = await supabase
+      .from('addresses')
+      .select('*')
+      .eq('customer_id', realCustomerId)
 
-      if (directData?.id && isUuid(directData.id)) {
-        addressIdToSave = directData.id
-      }
-    } catch (e) {}
+    const existingMatch = existingAddrs?.find((a: any) => {
+      const line = (a.address_line || a.address_line1 || a.address || '').toLowerCase()
+      return line && (trimmedAddress.toLowerCase().includes(line) || line.includes(trimmedAddress.toLowerCase()))
+    })
 
-    // 2. Try SECURITY DEFINER helper upsert_address_sec RPC fallback
-    if (!addressIdToSave) {
+    if (existingMatch?.id && isUuid(existingMatch.id)) {
+      addressIdToSave = existingMatch.id
+    } else {
+      // 1. Direct insert using actual database schema columns (address_line, label, pincode)
       try {
-        const { data: rpcAddr } = await supabase.rpc('upsert_address_sec', {
-          p_customer_id: realCustomerId,
-          p_address_line1: trimmedAddress,
-          p_title: 'Home',
-          p_city: 'Kochi',
-          p_pincode: pincode,
-        })
+        const { data: directData } = await supabase
+          .from('addresses')
+          .insert([
+            {
+              customer_id: realCustomerId,
+              label: 'Home',
+              address_line: trimmedAddress,
+              pincode: pincode,
+              is_default: true,
+            },
+          ])
+          .select('id')
+          .single()
 
-        const parsed = typeof rpcAddr === 'string' ? JSON.parse(rpcAddr) : rpcAddr
-        if (parsed?.id && isUuid(parsed.id)) {
-          addressIdToSave = parsed.id
-        } else if (isUuid(rpcAddr)) {
-          addressIdToSave = rpcAddr
+        if (directData?.id && isUuid(directData.id)) {
+          addressIdToSave = directData.id
         }
       } catch (e) {}
-    }
 
-    // 3. Fallback: select most recent address for this customer
-    if (!addressIdToSave) {
-      const { data: latestAddrs } = await supabase
-        .from('addresses')
-        .select('id')
-        .eq('customer_id', realCustomerId)
-        .order('created_at', { ascending: false })
-        .limit(1)
+      // 2. Try SECURITY DEFINER helper upsert_address_sec RPC fallback
+      if (!addressIdToSave) {
+        try {
+          const { data: rpcAddr } = await supabase.rpc('upsert_address_sec', {
+            p_customer_id: realCustomerId,
+            p_address_line1: trimmedAddress,
+            p_title: 'Home',
+            p_city: 'Kochi',
+            p_pincode: pincode,
+          })
 
-      if (latestAddrs && latestAddrs.length > 0 && isUuid(latestAddrs[0].id)) {
-        addressIdToSave = latestAddrs[0].id
+          const parsed = typeof rpcAddr === 'string' ? JSON.parse(rpcAddr) : rpcAddr
+          if (parsed?.id && isUuid(parsed.id)) {
+            addressIdToSave = parsed.id
+          } else if (isUuid(rpcAddr)) {
+            addressIdToSave = rpcAddr
+          }
+        } catch (e) {}
+      }
+
+      // 3. Fallback: select most recent address for this customer
+      if (!addressIdToSave) {
+        const { data: latestAddrs } = await supabase
+          .from('addresses')
+          .select('id')
+          .eq('customer_id', realCustomerId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+
+        if (latestAddrs && latestAddrs.length > 0 && isUuid(latestAddrs[0].id)) {
+          addressIdToSave = latestAddrs[0].id
+        }
       }
     }
   }
