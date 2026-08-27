@@ -72,6 +72,47 @@ function normalizeCart(cart: any[]) {
   })
 }
 
+export function isUuid(val: any): boolean {
+  return typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+}
+
+export function getTodayDateIST(): string {
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }
+  const formatter = new Intl.DateTimeFormat('en-CA', options)
+  return formatter.format(new Date())
+}
+
+export async function resolveCustomerBranch(
+  supabase: any,
+  session: any
+): Promise<{ branch_id: string | null; branch_name: string | null; isValid: boolean }> {
+  const branchId = session?.selected_branch_id
+  if (!branchId || typeof branchId !== 'string' || !isUuid(branchId)) {
+    return { branch_id: null, branch_name: null, isValid: false }
+  }
+
+  const { data: branch, error } = await supabase
+    .from('branches')
+    .select('id, name, is_active')
+    .eq('id', branchId)
+    .single()
+
+  if (error || !branch || branch.is_active === false) {
+    console.warn(`[Stale/Inactive Branch Cleared]: ${branchId}`)
+    if (session?.id) {
+      await updateSessionState(supabase, session.id, 'SELECTING_BRANCH', { selected_branch_id: null })
+    }
+    return { branch_id: null, branch_name: null, isValid: false }
+  }
+
+  return { branch_id: branch.id, branch_name: branch.name, isValid: true }
+}
+
 export type NormalizedAction =
   | 'ORDER_FISH'
   | 'TRACK_ORDER'
@@ -83,6 +124,7 @@ export type NormalizedAction =
   | 'ADD_MORE'
   | 'MAIN_MENU'
   | 'BRANCH_SELECTION'
+  | 'CHANGE_BRANCH'
   | 'PRODUCT_SELECTION'
   | 'QUANTITY_SELECTION'
   | 'CUT_SELECTION'
@@ -167,7 +209,14 @@ export function normalizeWhatsAppAction(
     return 'MAIN_MENU'
   }
 
-  // 10. BRANCH_SELECTION
+  // 10. CHANGE_BRANCH
+  const isChangeBranchId = ['change_branch', 'btn_change_branch', 'switch_branch', 'btn_switch_branch'].includes(cleanId)
+  const isChangeBranchTitle = cleanTitle.includes('change branch') || cleanTitle.includes('switch branch')
+  if (isChangeBranchId || isChangeBranchTitle) {
+    return 'CHANGE_BRANCH'
+  }
+
+  // 11. BRANCH_SELECTION
   const isBranchId = cleanId === 'b1111111-1111-1111-1111-111111111111' || cleanId === 'b2222222-2222-2222-2222-222222222222' || cleanId.startsWith('btn_branch_')
   const isAddressContext = currentState === 'SELECTING_ADDRESS' || currentState === 'ADDING_ADDRESS' || isLikelyAddressText(rawText)
   const isBranchTitle = (combined.includes('manvila') || combined.includes('kazhakkoottam') || combined.includes('peroorkada')) && !isAddressContext
@@ -322,20 +371,42 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
       botResponse = await handleCheckoutAction(phone, session, customer, supabase)
       break
 
-    case 'ORDER_FISH':
-      if (session?.selected_branch_id) {
+    case 'ORDER_FISH': {
+      const branchRes = await resolveCustomerBranch(supabase, session)
+      if (branchRes.isValid && branchRes.branch_id) {
         await updateSessionState(supabase, session.id, 'SELECTING_FISH')
-        botResponse = await showDailyFishMenu(phone, session, supabase, session.selected_branch_id)
+        botResponse = await showDailyFishMenu(phone, session, supabase, branchRes.branch_id)
       } else {
         await updateSessionState(supabase, session.id, 'SELECTING_BRANCH')
         botResponse = await showBranchSelection(phone, session, supabase)
       }
       break
+    }
 
-    case 'ADD_MORE':
-      await updateSessionState(supabase, session.id, 'SELECTING_FISH')
-      botResponse = await showDailyFishMenu(phone, session, supabase)
+    case 'CHANGE_BRANCH': {
+      await updateSessionState(supabase, session.id, 'SELECTING_BRANCH', {
+        selected_branch_id: null,
+        cart: [],
+        pending_remarks: null,
+        selected_product_id: null,
+      })
+      session.selected_branch_id = null
+      session.cart = []
+      botResponse = await showBranchSelection(phone, session, supabase)
       break
+    }
+
+    case 'ADD_MORE': {
+      const branchRes = await resolveCustomerBranch(supabase, session)
+      if (branchRes.isValid && branchRes.branch_id) {
+        await updateSessionState(supabase, session.id, 'SELECTING_FISH')
+        botResponse = await showDailyFishMenu(phone, session, supabase, branchRes.branch_id)
+      } else {
+        await updateSessionState(supabase, session.id, 'SELECTING_BRANCH')
+        botResponse = await showBranchSelection(phone, session, supabase)
+      }
+      break
+    }
 
     case 'TRACK_ORDER':
       await updateSessionState(supabase, session.id, 'TRACK_ORDER')
@@ -351,21 +422,35 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
       botResponse = await handleBranchSelection(phone, userText, session, supabase)
       break
 
-    case 'MAIN_MENU':
+    case 'MAIN_MENU': {
+      const branchRes = await resolveCustomerBranch(supabase, session)
       if (hasActiveCart) {
+        const bName = branchRes.branch_name || 'selected branch'
         botResponse = await sendWhatsAppButtonsMessage(
           phone,
-          `🛒 *You have an active cart!*\nWould you like to continue with checkout or clear your cart?`,
+          `🛒 *You have an active cart for ${bName}!*\nWould you like to continue with checkout or clear your cart?`,
           [
             { id: 'btn_checkout', title: '🚀 Proceed Checkout' },
             { id: 'btn_clear_cart', title: '🗑️ Clear Cart & Resume' },
           ]
         )
-      } else {
+      } else if (branchRes.isValid && branchRes.branch_name) {
         await updateSessionState(supabase, session.id, 'MAIN_MENU')
-        botResponse = await handleMainMenu(phone)
+        botResponse = await sendWhatsAppButtonsMessage(
+          phone,
+          `👋 *Welcome to Bestiet Fresh!* 🐟💚\n"Your Fresh Friend At The Door"\n\nActive Branch: *${branchRes.branch_name}*\nHow can we serve you fresh fish today?`,
+          [
+            { id: 'btn_order_fish', title: '🛒 Order Fresh Fish' },
+            { id: 'btn_change_branch', title: '🔄 Change Branch' },
+            { id: 'btn_track_order', title: '📦 Track Order' },
+          ]
+        )
+      } else {
+        await updateSessionState(supabase, session.id, 'SELECTING_BRANCH')
+        botResponse = await showBranchSelection(phone, session, supabase)
       }
       break
+    }
 
     case 'PRODUCT_SELECTION':
       botResponse = await handleFishSelection(phone, userText, session, supabase)
@@ -528,6 +613,14 @@ async function getOrRollForwardBranchInventory(supabase: any, branchId: string, 
   for (const item of allItems) {
     const avail = Number(item.available_stock ?? item.opening_stock ?? 0)
     const isProductActive = item.product ? item.product.active !== false : true
+    
+    // Sanitize corrupted price_per_kg
+    let price = Number(item.price_per_kg)
+    if (isNaN(price) || price <= 0 || price > 3000) {
+      price = item.product?.price_per_unit ? Number(item.product.price_per_unit) : 220
+      item.price_per_kg = price
+    }
+
     if (!productMap.has(item.product_id) && avail > 0 && isProductActive) {
       productMap.set(item.product_id, item)
     }
@@ -630,16 +723,21 @@ async function handleBranchSelection(phone: string, userInput: string, session: 
 }
 
 async function showDailyFishMenu(phone: string, session: any, supabase: any, branchIdOverride?: string) {
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayDateIST()
   const branchId = branchIdOverride || session?.selected_branch_id
 
-  if (!branchId) {
+  if (!branchId || !isUuid(branchId)) {
     return await showBranchSelection(phone, session, supabase)
   }
 
-  let branchName = 'Bestiet Fresh'
-  const { data: bData } = await supabase.from('branches').select('name').eq('id', branchId).single()
-  if (bData?.name) branchName = bData.name
+  const { data: bData, error: bErr } = await supabase.from('branches').select('id, name, is_active').eq('id', branchId).single()
+  if (bErr || !bData || bData.is_active === false) {
+    console.warn(`[showDailyFishMenu]: Branch ${branchId} is inactive or invalid. Prompting selection.`)
+    await updateSessionState(supabase, session.id, 'SELECTING_BRANCH', { selected_branch_id: null })
+    return await showBranchSelection(phone, session, supabase)
+  }
+
+  const branchName = bData.name || 'Bestiet Fresh'
 
   // Query Active Inventory with automatic carry forward
   const activeStockItems = await getOrRollForwardBranchInventory(supabase, branchId, today)
@@ -652,8 +750,9 @@ async function showDailyFishMenu(phone: string, session: any, supabase: any, bra
     )
   }
 
+  // Embed branchId into list row ID for menu versioning & stale cross-branch button protection
   const rows = activeStockItems.map((inv: any) => ({
-    id: inv.product_id,
+    id: `fish_${inv.product_id}_b_${branchId}`,
     title: inv.product?.name || 'Fresh Fish',
     description: `₹${inv.price_per_kg}/kg | ${inv.available_stock}kg left`,
   }))
@@ -677,38 +776,59 @@ async function showDailyFishMenu(phone: string, session: any, supabase: any, bra
 
 async function handleFishSelection(phone: string, userInput: string, session: any, supabase: any) {
   const cleanInput = userInput.trim()
-  const today = new Date().toISOString().split('T')[0]
-  const branchId = session?.selected_branch_id
+  const branchRes = await resolveCustomerBranch(supabase, session)
 
-  if (!branchId) {
+  if (!branchRes.isValid || !branchRes.branch_id) {
     return await showBranchSelection(phone, session, supabase)
   }
 
-  const inventoryItems = await getOrRollForwardBranchInventory(supabase, branchId, today)
+  // Stale/Cross-Branch Button Protection: parse embedded _b_${branchId}
+  let selectedProductId = cleanInput
+  if (cleanInput.includes('_b_')) {
+    const parts = cleanInput.split('_b_')
+    selectedProductId = parts[0].replace('fish_', '')
+    const buttonBranchId = parts[1]
+
+    if (buttonBranchId && buttonBranchId !== branchRes.branch_id) {
+      console.warn(`[Stale Cross-Branch Button Intercepted]: Button branch ${buttonBranchId} != session branch ${branchRes.branch_id}`)
+      await sendWhatsAppTextMessage(
+        phone,
+        `⚠️ *This menu option belongs to another branch.*\nHere is the latest fresh fish catalogue for *${branchRes.branch_name}*:`
+      )
+      return await showDailyFishMenu(phone, session, supabase, branchRes.branch_id)
+    }
+  } else if (cleanInput.startsWith('fish_')) {
+    selectedProductId = cleanInput.replace('fish_', '')
+  }
+
+  const today = getTodayDateIST()
+  const inventoryItems = await getOrRollForwardBranchInventory(supabase, branchRes.branch_id, today)
 
   const selectedInv = (inventoryItems || []).find((inv: any) => {
-    const isIdMatch = inv.product_id === cleanInput || inv.id === cleanInput
+    const isIdMatch = inv.product_id === selectedProductId || inv.id === selectedProductId
     const pName = (inv.product?.name || '').toLowerCase().trim()
-    const inp = cleanInput.toLowerCase().trim()
+    const inp = selectedProductId.toLowerCase().trim()
     const isNameMatch = pName === inp
     const isPartialMatch = pName.includes(inp) || inp.includes(pName)
     return isIdMatch || isNameMatch || isPartialMatch
   })
 
   if (!selectedInv) {
-    return await sendWhatsAppTextMessage(
+    await sendWhatsAppTextMessage(
       phone,
-      `⚠️ Item "${cleanInput}" not found in today's menu for this branch. Please select a fish from the list.`
+      `⚠️ Item is not available in today's menu for *${branchRes.branch_name}*. Please select a fish from the catalogue below.`
     )
+    return await showDailyFishMenu(phone, session, supabase, branchRes.branch_id)
   }
 
   const availableStock = Number(selectedInv.available_stock ?? selectedInv.opening_stock ?? 0)
 
   if (availableStock <= 0) {
-    return await sendWhatsAppTextMessage(
+    await sendWhatsAppTextMessage(
       phone,
-      `❌ Sorry, ${selectedInv.product?.name || 'that item'} is currently out of stock at this branch. Please select another fish from the menu.`
+      `❌ Sorry, ${selectedInv.product?.name || 'that item'} is currently out of stock at *${branchRes.branch_name}*. Please select another fish from the menu.`
     )
+    return await showDailyFishMenu(phone, session, supabase, branchRes.branch_id)
   }
 
   await updateSessionState(supabase, session.id, 'SELECTING_QUANTITY', {
@@ -717,7 +837,7 @@ async function handleFishSelection(phone: string, userInput: string, session: an
 
   return await sendWhatsAppButtonsMessage(
     phone,
-    `⚖️ *Selected: ${selectedInv.product?.name || 'Fish'}*\nPrice: ₹${selectedInv.price_per_kg}/kg\nAvailable at branch: ${availableStock}kg\n\nChoose quantity below or reply with your custom quantity in kg (e.g. 1.5, 2.5):`,
+    `⚖️ *Selected: ${selectedInv.product?.name || 'Fish'}*\nPrice: ₹${selectedInv.price_per_kg}/kg\nAvailable at ${branchRes.branch_name}: ${availableStock}kg\n\nChoose quantity below or reply with your custom quantity in kg (e.g. 1.5, 2.5):`,
     [
       { id: 'qty_0.5', title: '0.5 kg (500g)' },
       { id: 'qty_1.0', title: '1.0 kg (1000g)' },

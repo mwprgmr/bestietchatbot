@@ -104,8 +104,8 @@ export async function POST(req: NextRequest) {
     }
 
     const price = parseFloat(price_per_kg)
-    if (isNaN(price) || price <= 0) {
-      return NextResponse.json({ error: 'Price per kg must be a positive number.' }, { status: 400 })
+    if (isNaN(price) || price <= 0 || price > 3000) {
+      return NextResponse.json({ error: 'Price per kg must be a positive number between ₹1 and ₹3000.' }, { status: 400 })
     }
 
     const stock = parseFloat(opening_stock)
