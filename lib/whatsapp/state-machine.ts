@@ -72,6 +72,132 @@ function normalizeCart(cart: any[]) {
   })
 }
 
+export type NormalizedAction =
+  | 'ORDER_FISH'
+  | 'TRACK_ORDER'
+  | 'PREVIOUS_ORDERS'
+  | 'CHECKOUT'
+  | 'CLEAR_CART'
+  | 'CONFIRM_ORDER'
+  | 'CANCEL_ORDER'
+  | 'ADD_MORE'
+  | 'MAIN_MENU'
+  | 'BRANCH_SELECTION'
+  | 'PRODUCT_SELECTION'
+  | 'QUANTITY_SELECTION'
+  | 'CUT_SELECTION'
+  | 'ADDRESS_SELECTION'
+  | 'UNKNOWN'
+
+export function normalizeWhatsAppAction(
+  payload: IncomingMessagePayload,
+  session?: any,
+  currentState?: BotState
+): NormalizedAction {
+  const rawId = (payload.buttonId || payload.listId || '').trim()
+  const rawText = (payload.text || '').trim()
+
+  const cleanId = rawId.toLowerCase()
+  const cleanTitle = rawText
+    .toLowerCase()
+    .replace(/[^\w\s]/gi, '')
+    .trim()
+  const combined = `${cleanId} ${cleanTitle}`.trim()
+
+  // 1. ORDER_FISH (Recognize all IDs and title variations)
+  const isOrderFishId = ['order_fish', 'btn_order_fish', 'order', 'order_fresh_fish', 'btn_order', 'fish_order', 'order_fish_now'].includes(cleanId)
+  const isOrderFishTitle = cleanTitle.includes('order fresh fish') || cleanTitle.includes('order fish') || cleanTitle.includes('fresh fish') || cleanTitle === 'order' || combined.includes('order fresh fish')
+  if (isOrderFishId || isOrderFishTitle) {
+    return 'ORDER_FISH'
+  }
+
+  // 2. TRACK_ORDER
+  const isTrackId = ['track_order', 'btn_track_order', 'track', 'btn_track'].includes(cleanId)
+  const isTrackTitle = cleanTitle.includes('track order') || cleanTitle === 'track'
+  if (isTrackId || isTrackTitle) {
+    return 'TRACK_ORDER'
+  }
+
+  // 3. PREVIOUS_ORDERS
+  const isPrevId = ['previous_orders', 'btn_previous_orders', 'previous_order', 'history', 'btn_history', 'order_history'].includes(cleanId)
+  const isPrevTitle = cleanTitle.includes('previous orders') || cleanTitle.includes('previous order') || cleanTitle.includes('order history') || cleanTitle === 'previous'
+  if (isPrevId || isPrevTitle) {
+    return 'PREVIOUS_ORDERS'
+  }
+
+  // 4. CHECKOUT
+  const isCheckoutId = ['checkout', 'btn_checkout', 'proceed_checkout', 'btn_proceed_checkout'].includes(cleanId)
+  const isCheckoutTitle = cleanTitle.includes('proceed checkout') || cleanTitle.includes('checkout')
+  if (isCheckoutId || isCheckoutTitle) {
+    return 'CHECKOUT'
+  }
+
+  // 5. CLEAR_CART
+  const isClearCartId = ['clear_cart', 'btn_clear_cart', 'clear_cart_resume', 'btn_clear_cart_resume'].includes(cleanId)
+  const isClearCartTitle = cleanTitle.includes('clear cart')
+  if (isClearCartId || isClearCartTitle) {
+    return 'CLEAR_CART'
+  }
+
+  // 6. CONFIRM_ORDER
+  const isConfirmId = ['confirm_order', 'btn_confirm_order', 'confirm', 'place_order'].includes(cleanId)
+  const isConfirmTitle = cleanTitle.includes('confirm & order') || cleanTitle.includes('confirm order') || cleanTitle.includes('place order') || cleanTitle === 'confirm'
+  if (isConfirmId || isConfirmTitle) {
+    return 'CONFIRM_ORDER'
+  }
+
+  // 7. CANCEL_ORDER
+  const isCancelId = ['cancel_order', 'btn_cancel_order', 'cancel'].includes(cleanId)
+  const isCancelTitle = cleanTitle.includes('cancel order') || (cleanTitle.includes('cancel') && cleanTitle.includes('order'))
+  if (isCancelId || isCancelTitle) {
+    return 'CANCEL_ORDER'
+  }
+
+  // 8. ADD_MORE
+  const isAddMoreId = ['add_more', 'btn_add_more', 'add_more_fish'].includes(cleanId)
+  const isAddMoreTitle = cleanTitle.includes('add more fish') || cleanTitle.includes('add more')
+  if (isAddMoreId || isAddMoreTitle) {
+    return 'ADD_MORE'
+  }
+
+  // 9. MAIN_MENU / GREETINGS
+  const isMenuId = ['main_menu', 'btn_main_menu', 'home', 'btn_home'].includes(cleanId)
+  const isMenuTitle = /^(hi|hello|hey|start|menu|main_menu|home)$/i.test(cleanTitle)
+  if (isMenuId || isMenuTitle) {
+    return 'MAIN_MENU'
+  }
+
+  // 10. BRANCH_SELECTION
+  const isBranchId = cleanId === 'b1111111-1111-1111-1111-111111111111' || cleanId === 'b2222222-2222-2222-2222-222222222222' || cleanId.startsWith('btn_branch_')
+  const isAddressContext = currentState === 'SELECTING_ADDRESS' || currentState === 'ADDING_ADDRESS' || isLikelyAddressText(rawText)
+  const isBranchTitle = (combined.includes('manvila') || combined.includes('kazhakkoottam') || combined.includes('peroorkada')) && !isAddressContext
+  if (isBranchId || isBranchTitle) {
+    return 'BRANCH_SELECTION'
+  }
+
+  // 11. QUANTITY_SELECTION
+  if (cleanId.startsWith('qty_')) {
+    return 'QUANTITY_SELECTION'
+  }
+
+  // 12. CUT_SELECTION
+  if (cleanId.startsWith('cut_')) {
+    return 'CUT_SELECTION'
+  }
+
+  // 13. ADDRESS_SELECTION
+  if (cleanId.startsWith('addr_') || (isAddressContext && !isBranchId)) {
+    return 'ADDRESS_SELECTION'
+  }
+
+  // 14. PRODUCT_SELECTION (Only IDs starting with fish_ or matching UUIDs)
+  if (cleanId.startsWith('fish_')) {
+    return 'PRODUCT_SELECTION'
+  }
+
+  return 'UNKNOWN'
+}
+
 export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
   const supabase = createAdminClient()
 
@@ -151,92 +277,6 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
   const buttonOrListId = (payload.buttonId || payload.listId || '').trim()
   const rawText = (payload.text || '').trim()
   const userText = buttonOrListId || rawText
-  const cleanGlobal = `${buttonOrListId} ${rawText}`.toLowerCase().trim()
-
-  const isCheckoutIntent =
-    userText === 'btn_checkout' ||
-    payload.buttonId === 'btn_checkout' ||
-    buttonOrListId === 'btn_checkout' ||
-    cleanGlobal === 'btn_checkout' ||
-    cleanGlobal === 'checkout' ||
-    cleanGlobal === 'proceed_checkout' ||
-    cleanGlobal.includes('proceed checkout') ||
-    cleanGlobal.includes('🚀 proceed checkout')
-
-  const isClearCartIntent =
-    userText === 'btn_clear_cart' ||
-    payload.buttonId === 'btn_clear_cart' ||
-    buttonOrListId === 'btn_clear_cart' ||
-    cleanGlobal === 'btn_clear_cart' ||
-    cleanGlobal === 'clear_cart' ||
-    cleanGlobal === 'clear_cart_resume' ||
-    cleanGlobal.includes('clear cart') ||
-    cleanGlobal.includes('🗑️ clear cart')
-
-  const isConfirmIntent =
-    userText === 'btn_confirm_order' ||
-    payload.buttonId === 'btn_confirm_order' ||
-    buttonOrListId === 'btn_confirm_order' ||
-    cleanGlobal === 'btn_confirm_order' ||
-    cleanGlobal === 'confirm_order' ||
-    cleanGlobal === 'confirm' ||
-    cleanGlobal.includes('confirm & order') ||
-    cleanGlobal.includes('✅ confirm')
-
-  const isCancelIntent =
-    userText === 'btn_cancel_order' ||
-    payload.buttonId === 'btn_cancel_order' ||
-    buttonOrListId === 'btn_cancel_order' ||
-    cleanGlobal === 'btn_cancel_order' ||
-    cleanGlobal === 'cancel_order' ||
-    (cleanGlobal.includes('cancel') && cleanGlobal.includes('order')) ||
-    cleanGlobal === 'cancel' ||
-    cleanGlobal.includes('❌ cancel')
-
-  const isAddMoreIntent =
-    userText === 'btn_add_more' ||
-    payload.buttonId === 'btn_add_more' ||
-    buttonOrListId === 'btn_add_more' ||
-    cleanGlobal === 'btn_add_more' ||
-    cleanGlobal === 'add_more' ||
-    cleanGlobal.includes('add more fish') ||
-    cleanGlobal.includes('➕ add more')
-
-  const isTrackIntent =
-    userText === 'btn_track_order' ||
-    payload.buttonId === 'btn_track_order' ||
-    buttonOrListId === 'btn_track_order' ||
-    cleanGlobal === 'btn_track_order' ||
-    cleanGlobal.includes('track order') ||
-    cleanGlobal.includes('track_order') ||
-    cleanGlobal === 'track' ||
-    cleanGlobal.includes('📦 track order')
-
-  const isPreviousOrdersIntent =
-    userText === 'btn_previous_orders' ||
-    payload.buttonId === 'btn_previous_orders' ||
-    buttonOrListId === 'btn_previous_orders' ||
-    cleanGlobal === 'btn_previous_orders' ||
-    cleanGlobal.includes('previous orders') ||
-    cleanGlobal.includes('previous order') ||
-    cleanGlobal.includes('previous_orders') ||
-    cleanGlobal === 'previous' ||
-    cleanGlobal.includes('🔄 previous orders')
-
-  const isBranchIntent =
-    buttonOrListId === 'b1111111-1111-1111-1111-111111111111' ||
-    buttonOrListId === 'b2222222-2222-2222-2222-222222222222' ||
-    buttonOrListId.startsWith('btn_branch_') ||
-    cleanGlobal.includes('manvila') ||
-    cleanGlobal.includes('kazhakkoottam') ||
-    cleanGlobal.includes('peroorkada')
-
-  const isMainMenuIntent =
-    userText === 'btn_main_menu' ||
-    payload.buttonId === 'btn_main_menu' ||
-    buttonOrListId === 'btn_main_menu' ||
-    cleanGlobal === 'btn_main_menu' ||
-    /^(hi|hello|hey|start|menu|main_menu)$/i.test(rawText.trim())
 
   // Save User Incoming Message to chat_messages Table
   if (session?.id && (rawText || buttonOrListId)) {
@@ -256,145 +296,117 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
   const hasActiveCart = Array.isArray(session.cart) && session.cart.length > 0 && !!session.selected_branch_id
   const currentState: BotState = session.state || 'MAIN_MENU'
 
+  // Centralized Action Normalizer Execution
+  const action = normalizeWhatsAppAction(payload, session, currentState)
+
   let botResponse: any = null
 
   // -------------------------------------------------------------
-  // STRICT INTERACTION ROUTER
-  // (Action IDs must NEVER be treated as product IDs)
+  // CENTRALIZED INTERACTION ACTION DISPATCHER
   // -------------------------------------------------------------
+  switch (action) {
+    case 'CONFIRM_ORDER':
+      botResponse = await handleOrderReview(phone, userText, session, customer.id, payload.messageId, supabase)
+      break
 
-  // 1. Confirm Order Action
-  if (isConfirmIntent) {
-    botResponse = await handleOrderReview(phone, userText, session, customer.id, payload.messageId, supabase)
-  }
-  // 2. Cancel Order Action
-  else if (isCancelIntent) {
-    await updateSessionState(supabase, session.id, 'MAIN_MENU', { pending_remarks: null, idempotency_key: null })
-    botResponse = await sendWhatsAppTextMessage(phone, '❌ Order checkout cancelled. Your cart items have been preserved.')
-  }
-  // 3. Clear Cart & Resume Action
-  else if (isClearCartIntent) {
-    botResponse = await handleClearCartAction(phone, session, supabase)
-  }
-  // 4. Proceed Checkout Action
-  else if (isCheckoutIntent) {
-    botResponse = await handleCheckoutAction(phone, session, customer, supabase)
-  }
-  // 5. Add More Fish Action
-  else if (isAddMoreIntent) {
-    await updateSessionState(supabase, session.id, 'SELECTING_FISH')
-    botResponse = await showDailyFishMenu(phone, session, supabase)
-  }
-  // 6. Track Order Action
-  else if (isTrackIntent) {
-    await updateSessionState(supabase, session.id, 'TRACK_ORDER')
-    botResponse = await handleTrackOrder(phone, customer.id, supabase)
-  }
-  // 7. Previous Orders Action
-  else if (isPreviousOrdersIntent) {
-    await updateSessionState(supabase, session.id, 'PREVIOUS_ORDERS')
-    botResponse = await handlePreviousOrders(phone, customer.id, supabase)
-  }
-  // 7.5 Branch Selection Intent
-  else if (isBranchIntent || currentState === 'SELECTING_BRANCH') {
-    botResponse = await handleBranchSelection(phone, userText, session, supabase)
-  }
-  // 8. Main Menu / Welcome Greeting
-  else if (isMainMenuIntent) {
-    if (hasActiveCart) {
-      botResponse = await sendWhatsAppButtonsMessage(
-        phone,
-        `🛒 *You have an active cart!*\nWould you like to continue with checkout or clear your cart?`,
-        [
-          { id: 'btn_checkout', title: '🚀 Proceed Checkout' },
-          { id: 'btn_clear_cart', title: '🗑️ Clear Cart & Resume' },
-        ]
-      )
-    } else {
-      await updateSessionState(supabase, session.id, 'MAIN_MENU')
-      botResponse = await handleMainMenu(phone)
-    }
-  }
-  // 9. Unknown/Stale Interactive Action Guard (Never query inventory with action IDs!)
-  else if (buttonOrListId.startsWith('btn_')) {
-    console.warn(`[Unrecognized interactive action ID]: ${buttonOrListId}`)
-    if (hasActiveCart) {
-      botResponse = await sendWhatsAppButtonsMessage(
-        phone,
-        `⚠️ That option is no longer active. Please choose an option from the current menu.`,
-        [
-          { id: 'btn_checkout', title: '🚀 Proceed Checkout' },
-          { id: 'btn_clear_cart', title: '🗑️ Clear Cart & Resume' },
-        ]
-      )
-    } else {
-      await updateSessionState(supabase, session.id, 'MAIN_MENU')
-      botResponse = await sendWhatsAppTextMessage(
-        phone,
-        `⚠️ That option is no longer active. Please choose an option from the current menu.`
-      )
-    }
-  }
-  // 10. Address Input Handling
-  else if (
-    (currentState === 'SELECTING_ADDRESS' || currentState === 'ADDING_ADDRESS' || isLikelyAddressText(rawText)) &&
-    hasActiveCart &&
-    !buttonOrListId.startsWith('btn_') &&
-    !buttonOrListId.startsWith('qty_') &&
-    !buttonOrListId.startsWith('cut_')
-  ) {
-    botResponse = await handleAddressSelection(phone, userText, session, supabase, rawText)
-  }
-  // 11. State-Specific Fallthrough Router
-  else {
-    switch (currentState) {
-      case 'MAIN_MENU':
-        botResponse = await handleMainMenuRouter(phone, userText, session, supabase)
-        break
+    case 'CANCEL_ORDER':
+      await updateSessionState(supabase, session.id, 'MAIN_MENU', { pending_remarks: null, idempotency_key: null })
+      botResponse = await sendWhatsAppTextMessage(phone, '❌ Order checkout cancelled. Your cart items have been preserved.')
+      break
 
-      case 'SELECTING_FISH':
-        botResponse = await handleFishSelection(phone, userText, session, supabase)
-        break
+    case 'CLEAR_CART':
+      botResponse = await handleClearCartAction(phone, session, supabase)
+      break
 
-      case 'SELECTING_QUANTITY':
-        botResponse = await handleQuantitySelection(phone, userText, session, supabase)
-        break
+    case 'CHECKOUT':
+      botResponse = await handleCheckoutAction(phone, session, customer, supabase)
+      break
 
-      case 'SELECTING_CUT':
-        botResponse = await handleCutSelection(phone, userText, session, supabase)
-        break
+    case 'ORDER_FISH':
+      if (session?.selected_branch_id) {
+        await updateSessionState(supabase, session.id, 'SELECTING_FISH')
+        botResponse = await showDailyFishMenu(phone, session, supabase, session.selected_branch_id)
+      } else {
+        await updateSessionState(supabase, session.id, 'SELECTING_BRANCH')
+        botResponse = await showBranchSelection(phone, session, supabase)
+      }
+      break
 
-      case 'CART':
-        botResponse = await handleCartRouter(phone, userText, session, supabase)
-        break
+    case 'ADD_MORE':
+      await updateSessionState(supabase, session.id, 'SELECTING_FISH')
+      botResponse = await showDailyFishMenu(phone, session, supabase)
+      break
 
-      case 'SELECTING_ADDRESS':
-      case 'ADDING_ADDRESS':
+    case 'TRACK_ORDER':
+      await updateSessionState(supabase, session.id, 'TRACK_ORDER')
+      botResponse = await handleTrackOrder(phone, customer.id, supabase)
+      break
+
+    case 'PREVIOUS_ORDERS':
+      await updateSessionState(supabase, session.id, 'PREVIOUS_ORDERS')
+      botResponse = await handlePreviousOrders(phone, customer.id, supabase)
+      break
+
+    case 'BRANCH_SELECTION':
+      botResponse = await handleBranchSelection(phone, userText, session, supabase)
+      break
+
+    case 'MAIN_MENU':
+      if (hasActiveCart) {
+        botResponse = await sendWhatsAppButtonsMessage(
+          phone,
+          `🛒 *You have an active cart!*\nWould you like to continue with checkout or clear your cart?`,
+          [
+            { id: 'btn_checkout', title: '🚀 Proceed Checkout' },
+            { id: 'btn_clear_cart', title: '🗑️ Clear Cart & Resume' },
+          ]
+        )
+      } else {
+        await updateSessionState(supabase, session.id, 'MAIN_MENU')
+        botResponse = await handleMainMenu(phone)
+      }
+      break
+
+    case 'PRODUCT_SELECTION':
+      botResponse = await handleFishSelection(phone, userText, session, supabase)
+      break
+
+    case 'QUANTITY_SELECTION':
+      botResponse = await handleQuantitySelection(phone, userText, session, supabase)
+      break
+
+    case 'CUT_SELECTION':
+      botResponse = await handleCutSelection(phone, userText, session, supabase)
+      break
+
+    case 'ADDRESS_SELECTION':
+      botResponse = await handleAddressSelection(phone, userText, session, supabase, rawText)
+      break
+
+    case 'UNKNOWN':
+    default:
+      if (
+        (currentState === 'SELECTING_ADDRESS' || currentState === 'ADDING_ADDRESS' || isLikelyAddressText(rawText)) &&
+        hasActiveCart &&
+        !buttonOrListId.startsWith('btn_')
+      ) {
         botResponse = await handleAddressSelection(phone, userText, session, supabase, rawText)
-        break
-
-      case 'ORDER_REVIEW':
-      case 'CONFIRMING_ORDER':
-      case 'PROCESSING_ORDER':
-        botResponse = await handleOrderReview(phone, userText, session, customer.id, payload.messageId, supabase)
-        break
-
-      case 'TRACK_ORDER':
-        botResponse = await handleTrackOrder(phone, customer.id, supabase)
-        break
-
-      case 'PREVIOUS_ORDERS':
-        botResponse = await handlePreviousOrders(phone, customer.id, supabase)
-        break
-
-      default:
+      } else if (currentState === 'SELECTING_FISH') {
+        botResponse = await handleFishSelection(phone, userText, session, supabase)
+      } else if (currentState === 'SELECTING_QUANTITY') {
+        botResponse = await handleQuantitySelection(phone, userText, session, supabase)
+      } else if (currentState === 'SELECTING_CUT') {
+        botResponse = await handleCutSelection(phone, userText, session, supabase)
+      } else if (currentState === 'CART') {
+        botResponse = await handleCartRouter(phone, userText, session, supabase)
+      } else if (buttonOrListId.startsWith('btn_')) {
+        console.warn(`[Unrecognized interactive action ID]: ${buttonOrListId}`)
         if (hasActiveCart) {
           botResponse = await sendWhatsAppButtonsMessage(
             phone,
-            `🤔 I didn't quite understand that. Your cart is still active!\nWould you like to continue checkout?`,
+            `⚠️ That option is no longer active. Please choose an option from the current menu.`,
             [
               { id: 'btn_checkout', title: '🚀 Proceed Checkout' },
-              { id: 'btn_add_more', title: '➕ Add More Fish' },
               { id: 'btn_clear_cart', title: '🗑️ Clear Cart & Resume' },
             ]
           )
@@ -402,8 +414,22 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
           await updateSessionState(supabase, session.id, 'MAIN_MENU')
           botResponse = await handleMainMenu(phone)
         }
-        break
-    }
+      } else {
+        if (hasActiveCart) {
+          botResponse = await sendWhatsAppButtonsMessage(
+            phone,
+            `🛒 *You have an active cart!*\nWould you like to continue with checkout or clear your cart?`,
+            [
+              { id: 'btn_checkout', title: '🚀 Proceed Checkout' },
+              { id: 'btn_clear_cart', title: '🗑️ Clear Cart & Resume' },
+            ]
+          )
+        } else {
+          await updateSessionState(supabase, session.id, 'MAIN_MENU')
+          botResponse = await handleMainMenu(phone)
+        }
+      }
+      break
   }
 
   // 5. Fallback for unrecognized text when cart is active
@@ -1548,14 +1574,18 @@ async function updateSessionState(
     'cart',
   ]
 
+  const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+
   const dbPayload: Record<string, any> = { state, updated_at: new Date().toISOString() }
   for (const key of allowedColumns) {
     if (key in extra) {
-      dbPayload[key] = extra[key]
+      if ((key === 'selected_address_id' || key === 'selected_branch_id' || key === 'selected_product_id') && extra[key] !== null) {
+        dbPayload[key] = isUuid(extra[key]) ? extra[key] : null
+      } else {
+        dbPayload[key] = extra[key]
+      }
     }
   }
-
-  const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
 
   if (sessionId && isUuid(sessionId)) {
     const { error } = await supabase
