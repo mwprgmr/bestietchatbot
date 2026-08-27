@@ -6,8 +6,8 @@
 -- 1. Ensure public.branches has exactly the 2 fixed branch records
 INSERT INTO public.branches (id, name, location, is_active)
 VALUES 
-    ('b1111111-1111-1111-1111-111111111111', 'Marine Drive Branch', 'Marine Drive, Kochi', true),
-    ('b2222222-2222-2222-2222-222222222222', 'Fort Kochi Branch', 'Fort Kochi, Kochi', true)
+    ('b1111111-1111-1111-1111-111111111111', 'Manvila Kazhakkoottam Branch', 'Manvila, Kazhakkoottam', true),
+    ('b2222222-2222-2222-2222-222222222222', 'Peroorkada Branch', 'Peroorkada, Trivandrum', true)
 ON CONFLICT (id) DO UPDATE 
 SET name = EXCLUDED.name, location = EXCLUDED.location, is_active = true;
 

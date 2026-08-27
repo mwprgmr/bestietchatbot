@@ -56,7 +56,7 @@ export async function getCurrentAdminUser(): Promise<AdminUser | null> {
     id: user.id,
     email: user.email || '',
     role: role as 'admin' | 'store_admin' | 'branch_admin',
-    name: profile?.name || (branchId === FORT_KOCHI_BRANCH_ID ? 'Fort Kochi Admin' : 'Marine Drive Admin'),
+    name: profile?.name || (branchId === FORT_KOCHI_BRANCH_ID ? 'Peroorkada Admin' : 'Manvila Kazhakkoottam Admin'),
     branch_id: branchId,
   }
 }
@@ -100,9 +100,9 @@ export async function signInAdminUser(email: string, password: string): Promise<
   }
 
   // Determine target branch for this account
-  const isFortKochi = email.toLowerCase().includes('fort')
+  const isFortKochi = email.toLowerCase().includes('fort') || email.toLowerCase().includes('peroorkada')
   const assignedBranchId = isFortKochi ? FORT_KOCHI_BRANCH_ID : MARINE_DRIVE_BRANCH_ID
-  const adminName = isFortKochi ? 'Fort Kochi Branch Admin' : 'Marine Drive Branch Admin'
+  const adminName = isFortKochi ? 'Peroorkada Branch Admin' : 'Manvila Kazhakkoottam Branch Admin'
 
   // Ensure admin profile exists in public.profiles table with branch_id
   if (data?.user) {

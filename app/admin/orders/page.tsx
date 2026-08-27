@@ -349,8 +349,8 @@ export default function OrdersPage() {
                   const branchName =
                     ord.branch?.name ||
                     (ord.branch_id === 'b2222222-2222-2222-2222-222222222222'
-                      ? 'Fort Kochi Branch'
-                      : 'Marine Drive Branch')
+                      ? 'Peroorkada Branch'
+                      : 'Manvila Kazhakkoottam Branch')
 
                   const totalAmt = ord.total_amount ?? ord.total ?? 0
 
@@ -528,7 +528,7 @@ export default function OrdersPage() {
                     <span className="text-slate-500 font-medium">Fulfilling Branch:</span>
                     <span className="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
                       <Store className="w-3.5 h-3.5 text-blue-600" />
-                      {selectedOrder.branch?.name || (selectedOrder.branch_id === 'b2222222-2222-2222-2222-222222222222' ? 'Fort Kochi Branch' : 'Marine Drive Branch')}
+                      {selectedOrder.branch?.name || (selectedOrder.branch_id === 'b2222222-2222-2222-2222-222222222222' ? 'Peroorkada Branch' : 'Manvila Kazhakkoottam Branch')}
                     </span>
                   </div>
 

@@ -426,7 +426,7 @@ export default function WhatsAppSimulatorPage() {
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase block">Selected Branch</span>
                     <span className="font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded text-[11px] inline-block mt-0.5 border border-blue-200">
-                      🏪 {sessionState.selected_branch_id === 'b2222222-2222-2222-2222-222222222222' ? 'Fort Kochi Branch' : 'Marine Drive Branch'}
+                      🏪 {sessionState.selected_branch_id === 'b2222222-2222-2222-2222-222222222222' ? 'Peroorkada Branch' : 'Manvila Kazhakkoottam Branch'}
                     </span>
                   </div>
                 )}

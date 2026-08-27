@@ -46,8 +46,8 @@ function isLikelyAddressText(text: string): boolean {
   const addressKeywords = [
     'address', 'flat', 'house', 'building', 'apartment', 'villa', 'floor',
     'road', 'street', 'st', 'lane', 'nagar', 'colony', 'junction',
-    'kochi', 'ernakulam', 'kerala', 'marine drive', 'kakkanad', 'edappally',
-    'fort kochi', 'aluva', 'vytila', 'palarivattom', 'thrippunithura', 'pincode', 'pin'
+    'manvila', 'kazhakkoottam', 'peroorkada', 'trivandrum', 'thiruvananthapuram',
+    'kochi', 'ernakulam', 'kerala', 'pincode', 'pin'
   ]
 
   const hasKeyword = addressKeywords.some((kw) => clean.includes(kw))
@@ -153,10 +153,32 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
   const userText = buttonOrListId || rawText
   const cleanGlobal = `${buttonOrListId} ${rawText}`.toLowerCase().trim()
 
+  const isCheckoutIntent =
+    userText === 'btn_checkout' ||
+    payload.buttonId === 'btn_checkout' ||
+    buttonOrListId === 'btn_checkout' ||
+    cleanGlobal === 'btn_checkout' ||
+    cleanGlobal === 'checkout' ||
+    cleanGlobal === 'proceed_checkout' ||
+    cleanGlobal.includes('proceed checkout') ||
+    cleanGlobal.includes('🚀 proceed checkout')
+
+  const isClearCartIntent =
+    userText === 'btn_clear_cart' ||
+    payload.buttonId === 'btn_clear_cart' ||
+    buttonOrListId === 'btn_clear_cart' ||
+    cleanGlobal === 'btn_clear_cart' ||
+    cleanGlobal === 'clear_cart' ||
+    cleanGlobal === 'clear_cart_resume' ||
+    cleanGlobal.includes('clear cart') ||
+    cleanGlobal.includes('🗑️ clear cart')
+
   const isConfirmIntent =
     userText === 'btn_confirm_order' ||
     payload.buttonId === 'btn_confirm_order' ||
+    buttonOrListId === 'btn_confirm_order' ||
     cleanGlobal === 'btn_confirm_order' ||
+    cleanGlobal === 'confirm_order' ||
     cleanGlobal === 'confirm' ||
     cleanGlobal.includes('confirm & order') ||
     cleanGlobal.includes('✅ confirm')
@@ -164,8 +186,57 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
   const isCancelIntent =
     userText === 'btn_cancel_order' ||
     payload.buttonId === 'btn_cancel_order' ||
+    buttonOrListId === 'btn_cancel_order' ||
     cleanGlobal === 'btn_cancel_order' ||
-    (cleanGlobal.includes('cancel') && cleanGlobal.includes('order'))
+    cleanGlobal === 'cancel_order' ||
+    (cleanGlobal.includes('cancel') && cleanGlobal.includes('order')) ||
+    cleanGlobal === 'cancel' ||
+    cleanGlobal.includes('❌ cancel')
+
+  const isAddMoreIntent =
+    userText === 'btn_add_more' ||
+    payload.buttonId === 'btn_add_more' ||
+    buttonOrListId === 'btn_add_more' ||
+    cleanGlobal === 'btn_add_more' ||
+    cleanGlobal === 'add_more' ||
+    cleanGlobal.includes('add more fish') ||
+    cleanGlobal.includes('➕ add more')
+
+  const isTrackIntent =
+    userText === 'btn_track_order' ||
+    payload.buttonId === 'btn_track_order' ||
+    buttonOrListId === 'btn_track_order' ||
+    cleanGlobal === 'btn_track_order' ||
+    cleanGlobal.includes('track order') ||
+    cleanGlobal.includes('track_order') ||
+    cleanGlobal === 'track' ||
+    cleanGlobal.includes('📦 track order')
+
+  const isPreviousOrdersIntent =
+    userText === 'btn_previous_orders' ||
+    payload.buttonId === 'btn_previous_orders' ||
+    buttonOrListId === 'btn_previous_orders' ||
+    cleanGlobal === 'btn_previous_orders' ||
+    cleanGlobal.includes('previous orders') ||
+    cleanGlobal.includes('previous order') ||
+    cleanGlobal.includes('previous_orders') ||
+    cleanGlobal === 'previous' ||
+    cleanGlobal.includes('🔄 previous orders')
+
+  const isBranchIntent =
+    buttonOrListId === 'b1111111-1111-1111-1111-111111111111' ||
+    buttonOrListId === 'b2222222-2222-2222-2222-222222222222' ||
+    buttonOrListId.startsWith('btn_branch_') ||
+    cleanGlobal.includes('manvila') ||
+    cleanGlobal.includes('kazhakkoottam') ||
+    cleanGlobal.includes('peroorkada')
+
+  const isMainMenuIntent =
+    userText === 'btn_main_menu' ||
+    payload.buttonId === 'btn_main_menu' ||
+    buttonOrListId === 'btn_main_menu' ||
+    cleanGlobal === 'btn_main_menu' ||
+    /^(hi|hello|hey|start|menu|main_menu)$/i.test(rawText.trim())
 
   // Save User Incoming Message to chat_messages Table
   if (session?.id && (rawText || buttonOrListId)) {
@@ -187,14 +258,84 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
 
   let botResponse: any = null
 
-  // 1. Check Global Confirmation / Cancellation Overrides
+  // -------------------------------------------------------------
+  // STRICT INTERACTION ROUTER
+  // (Action IDs must NEVER be treated as product IDs)
+  // -------------------------------------------------------------
+
+  // 1. Confirm Order Action
   if (isConfirmIntent) {
     botResponse = await handleOrderReview(phone, userText, session, customer.id, payload.messageId, supabase)
-  } else if (isCancelIntent) {
-    await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [], selected_branch_id: null, selected_address_id: null, pending_remarks: null, idempotency_key: null })
-    botResponse = await sendWhatsAppTextMessage(phone, '❌ Order cancelled. Returned to main menu.')
-  } 
-  // 2. Check Address Detection Before Fallback or Generic Commands
+  }
+  // 2. Cancel Order Action
+  else if (isCancelIntent) {
+    await updateSessionState(supabase, session.id, 'MAIN_MENU', { pending_remarks: null, idempotency_key: null })
+    botResponse = await sendWhatsAppTextMessage(phone, '❌ Order checkout cancelled. Your cart items have been preserved.')
+  }
+  // 3. Clear Cart & Resume Action
+  else if (isClearCartIntent) {
+    botResponse = await handleClearCartAction(phone, session, supabase)
+  }
+  // 4. Proceed Checkout Action
+  else if (isCheckoutIntent) {
+    botResponse = await handleCheckoutAction(phone, session, customer, supabase)
+  }
+  // 5. Add More Fish Action
+  else if (isAddMoreIntent) {
+    await updateSessionState(supabase, session.id, 'SELECTING_FISH')
+    botResponse = await showDailyFishMenu(phone, session, supabase)
+  }
+  // 6. Track Order Action
+  else if (isTrackIntent) {
+    await updateSessionState(supabase, session.id, 'TRACK_ORDER')
+    botResponse = await handleTrackOrder(phone, customer.id, supabase)
+  }
+  // 7. Previous Orders Action
+  else if (isPreviousOrdersIntent) {
+    await updateSessionState(supabase, session.id, 'PREVIOUS_ORDERS')
+    botResponse = await handlePreviousOrders(phone, customer.id, supabase)
+  }
+  // 7.5 Branch Selection Intent
+  else if (isBranchIntent || currentState === 'SELECTING_BRANCH') {
+    botResponse = await handleBranchSelection(phone, userText, session, supabase)
+  }
+  // 8. Main Menu / Welcome Greeting
+  else if (isMainMenuIntent) {
+    if (hasActiveCart) {
+      botResponse = await sendWhatsAppButtonsMessage(
+        phone,
+        `🛒 *You have an active cart!*\nWould you like to continue with checkout or clear your cart?`,
+        [
+          { id: 'btn_checkout', title: '🚀 Proceed Checkout' },
+          { id: 'btn_clear_cart', title: '🗑️ Clear Cart & Resume' },
+        ]
+      )
+    } else {
+      await updateSessionState(supabase, session.id, 'MAIN_MENU')
+      botResponse = await handleMainMenu(phone)
+    }
+  }
+  // 9. Unknown/Stale Interactive Action Guard (Never query inventory with action IDs!)
+  else if (buttonOrListId.startsWith('btn_')) {
+    console.warn(`[Unrecognized interactive action ID]: ${buttonOrListId}`)
+    if (hasActiveCart) {
+      botResponse = await sendWhatsAppButtonsMessage(
+        phone,
+        `⚠️ That option is no longer active. Please choose an option from the current menu.`,
+        [
+          { id: 'btn_checkout', title: '🚀 Proceed Checkout' },
+          { id: 'btn_clear_cart', title: '🗑️ Clear Cart & Resume' },
+        ]
+      )
+    } else {
+      await updateSessionState(supabase, session.id, 'MAIN_MENU')
+      botResponse = await sendWhatsAppTextMessage(
+        phone,
+        `⚠️ That option is no longer active. Please choose an option from the current menu.`
+      )
+    }
+  }
+  // 10. Address Input Handling
   else if (
     (currentState === 'SELECTING_ADDRESS' || currentState === 'ADDING_ADDRESS' || isLikelyAddressText(rawText)) &&
     hasActiveCart &&
@@ -204,30 +345,11 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
   ) {
     botResponse = await handleAddressSelection(phone, userText, session, supabase, rawText)
   }
-  // 3. Strict Word-Boundary Menu Command Check
-  else if (/^(hi|hello|hey|start|menu|main_menu)$/i.test(rawText.trim()) || buttonOrListId === 'btn_main_menu') {
-    if (hasActiveCart) {
-      botResponse = await sendWhatsAppButtonsMessage(
-        phone,
-        `🛒 *You have an active cart!*\nWould you like to continue with checkout or clear your cart?`,
-        [
-          { id: 'btn_checkout', title: '🚀 Proceed Checkout' },
-          { id: 'btn_clear_cart', title: '🗑️ Clear Cart & Restart' },
-        ]
-      )
-    } else {
-      await updateSessionState(supabase, session.id, 'MAIN_MENU')
-      botResponse = await handleMainMenu(phone)
-    }
-  } else {
-    // 4. Router based on Current State
+  // 11. State-Specific Fallthrough Router
+  else {
     switch (currentState) {
       case 'MAIN_MENU':
         botResponse = await handleMainMenuRouter(phone, userText, session, supabase)
-        break
-
-      case 'SELECTING_BRANCH':
-        botResponse = await handleBranchSelection(phone, userText, session, supabase)
         break
 
       case 'SELECTING_FISH':
@@ -273,7 +395,7 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
             [
               { id: 'btn_checkout', title: '🚀 Proceed Checkout' },
               { id: 'btn_add_more', title: '➕ Add More Fish' },
-              { id: 'btn_clear_cart', title: '🗑️ Clear Cart' },
+              { id: 'btn_clear_cart', title: '🗑️ Clear Cart & Resume' },
             ]
           )
         } else {
@@ -340,16 +462,20 @@ async function handleMainMenu(phone: string) {
 }
 
 async function handleMainMenuRouter(phone: string, userText: string, session: any, supabase: any) {
-  if (userText === 'btn_order_fish' || userText.toLowerCase().includes('order')) {
-    return await showBranchSelection(phone, session, supabase)
-  }
-  if (userText === 'btn_track_order' || userText.toLowerCase().includes('track')) {
+  const clean = userText.toLowerCase().trim()
+
+  if (clean === 'btn_track_order' || clean.includes('track')) {
     await updateSessionState(supabase, session.id, 'TRACK_ORDER')
     return await handleTrackOrder(phone, session.customer_id, supabase)
   }
-  if (userText === 'btn_previous_orders' || userText.toLowerCase().includes('previous')) {
+
+  if (clean === 'btn_previous_orders' || clean.includes('previous')) {
     await updateSessionState(supabase, session.id, 'PREVIOUS_ORDERS')
     return await handlePreviousOrders(phone, session.customer_id, supabase)
+  }
+
+  if (clean === 'btn_order_fish' || clean.includes('order fresh fish') || clean === 'order' || clean === 'order fish') {
+    return await showBranchSelection(phone, session, supabase)
   }
 
   return await handleMainMenu(phone)
@@ -358,20 +484,8 @@ async function handleMainMenuRouter(phone: string, userText: string, session: an
 async function getOrRollForwardBranchInventory(supabase: any, branchId: string, targetDate?: string) {
   const today = targetDate || new Date().toISOString().split('T')[0]
 
-  // 1. Fetch inventory items for today
-  const { data: todayItems } = await supabase
-    .from('inventory')
-    .select('*, product:products(*)')
-    .eq('inventory_date', today)
-    .eq('branch_id', branchId)
-
-  const activeToday = (todayItems || []).filter((i: any) => Number(i.available_stock ?? i.opening_stock ?? 0) > 0)
-  if (activeToday.length > 0) {
-    return activeToday
-  }
-
-  // 2. If today has 0 records for this branch, query the LATEST inventory entries <= today for this branch!
-  const { data: latestItems } = await supabase
+  // Query ALL inventory records for this branch <= today ordered by inventory_date DESC, created_at DESC
+  const { data: allItems } = await supabase
     .from('inventory')
     .select('*, product:products(*)')
     .eq('branch_id', branchId)
@@ -379,23 +493,24 @@ async function getOrRollForwardBranchInventory(supabase: any, branchId: string, 
     .order('inventory_date', { ascending: false })
     .order('created_at', { ascending: false })
 
-  if (!latestItems || latestItems.length === 0) {
+  if (!allItems || allItems.length === 0) {
     return []
   }
 
-  // Deduplicate by product_id keeping the latest row for each product
+  // Deduplicate by product_id keeping only the newest record for each product with available_stock > 0 and product.active !== false
   const productMap = new Map<string, any>()
-  for (const item of latestItems) {
+  for (const item of allItems) {
     const avail = Number(item.available_stock ?? item.opening_stock ?? 0)
-    if (!productMap.has(item.product_id) && avail > 0) {
+    const isProductActive = item.product ? item.product.active !== false : true
+    if (!productMap.has(item.product_id) && avail > 0 && isProductActive) {
       productMap.set(item.product_id, item)
     }
   }
 
-  const rolledForward: any[] = Array.from(productMap.values())
+  const activeItems: any[] = Array.from(productMap.values())
 
-  // Automatically insert carried-forward records for today so future updates & orders hit today's row seamlessly!
-  for (const item of rolledForward) {
+  // Ensure carried-forward entries exist for today in DB so future atomic updates hit today's row cleanly
+  for (const item of activeItems) {
     if (item.inventory_date !== today) {
       try {
         const avail = Number(item.available_stock ?? item.opening_stock ?? 0)
@@ -431,6 +546,7 @@ async function showBranchSelection(phone: string, session: any, supabase: any) {
     .from('branches')
     .select('*')
     .eq('is_active', true)
+    .order('name', { ascending: true })
 
   const today = new Date().toISOString().split('T')[0]
 
@@ -438,10 +554,17 @@ async function showBranchSelection(phone: string, session: any, supabase: any) {
     (branches || []).map(async (b: any) => {
       const invItems = await getOrRollForwardBranchInventory(supabase, b.id, today)
       const count = invItems.length
+      const description =
+        count === 0
+          ? '⚠️ Sold out today'
+          : count === 1
+          ? '1 fish variety available today'
+          : `${count} fish varieties available today`
+
       return {
         id: b.id,
         title: b.name,
-        description: `${count} fish varieties available today`,
+        description,
       }
     })
   )
@@ -710,49 +833,153 @@ async function handleCutSelection(phone: string, userText: string, session: any,
   ])
 }
 
-async function handleCartRouter(phone: string, userText: string, session: any, supabase: any) {
-  if (userText === 'btn_add_more') {
-    return await showDailyFishMenu(phone, session, supabase)
+async function handleClearCartAction(phone: string, session: any, supabase: any) {
+  const branchId = session?.selected_branch_id
+
+  await updateSessionState(supabase, session.id, 'SELECTING_FISH', {
+    cart: [],
+    selected_product_id: null,
+    selected_quantity: null,
+    selected_cutting_type: null,
+    selected_address_id: null,
+    delivery_address: null,
+    pending_remarks: null,
+    idempotency_key: null,
+    selected_branch_id: branchId, // Preserve selected branch!
+  })
+
+  await sendWhatsAppTextMessage(
+    phone,
+    `🗑️ *Cart Cleared!*\nYour cart has been reset. You can now select fresh fish from the same branch:`
+  )
+
+  if (branchId) {
+    return await showDailyFishMenu(phone, session, supabase, branchId)
+  } else {
+    return await showBranchSelection(phone, session, supabase)
   }
-  if (userText === 'btn_clear_cart') {
-    await updateSessionState(supabase, session.id, 'MAIN_MENU', { cart: [], selected_branch_id: null, selected_address_id: null, pending_remarks: null, idempotency_key: null })
-    return await sendWhatsAppTextMessage(phone, '🗑️ Cart cleared. Returned to main menu.')
+}
+
+async function handleCheckoutAction(phone: string, session: any, customer: any, supabase: any) {
+  const cart = normalizeCart(session?.cart)
+  const branchId = session?.selected_branch_id
+
+  if (!cart || cart.length === 0) {
+    await updateSessionState(supabase, session.id, 'MAIN_MENU')
+    return await sendWhatsAppTextMessage(
+      phone,
+      `⚠️ *Your cart is empty.*\nPlease select a branch to order fresh fish.`
+    )
   }
 
-  if (userText === 'btn_checkout' || userText.toLowerCase().includes('checkout')) {
-    const { data: addresses } = await supabase
-      .from('addresses')
-      .select('*')
-      .eq('customer_id', session.customer_id)
+  if (!branchId) {
+    return await showBranchSelection(phone, session, supabase)
+  }
 
-    if (!addresses || addresses.length === 0) {
-      await updateSessionState(supabase, session.id, 'SELECTING_ADDRESS')
-      return await sendWhatsAppTextMessage(
+  // 1. Verify branch inventory for all cart items
+  const today = new Date().toISOString().split('T')[0]
+  const activeStock = await getOrRollForwardBranchInventory(supabase, branchId, today)
+
+  for (const item of cart) {
+    const invItem = activeStock.find((i: any) => i.product_id === item.product_id)
+    const availKg = Number(invItem?.available_stock ?? invItem?.opening_stock ?? 0)
+
+    if (!invItem || availKg < Number(item.quantity_kg || 1)) {
+      return await sendWhatsAppButtonsMessage(
         phone,
-        `📍 *Delivery Address Required*\nPlease reply with your full delivery address and 6-digit pincode (e.g., "Flat 4B, Marine Drive, Kochi 682031"):`
+        `❌ *Stock Availability Issue*\n"${item.product_name}" has only ${availKg}kg left in stock at this branch (requested ${item.quantity_kg}kg).\n\nWould you like to adjust your cart or clear cart?`,
+        [
+          { id: 'btn_add_more', title: '➕ Adjust Cart' },
+          { id: 'btn_clear_cart', title: '🗑️ Clear Cart & Resume' },
+        ]
       )
     }
+  }
 
-    const rows = addresses.map((addr: any) => ({
-      id: addr.id,
-      title: addr.title || 'Address',
-      description: `${addr.address_line1 || addr.address_line || addr.address || ''}, ${addr.city || 'Kochi'} ${addr.pincode || ''}`,
-    }))
-    rows.push({ id: 'addr_new', title: '+ Add New Address', description: 'Enter a new delivery address' })
+  // 2. Delivery Address Check & Resolution
+  const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
 
+  let realCustomerId = customer?.id || session?.customer_id
+  if (!isUuid(realCustomerId)) {
+    const { data: cData } = await supabase.from('customers').select('id').eq('phone', phone).single()
+    if (cData?.id && isUuid(cData.id)) {
+      realCustomerId = cData.id
+    }
+  }
+
+  let selectedAddrId = isUuid(session?.selected_address_id) ? session.selected_address_id : null
+  let deliveryAddrText = session?.delivery_address || null
+
+  if (!selectedAddrId && isUuid(realCustomerId)) {
+    const { data: customerAddrs } = await supabase
+      .from('addresses')
+      .select('*')
+      .eq('customer_id', realCustomerId)
+      .order('created_at', { ascending: false })
+
+    if (customerAddrs && customerAddrs.length > 0) {
+      if (customerAddrs.length === 1) {
+        const addr = customerAddrs[0]
+        selectedAddrId = addr.id
+        const line = addr.address_line || addr.address_line1 || addr.address || ''
+        deliveryAddrText = `${line}${addr.pincode ? ', ' + addr.pincode : ''}`.trim()
+        await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER', {
+          selected_address_id: selectedAddrId,
+          delivery_address: deliveryAddrText,
+        })
+      } else {
+        const rows = customerAddrs.map((addr: any) => ({
+          id: addr.id,
+          title: addr.title || 'Address',
+          description: `${addr.address_line1 || addr.address_line || addr.address || ''}, ${addr.city || 'Kochi'} ${addr.pincode || ''}`,
+        }))
+        rows.push({ id: 'addr_new', title: '+ Add New Address', description: 'Enter a new delivery address' })
+
+        await updateSessionState(supabase, session.id, 'SELECTING_ADDRESS')
+
+        return await sendWhatsAppListMessage(
+          phone,
+          `🏡 *Select Delivery Address*\nChoose your saved address for fresh delivery:`,
+          'Select Address',
+          [
+            {
+              title: 'Saved Delivery Addresses',
+              rows,
+            },
+          ]
+        )
+      }
+    }
+  }
+
+  if (!selectedAddrId && !deliveryAddrText) {
     await updateSessionState(supabase, session.id, 'SELECTING_ADDRESS')
-
-    return await sendWhatsAppListMessage(
+    return await sendWhatsAppTextMessage(
       phone,
-      `🏡 *Select Delivery Address*\nChoose your saved address for fresh delivery:`,
-      'Select Address',
-      [
-        {
-          title: 'Saved Delivery Addresses',
-          rows,
-        },
-      ]
+      `📍 *Delivery Address Required*\nPlease reply with your full delivery address and 6-digit pincode (e.g., "Flat 4B, Marine Drive, Kochi 682031"):`
     )
+  }
+
+  // 3. Render Order Summary
+  await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER', {
+    selected_address_id: selectedAddrId,
+    delivery_address: deliveryAddrText,
+  })
+  return await renderOrderReview(phone, session, selectedAddrId, supabase, deliveryAddrText)
+}
+
+async function handleCartRouter(phone: string, userText: string, session: any, supabase: any) {
+  const clean = userText.toLowerCase().trim()
+
+  if (clean === 'btn_add_more' || clean.includes('add_more')) {
+    await updateSessionState(supabase, session.id, 'SELECTING_FISH')
+    return await showDailyFishMenu(phone, session, supabase)
+  }
+  if (clean === 'btn_clear_cart' || clean.includes('clear_cart') || clean.includes('clear cart')) {
+    return await handleClearCartAction(phone, session, supabase)
+  }
+  if (clean === 'btn_checkout' || clean.includes('checkout')) {
+    return await handleCheckoutAction(phone, session, session?.customer_id ? { id: session.customer_id } : null, supabase)
   }
 
   return await sendWhatsAppButtonsMessage(
@@ -761,7 +988,7 @@ async function handleCartRouter(phone: string, userText: string, session: any, s
     [
       { id: 'btn_checkout', title: '🚀 Proceed Checkout' },
       { id: 'btn_add_more', title: '➕ Add More Fish' },
-      { id: 'btn_clear_cart', title: '🗑️ Clear Cart' },
+      { id: 'btn_clear_cart', title: '🗑️ Clear Cart & Resume' },
     ]
   )
 }
@@ -1182,45 +1409,110 @@ async function handleOrderReview(
 }
 
 async function handleTrackOrder(phone: string, customerId: string, supabase: any) {
+  const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+
+  let realCustomerId = customerId
+  if (!isUuid(realCustomerId)) {
+    const { data: cData } = await supabase.from('customers').select('id').eq('phone', phone).single()
+    if (cData?.id && isUuid(cData.id)) {
+      realCustomerId = cData.id
+    }
+  }
+
   const { data: recentOrders } = await supabase
     .from('orders')
-    .select('*, items:order_items(*, product:products(*))')
-    .eq('customer_id', customerId)
+    .select('*, items:order_items(*, product:products(*)), order_items(*, product:products(*)), branch:branches(name)')
+    .eq('customer_id', realCustomerId)
     .order('created_at', { ascending: false })
     .limit(3)
 
   if (!recentOrders || recentOrders.length === 0) {
-    return await sendWhatsAppTextMessage(phone, '📦 You have no active orders to track.')
+    return await sendWhatsAppButtonsMessage(phone, `📦 *No Active Orders*\nYou have no orders in your history yet.\nWould you like to order fresh fish today?`, [
+      { id: 'btn_order_fish', title: '🛒 Order Fresh Fish' },
+      { id: 'btn_main_menu', title: '🐟 Main Menu' },
+    ])
   }
 
-  let text = `📦 *Your Active Orders*\n\n`
-  recentOrders.forEach((ord: any) => {
-    text += `*Order #${ord.order_number}*\n`
-    text += `Status: *${ord.status}*\n`
-    text += `Total: ₹${ord.total_amount}\n`
-    text += `-----------------------\n`
+  let text = `📦 *YOUR LIVE ORDERS TRACKING*\n\n`
+  recentOrders.forEach((ord: any, idx: number) => {
+    const statusUpper = (ord.status || 'PENDING').toUpperCase()
+    let statusEmoji = '⏳'
+    if (statusUpper === 'ACCEPTED' || statusUpper === 'PREPARING' || statusUpper === 'PACKED') statusEmoji = '👨‍🍳'
+    else if (statusUpper === 'OUT_FOR_DELIVERY' || statusUpper === 'DISPATCHED') statusEmoji = '🛵'
+    else if (statusUpper === 'DELIVERED') statusEmoji = '✅'
+    else if (statusUpper === 'CANCELLED') statusEmoji = '❌'
+
+    const branchName = ord.branch?.name || 'Bestiet Fresh'
+    const totalAmt = Number(ord.total_amount ?? ord.total ?? 0)
+    const itemsList = Array.isArray(ord.items) && ord.items.length > 0 ? ord.items : Array.isArray(ord.order_items) ? ord.order_items : []
+
+    text += `*Order #${ord.order_number || ord.id.slice(0, 8)}*\n`
+    text += `🏪 Branch: *${branchName}*\n`
+    text += `Status: ${statusEmoji} *${statusUpper.replace(/_/g, ' ')}*\n`
+    text += `Total Amount: *₹${totalAmt}*\n`
+
+    if (itemsList.length > 0) {
+      text += `Fish Items:\n`
+      itemsList.forEach((it: any) => {
+        const pName = it.product?.name || 'Fresh Fish'
+        const qty = Number(it.quantity_kg ?? it.quantity ?? 1)
+        const cut = (it.cutting_type || 'whole').replace(/_/g, ' ')
+        text += `  • ${pName} — ${qty}kg (${cut})\n`
+      })
+    }
+
+    if (idx < recentOrders.length - 1) {
+      text += `-----------------------\n`
+    }
   })
 
   return await sendWhatsAppButtonsMessage(phone, text, [
+    { id: 'btn_order_fish', title: '🛒 Order Fresh Fish' },
     { id: 'btn_main_menu', title: '🐟 Main Menu' },
   ])
 }
 
 async function handlePreviousOrders(phone: string, customerId: string, supabase: any) {
+  const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+
+  let realCustomerId = customerId
+  if (!isUuid(realCustomerId)) {
+    const { data: cData } = await supabase.from('customers').select('id').eq('phone', phone).single()
+    if (cData?.id && isUuid(cData.id)) {
+      realCustomerId = cData.id
+    }
+  }
+
   const { data: orders } = await supabase
     .from('orders')
-    .select('*')
-    .eq('customer_id', customerId)
+    .select('*, items:order_items(*, product:products(*)), order_items(*, product:products(*)), branch:branches(name)')
+    .eq('customer_id', realCustomerId)
     .order('created_at', { ascending: false })
     .limit(5)
 
   if (!orders || orders.length === 0) {
-    return await sendWhatsAppTextMessage(phone, '🔄 No previous order history found.')
+    return await sendWhatsAppButtonsMessage(phone, `🔄 *No Previous Order History*\nYou have not placed any orders yet.\nWould you like to order fresh fish today?`, [
+      { id: 'btn_order_fish', title: '🛒 Order Fresh Fish' },
+      { id: 'btn_main_menu', title: '🐟 Main Menu' },
+    ])
   }
 
-  let text = `🔄 *Your Previous Orders*\n\n`
-  orders.forEach((ord: any) => {
-    text += `• *#${ord.order_number}* — ₹${ord.total_amount} (${ord.status})\n`
+  let text = `🔄 *YOUR PREVIOUS ORDER HISTORY*\n\n`
+  orders.forEach((ord: any, idx: number) => {
+    const statusUpper = (ord.status || 'PENDING').toUpperCase()
+    const branchName = ord.branch?.name || 'Bestiet Fresh'
+    const totalAmt = Number(ord.total_amount ?? ord.total ?? 0)
+    const itemsList = Array.isArray(ord.items) && ord.items.length > 0 ? ord.items : Array.isArray(ord.order_items) ? ord.order_items : []
+
+    text += `*#${ord.order_number || ord.id.slice(0, 8)}* — ₹${totalAmt} (${statusUpper})\n`
+    text += `🏪 ${branchName}\n`
+    if (itemsList.length > 0) {
+      const itemsSummary = itemsList.map((it: any) => `${it.product?.name || 'Fish'} (${it.quantity_kg ?? it.quantity}kg)`).join(', ')
+      text += `Items: ${itemsSummary}\n`
+    }
+    if (idx < orders.length - 1) {
+      text += `-----------------------\n`
+    }
   })
 
   return await sendWhatsAppButtonsMessage(phone, text, [
@@ -1245,16 +1537,30 @@ async function updateSessionState(
     Object.assign(sessionOrId, extra)
   }
 
+  const allowedColumns = [
+    'state',
+    'selected_branch_id',
+    'selected_product_id',
+    'selected_quantity',
+    'selected_cutting_type',
+    'selected_address_id',
+    'delivery_address',
+    'cart',
+  ]
+
+  const dbPayload: Record<string, any> = { state, updated_at: new Date().toISOString() }
+  for (const key of allowedColumns) {
+    if (key in extra) {
+      dbPayload[key] = extra[key]
+    }
+  }
+
   const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
 
   if (sessionId && isUuid(sessionId)) {
     const { error } = await supabase
       .from('chat_sessions')
-      .update({
-        state,
-        ...extra,
-        updated_at: new Date().toISOString(),
-      })
+      .update(dbPayload)
       .eq('id', sessionId)
 
     if (error) {
@@ -1263,11 +1569,7 @@ async function updateSessionState(
   } else if (customerId && isUuid(customerId)) {
     const { error } = await supabase
       .from('chat_sessions')
-      .update({
-        state,
-        ...extra,
-        updated_at: new Date().toISOString(),
-      })
+      .update(dbPayload)
       .eq('customer_id', customerId)
 
     if (error) {

@@ -7,14 +7,14 @@ import { Branch } from '@/types/database'
 export const FIXED_BRANCHES: Branch[] = [
   {
     id: 'b1111111-1111-1111-1111-111111111111',
-    name: 'Marine Drive Branch',
-    location: 'Marine Drive, Kochi',
+    name: 'Manvila Kazhakkoottam Branch',
+    location: 'Manvila, Kazhakkoottam',
     is_active: true,
   },
   {
     id: 'b2222222-2222-2222-2222-222222222222',
-    name: 'Fort Kochi Branch',
-    location: 'Fort Kochi, Kochi',
+    name: 'Peroorkada Branch',
+    location: 'Peroorkada, Trivandrum',
     is_active: true,
   },
 ]

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { format, isToday } from 'date-fns'
 import { createClient } from '@/lib/supabase/client'
 import {
   BarChart3,
@@ -64,8 +65,7 @@ export default function ReportsPage() {
       // 1. Fetch Orders for analytics
       let query = supabase
         .from('orders')
-        .select('*, items:order_items(*, product:products(*))')
-        .neq('status', 'CANCELLED')
+        .select('*, items:order_items(*, product:products(*)), order_items(*, product:products(*))')
 
       if (selectedBranchId !== 'ALL') {
         query = query.eq('branch_id', selectedBranchId)
@@ -82,9 +82,14 @@ export default function ReportsPage() {
 
       const dailyMap: Record<string, { date: string; sales: number; orders: number }> = {}
 
-      allOrders?.forEach((ord) => {
-        const amt = Number(ord.total_amount || 0)
-        const dateStr = ord.created_at.split('T')[0]
+      const validOrders = (allOrders || []).filter(
+        (ord: any) => (ord.status || '').toLowerCase() !== 'cancelled'
+      )
+
+      validOrders.forEach((ord: any) => {
+        const amt = Number(ord.total_amount || ord.total || 0)
+        const oDate = new Date(ord.created_at)
+        const dateStr = format(oDate, 'yyyy-MM-dd')
 
         // Daily chart aggregator
         if (!dailyMap[dateStr]) {
@@ -93,17 +98,18 @@ export default function ReportsPage() {
         dailyMap[dateStr].sales += amt
         dailyMap[dateStr].orders += 1
 
-        if (dateStr === todayStr) todayRev += amt
-        if (new Date(ord.created_at) >= new Date(weekAgo)) weekRev += amt
-        if (new Date(ord.created_at) >= new Date(monthAgo)) monthRev += amt
+        if (dateStr === todayStr || isToday(oDate)) todayRev += amt
+        if (oDate >= new Date(weekAgo)) weekRev += amt
+        if (oDate >= new Date(monthAgo)) monthRev += amt
 
-        ord.items?.forEach((i: any) => {
-          totalKg += Number(i.quantity_kg || 0)
+        const itemsList = Array.isArray(ord.items) && ord.items.length > 0 ? ord.items : Array.isArray(ord.order_items) ? ord.order_items : []
+        itemsList.forEach((i: any) => {
+          totalKg += Number(i.quantity_kg ?? i.quantity ?? 0)
         })
       })
 
-      const totalCount = allOrders?.length || 0
-      const totalRevAll = allOrders?.reduce((a, b) => a + Number(b.total_amount), 0) || 0
+      const totalCount = validOrders.length
+      const totalRevAll = validOrders.reduce((a, b) => a + Number(b.total_amount || b.total || 0), 0)
       const avgVal = totalCount > 0 ? totalRevAll / totalCount : 0
 
       setSalesSummary({

@@ -49,43 +49,63 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     setLoading(true)
-    const todayStr = new Date().toISOString().split('T')[0]
     const MARINE_DRIVE_ID = 'b1111111-1111-1111-1111-111111111111'
     const FORT_KOCHI_ID = 'b2222222-2222-2222-2222-222222222222'
 
     try {
       const targetBranchId = selectedBranchId === FORT_KOCHI_ID ? FORT_KOCHI_ID : MARINE_DRIVE_ID
+      const now = new Date()
+      const todayFormatted = format(now, 'yyyy-MM-dd')
+      const todayStr = now.toISOString().split('T')[0]
 
-      // 1. Fetch Today's Orders for Sales KPI
-      let ordersQuery = supabase
+      // 1. Fetch Orders for Sales & Fish Sold KPI
+      const { data: allBranchOrders, error: ordersErr } = await supabase
         .from('orders')
-        .select('*, items:order_items(*, product:products(*))')
-        .gte('created_at', `${todayStr}T00:00:00.000Z`)
-        .lte('created_at', `${todayStr}T23:59:59.999Z`)
-        .neq('status', 'CANCELLED')
-
-      ordersQuery = ordersQuery.eq('branch_id', targetBranchId)
-
-      const { data: todayOrders, error: ordersErr } = await ordersQuery
+        .select('*, items:order_items(*, product:products(*)), order_items(*, product:products(*))')
+        .eq('branch_id', targetBranchId)
+        .order('created_at', { ascending: false })
 
       if (ordersErr) console.error('Orders KPI error:', ordersErr)
 
-      const totalSales = todayOrders?.reduce((acc, o) => acc + Number(o.total_amount || o.total || 0), 0) || 0
-      const ordersCount = todayOrders?.length || 0
-      let totalKg = 0
+      let todaySales = 0
+      let todayOrdersCount = 0
+      let todayKg = 0
+      let totalKgAllTime = 0
+      let totalSalesAllTime = 0
 
-      todayOrders?.forEach((o) => {
-        o.items?.forEach((i: any) => {
-          totalKg += Number(i.quantity_kg || 0)
+      const validOrders = (allBranchOrders || []).filter(
+        (o: any) => (o.status || '').toLowerCase() !== 'cancelled'
+      )
+
+      validOrders.forEach((o: any) => {
+        const oDate = new Date(o.created_at)
+        const isTodayOrder = format(oDate, 'yyyy-MM-dd') === todayFormatted || o.created_at.startsWith(todayStr)
+        const amt = Number(o.total_amount ?? o.total ?? 0)
+
+        totalSalesAllTime += amt
+        const itemsList = Array.isArray(o.items) && o.items.length > 0 ? o.items : Array.isArray(o.order_items) ? o.order_items : []
+        let orderKg = 0
+
+        itemsList.forEach((i: any) => {
+          orderKg += Number(i.quantity_kg ?? i.quantity ?? 0)
         })
+
+        totalKgAllTime += orderKg
+
+        if (isTodayOrder) {
+          todaySales += amt
+          todayOrdersCount += 1
+          todayKg += orderKg
+        }
       })
 
-      const avgOrder = ordersCount > 0 ? totalSales / ordersCount : 0
+      const displayKg = todayKg > 0 ? todayKg : totalKgAllTime
+      const avgOrder = todayOrdersCount > 0 ? todaySales / todayOrdersCount : (validOrders.length > 0 ? totalSalesAllTime / validOrders.length : 0)
 
       setStats({
-        todaySales: totalSales,
-        todayOrdersCount: ordersCount,
-        fishSoldKg: Math.round(totalKg * 10) / 10,
+        todaySales: todaySales,
+        todayOrdersCount: todayOrdersCount,
+        fishSoldKg: Math.round(displayKg * 10) / 10,
         avgOrderValue: Math.round(avgOrder),
       })
 

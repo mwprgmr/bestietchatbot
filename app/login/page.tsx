@@ -128,18 +128,18 @@ export default function LoginPage() {
                 className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200 transition-colors flex items-center justify-center gap-1.5"
               >
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Marine Drive</span>
+                <span>Manvila Kazhakkoottam</span>
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  setEmail('fortkochi@bestietfresh.com')
+                  setEmail('peroorkada@bestietfresh.com')
                   setPassword('admin123')
                 }}
                 className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold rounded-xl border border-blue-200 transition-colors flex items-center justify-center gap-1.5"
               >
                 <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
-                <span>Fort Kochi</span>
+                <span>Peroorkada</span>
               </button>
             </div>
           </div>
