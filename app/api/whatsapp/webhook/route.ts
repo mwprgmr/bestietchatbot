@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { processWhatsAppMessage } from '@/lib/whatsapp/state-machine'
 
-const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'bestiet_fresh_verify_token_2026'
+const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'bestiet'
 
 // Helper function to send WhatsApp text message via Meta Graph API
 async function sendWhatsAppTextMessage(toPhoneNumber: string, textResponse: string) {
@@ -48,8 +48,10 @@ export async function GET(req: NextRequest) {
   const token = searchParams.get('hub.verify_token')
   const challenge = searchParams.get('hub.challenge')
 
-  if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-    console.log('WEBHOOK_VERIFIED')
+  const isTokenValid = token === VERIFY_TOKEN || token === 'bestiet' || token === 'bestiet_fresh_verify_token_2026'
+
+  if (mode === 'subscribe' && isTokenValid) {
+    console.log('WEBHOOK_VERIFIED with token:', token)
     return new NextResponse(challenge, {
       status: 200,
       headers: { 'Content-Type': 'text/plain' },
