@@ -5,7 +5,7 @@ import {
   sendWhatsAppListMessage,
 } from './client'
 import { IncomingMessagePayload, BotState } from './types'
-import { normalizePhoneNumber } from './phone-utils'
+import { normalizePhoneNumber, getBusinessDate } from './phone-utils'
 
 const processedMessageIds = new Set<string>()
 
@@ -62,10 +62,13 @@ function normalizeCart(cart: any[]) {
     const subtotal = Number(item.subtotal ?? Math.round(price * qty * 100) / 100)
     return {
       product_id: item.product_id,
+      branch_id: item.branch_id,
       product_name: item.product_name || item.name || 'Fish',
       quantity_kg: qty,
       quantity: qty,
       unit_price: price,
+      price_per_kg: item.price_per_kg || price,
+      inventory_date: item.inventory_date,
       cutting_type: item.cutting_type || item.cut_type || 'whole',
       subtotal,
     }
@@ -593,7 +596,7 @@ async function handleMainMenuRouter(phone: string, userText: string, session: an
 }
 
 async function getOrRollForwardBranchInventory(supabase: any, branchId: string, targetDate?: string) {
-  const today = targetDate || new Date().toISOString().split('T')[0]
+  const today = targetDate || getBusinessDate()
 
   // Query ALL inventory records for this branch <= today ordered by inventory_date DESC, created_at DESC
   const { data: allItems } = await supabase
@@ -667,7 +670,7 @@ async function showBranchSelection(phone: string, session: any, supabase: any) {
     .eq('is_active', true)
     .order('name', { ascending: true })
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = getBusinessDate()
 
   const rows = await Promise.all(
     (branches || []).map(async (b: any) => {
@@ -881,7 +884,7 @@ async function handleQuantitySelection(phone: string, userText: string, session:
   }
 
   const productId = session.selected_product_id
-  const today = new Date().toISOString().split('T')[0]
+  const today = getBusinessDate()
   const branchId = session?.selected_branch_id
 
   if (!branchId || !productId) {
@@ -928,7 +931,7 @@ async function handleCutSelection(phone: string, userText: string, session: any,
 
   const productId = session.selected_product_id
   const qty = Number(session.selected_quantity || 1.0)
-  const today = new Date().toISOString().split('T')[0]
+  const today = getBusinessDate()
   const branchId = session.selected_branch_id
 
   if (!branchId || !productId) {
@@ -949,11 +952,14 @@ async function handleCutSelection(phone: string, userText: string, session: any,
   const currentCart = normalizeCart(session.cart)
   currentCart.push({
     product_id: productId,
+    branch_id: branchId,
     product_name: inv.product?.name || 'Fish',
     quantity_kg: qty,
     quantity: qty,
     cutting_type: cutType,
     unit_price: unitPrice,
+    price_per_kg: unitPrice,
+    inventory_date: today,
     subtotal,
   })
 
@@ -1502,9 +1508,16 @@ async function handleOrderReview(
   const stableIdempotencyKey = `wa:${customerId}:${activeSession.id}:${activeSession.selected_branch_id}`
   await updateSessionState(supabase, activeSession.id, 'PROCESSING_ORDER')
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = getBusinessDate()
   const validCustomerId = isUuid(customerId) ? customerId : null
   const customerRemarks = activeSession.pending_remarks || null
+
+  console.log('[CHECKOUT DIAGNOSTIC LOG]:', JSON.stringify({
+    business_date: today,
+    selected_branch_id: validBranchId,
+    selected_product_ids: cart.map((c: any) => c.product_id),
+    requested_quantities: cart.map((c: any) => c.quantity_kg),
+  }, null, 2))
 
   // 6. CALL CANONICAL PRODUCTION RPC (using Service Role client)
   const { data: result, error: orderErr } = await supabase.rpc('create_order_atomic', {

@@ -36,23 +36,29 @@ export interface WhatsAppListSection {
 export interface IncomingMessagePayload {
   from: string; // Phone number e.g. "15551964153"
   messageId: string;
-  type: 'text' | 'button_reply' | 'list_reply';
+  type: 'text' | 'button_reply' | 'list_reply' | string;
   text?: string;
   buttonId?: string;
   listId?: string;
 }
 
+export interface CartItem {
+  product_id: string;
+  product_name: string;
+  quantity_kg: number;
+  quantity?: number;
+  cutting_type: string;
+  unit_price: number;
+  price_per_kg?: number;
+  branch_id?: string;
+  inventory_date?: string;
+  subtotal: number;
+}
+
 export interface ChatSessionData {
   customer_id: string;
   state: BotState;
-  cart: {
-    product_id: string;
-    product_name: string;
-    quantity_kg: number;
-    cutting_type: string;
-    unit_price: number;
-    subtotal: number;
-  }[];
+  cart: CartItem[];
   selected_product_id?: string | null;
   selected_quantity?: number | null;
   selected_cutting_type?: string | null;
