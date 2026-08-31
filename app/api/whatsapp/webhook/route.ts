@@ -158,15 +158,18 @@ export async function POST(req: Request) {
         userText = message.text?.body || ''
       } else if (type === 'location' || message.location) {
         const loc = message.location
-        if (loc && typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+        const lat = loc ? parseFloat(loc.latitude) : NaN
+        const lng = loc ? parseFloat(loc.longitude) : NaN
+        if (!isNaN(lat) && !isNaN(lng)) {
           locationPayload = {
-            latitude: Number(loc.latitude),
-            longitude: Number(loc.longitude),
+            latitude: lat,
+            longitude: lng,
             name: loc.name || undefined,
             address: loc.address || undefined,
           }
+          console.log(`LOCATION RECEIVED\nlatitude: ${lat}\nlongitude: ${lng}\ncheckout_state: awaiting_location_confirmation`)
         }
-        userText = loc?.address || loc?.name || `${loc?.latitude}, ${loc?.longitude}`
+        userText = loc?.address || loc?.name || `${lat}, ${lng}`
       } else {
         userText = message.text?.body || message.body || ''
       }

@@ -1181,12 +1181,15 @@ async function handleLocationReceived(
   const gpsTag = `[GPS:${lat},${lng}]`
   const deliveryAddr = `GPS Location Shared ${gpsTag}`
 
-  await updateSessionState(supabase, session.id, 'CONFIRMING_LOCATION', {
-    delivery_address: deliveryAddr,
-  })
+  console.log(`LOCATION RECEIVED\nlatitude: ${lat}\nlongitude: ${lng}\ncheckout_state: awaiting_location_confirmation\nselected_address_id: ${session.selected_address_id || 'none'}`)
+
   session.latitude = lat
   session.longitude = lng
   session.maps_url = mapsUrl
+
+  await updateSessionState(supabase, session.id, 'CONFIRMING_LOCATION', {
+    delivery_address: deliveryAddr,
+  })
 
   return await sendWhatsAppButtonsMessage(
     phone,
@@ -1200,6 +1203,7 @@ async function handleLocationReceived(
 }
 
 async function handleConfirmLocationOnly(phone: string, session: any, customer: any, supabase: any) {
+  parseSessionLocation(session)
   const lat = session.latitude
   const lng = session.longitude
   const mapsUrl = session.maps_url || (lat && lng ? `https://www.google.com/maps?q=${lat},${lng}` : null)
@@ -1215,25 +1219,29 @@ async function handleConfirmLocationOnly(phone: string, session: any, customer: 
 
   if (isUuid(realCustomerId)) {
     try {
-      const { data: directData } = await supabase
+      const { data: directData, error: insertErr } = await supabase
         .from('addresses')
         .insert([
           {
             customer_id: realCustomerId,
             label: 'Location',
             address_line: 'GPS Location Shared',
-            latitude: lat,
-            longitude: lng,
+            latitude: lat || null,
+            longitude: lng || null,
             is_default: false,
           },
         ])
-        .select('id')
+        .select('id, latitude, longitude')
         .single()
 
-      if (directData?.id && isUuid(directData.id)) {
+      if (insertErr) {
+        console.error('[handleConfirmLocationOnly address insert error]:', insertErr)
+      } else if (directData?.id && isUuid(directData.id)) {
         addressIdToSave = directData.id
       }
-    } catch (e) {}
+    } catch (e: any) {
+      console.error('[handleConfirmLocationOnly address exception]:', e?.message)
+    }
   }
 
   await updateSessionState(supabase, session.id, 'ADDING_REMARKS', {
@@ -1514,8 +1522,22 @@ async function handleAddressSelection(phone: string, userText: string, session: 
         .single()
 
       if (matchedAddr) {
+        parseSessionLocation(session)
         const line = matchedAddr.address_line || matchedAddr.address_line1 || matchedAddr.address || ''
         const fullText = `${line}${matchedAddr.pincode ? ', ' + matchedAddr.pincode : ''}`.trim()
+
+        if (matchedAddr.latitude && matchedAddr.longitude) {
+          session.latitude = matchedAddr.latitude
+          session.longitude = matchedAddr.longitude
+          session.maps_url = matchedAddr.maps_url || `https://www.google.com/maps?q=${matchedAddr.latitude},${matchedAddr.longitude}`
+        } else if (session.latitude && session.longitude) {
+          try {
+            await supabase.from('addresses').update({
+              latitude: session.latitude,
+              longitude: session.longitude,
+            }).eq('id', matchedAddr.id)
+          } catch (e) {}
+        }
 
         await updateSessionState(supabase, session.id, 'ADDING_REMARKS', {
           selected_address_id: matchedAddr.id,
@@ -1631,6 +1653,16 @@ async function handleAddressSelection(phone: string, userText: string, session: 
           } catch (e) {}
         }
       }
+    }
+
+    parseSessionLocation(session)
+    if (addressIdToSave && session.latitude && session.longitude) {
+      try {
+        await supabase.from('addresses').update({
+          latitude: session.latitude,
+          longitude: session.longitude,
+        }).eq('id', addressIdToSave)
+      } catch (e) {}
     }
 
     await updateSessionState(supabase, session.id, 'ADDING_REMARKS', {
@@ -1874,19 +1906,31 @@ async function handleOrderReview(
     return await showBranchSelection(phone, activeSession, supabase)
   }
 
-  // 5. STABLE IDEMPOTENCY KEY (Deterministic per session & branch)
-  const stableIdempotencyKey = `wa:${customerId}:${activeSession.id}:${activeSession.selected_branch_id}`
+  // 5. PER-CHECKOUT UNIQUE IDEMPOTENCY KEY (Isolated per checkout attempt)
+  const msgTag = incomingMessageId ? incomingMessageId.replace(/[^a-zA-Z0-9_-]/g, '_') : `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+  const stableIdempotencyKey = `wa_chk:${customerId}:${activeSession.id}:${msgTag}`
   await updateSessionState(supabase, activeSession.id, 'PROCESSING_ORDER')
 
   const today = getBusinessDate()
   const validCustomerId = isUuid(customerId) ? customerId : null
   const customerRemarks = activeSession.pending_remarks || null
 
+  parseSessionLocation(activeSession)
+  if (validAddressId && activeSession.latitude && activeSession.longitude) {
+    try {
+      await supabase.from('addresses').update({
+        latitude: activeSession.latitude,
+        longitude: activeSession.longitude,
+      }).eq('id', validAddressId)
+    } catch (e) {}
+  }
+
   console.log('[CHECKOUT DIAGNOSTIC LOG]:', JSON.stringify({
     business_date: today,
     selected_branch_id: validBranchId,
     selected_product_ids: cart.map((c: any) => c.product_id),
     requested_quantities: cart.map((c: any) => c.quantity_kg),
+    idempotency_key: stableIdempotencyKey,
     latitude: activeSession.latitude,
     longitude: activeSession.longitude,
   }, null, 2))
@@ -1926,6 +1970,10 @@ async function handleOrderReview(
     selected_branch_id: null,
     selected_address_id: null,
     pending_remarks: null,
+    idempotency_key: null,
+    latitude: null,
+    longitude: null,
+    maps_url: null,
   })
 
   const orderNumber = resObj?.order_number || resObj?.order_id?.slice(0, 8) || 'BF-SUCCESS'
@@ -2078,6 +2126,10 @@ async function updateSessionState(
     'delivery_address',
     'pending_remarks',
     'cart',
+    'idempotency_key',
+    'latitude',
+    'longitude',
+    'maps_url',
   ]
 
   const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
