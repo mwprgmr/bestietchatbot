@@ -1,18 +1,24 @@
 import { WhatsAppButtonReply, WhatsAppListSection } from './types'
 
-const GRAPH_API_URL = 'https://graph.facebook.com/v20.0'
+function getGraphApiUrl() {
+  const apiVersion = process.env.WHATSAPP_API_VERSION || 'v20.0'
+  return `https://graph.facebook.com/${apiVersion}`
+}
 
 export async function sendWhatsAppTextMessage(to: string, bodyText: string) {
   const token = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN
-  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID
+  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID || '1335356319655951'
+  const graphUrl = getGraphApiUrl()
 
   if (!token || !phoneId) {
-    console.warn('[WhatsApp API] Credentials missing in environment. Logged message body:\n', bodyText)
+    console.warn('[WHATSAPP API] Credentials missing in environment. Logged message body:\n', bodyText)
     return { success: true, simulated: true, text: bodyText, reply: bodyText }
   }
 
+  console.log(`[WHATSAPP API] sending text message to phoneId=${phoneId}, recipient=${to}`)
+
   try {
-    const res = await fetch(`${GRAPH_API_URL}/${phoneId}/messages`, {
+    const res = await fetch(`${graphUrl}/${phoneId}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -28,13 +34,15 @@ export async function sendWhatsAppTextMessage(to: string, bodyText: string) {
     })
 
     const data = await res.json()
+    console.log(`[WHATSAPP API] response status=${res.status}:`, JSON.stringify(data))
+
     if (!res.ok) {
-      console.error('[WhatsApp API] Text Send Error:', data)
+      console.error('[WHATSAPP API] Text Send Error:', data)
       return { success: false, error: data, text: bodyText, reply: bodyText }
     }
     return { success: true, data, text: bodyText, reply: bodyText }
-  } catch (err) {
-    console.error('[WhatsApp API] Text Fetch Failure:', err)
+  } catch (err: any) {
+    console.error('[WHATSAPP API] Text Fetch Failure:', err?.message || err)
     return { success: false, error: err, text: bodyText, reply: bodyText }
   }
 }
@@ -45,12 +53,15 @@ export async function sendWhatsAppButtonsMessage(
   buttons: WhatsAppButtonReply[]
 ) {
   const token = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN
-  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID
+  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID || '1335356319655951'
+  const graphUrl = getGraphApiUrl()
 
   if (!token || !phoneId) {
-    console.warn('[WhatsApp API] Credentials missing. Simulated Buttons:\n', bodyText, buttons)
+    console.warn('[WHATSAPP API] Credentials missing. Simulated Buttons:\n', bodyText, buttons)
     return { success: true, simulated: true, text: bodyText, reply: bodyText, buttons }
   }
+
+  console.log(`[WHATSAPP API] sending interactive buttons to phoneId=${phoneId}, recipient=${to}`)
 
   try {
     const formattedButtons = buttons.slice(0, 3).map((b) => ({
@@ -61,7 +72,7 @@ export async function sendWhatsAppButtonsMessage(
       },
     }))
 
-    const res = await fetch(`${GRAPH_API_URL}/${phoneId}/messages`, {
+    const res = await fetch(`${graphUrl}/${phoneId}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -81,14 +92,16 @@ export async function sendWhatsAppButtonsMessage(
     })
 
     const data = await res.json()
+    console.log(`[WHATSAPP API] response status=${res.status}:`, JSON.stringify(data))
+
     if (!res.ok) {
-      console.error('[WhatsApp API] Buttons Send Error:', data)
+      console.error('[WHATSAPP API] Buttons Send Error:', data)
       const fallbackText = `${bodyText}\n\nOptions:\n` + buttons.map((b, i) => `${i + 1}. ${b.title}`).join('\n')
       return await sendWhatsAppTextMessage(to, fallbackText)
     }
     return { success: true, data, text: bodyText, reply: bodyText, buttons }
-  } catch (err) {
-    console.error('[WhatsApp API] Buttons Fetch Error:', err)
+  } catch (err: any) {
+    console.error('[WHATSAPP API] Buttons Fetch Error:', err?.message || err)
     return { success: false, error: err, text: bodyText, reply: bodyText, buttons }
   }
 }
@@ -100,15 +113,18 @@ export async function sendWhatsAppListMessage(
   sections: WhatsAppListSection[]
 ) {
   const token = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN
-  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID
+  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID || '1335356319655951'
+  const graphUrl = getGraphApiUrl()
 
   if (!token || !phoneId) {
-    console.warn('[WhatsApp API] Credentials missing. Simulated List:\n', bodyText, sections)
+    console.warn('[WHATSAPP API] Credentials missing. Simulated List:\n', bodyText, sections)
     return { success: true, simulated: true, text: bodyText, reply: bodyText, listSections: sections }
   }
 
+  console.log(`[WHATSAPP API] sending interactive list to phoneId=${phoneId}, recipient=${to}`)
+
   try {
-    const res = await fetch(`${GRAPH_API_URL}/${phoneId}/messages`, {
+    const res = await fetch(`${graphUrl}/${phoneId}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -138,8 +154,10 @@ export async function sendWhatsAppListMessage(
     })
 
     const data = await res.json()
+    console.log(`[WHATSAPP API] response status=${res.status}:`, JSON.stringify(data))
+
     if (!res.ok) {
-      console.error('[WhatsApp API] List Send Error:', data)
+      console.error('[WHATSAPP API] List Send Error:', data)
       let fallbackText = `${bodyText}\n\n`
       sections.forEach((s) => {
         fallbackText += `*${s.title}*\n`
@@ -150,8 +168,8 @@ export async function sendWhatsAppListMessage(
       return await sendWhatsAppTextMessage(to, fallbackText)
     }
     return { success: true, data, text: bodyText, reply: bodyText, listSections: sections }
-  } catch (err) {
-    console.error('[WhatsApp API] List Fetch Error:', err)
+  } catch (err: any) {
+    console.error('[WHATSAPP API] List Fetch Error:', err?.message || err)
     return { success: false, error: err, text: bodyText, reply: bodyText, listSections: sections }
   }
 }

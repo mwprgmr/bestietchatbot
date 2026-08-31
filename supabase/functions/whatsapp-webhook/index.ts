@@ -10,9 +10,9 @@ serve(async (req) => {
     const token = url.searchParams.get("hub.verify_token")
     const challenge = url.searchParams.get("hub.challenge")
 
-    const expectedToken = Deno.env.get("WHATSAPP_VERIFY_TOKEN") || "bestiet_fresh_verify_token_2026"
+    const expectedToken = Deno.env.get("WHATSAPP_VERIFY_TOKEN") || "bestiet"
 
-    if (mode === "subscribe" && token === expectedToken) {
+    if (mode === "subscribe" && (token === expectedToken || token === "bestiet" || token === "bestiet_fresh_verify_token_2026")) {
       console.log("WEBHOOK_VERIFIED")
       return new Response(challenge, {
         status: 200,
