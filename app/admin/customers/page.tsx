@@ -116,6 +116,7 @@ export default function CustomersPage() {
                   <th className="py-3.5 px-4">Customer Name</th>
                   <th className="py-3.5 px-4">WhatsApp Phone</th>
                   <th className="py-3.5 px-4">Total Orders</th>
+                  <th className="py-3.5 px-4">Location Status</th>
                   <th className="py-3.5 px-4">Total Spent</th>
                   <th className="py-3.5 px-4">Joined Date</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
@@ -125,6 +126,9 @@ export default function CustomersPage() {
                 {filteredCustomers.map((cust) => {
                   const ordersCount = cust.orders?.length || 0
                   const totalSpent = cust.orders?.reduce((acc: number, o: any) => acc + Number(o.total_amount), 0) || 0
+                  const hasLocationShared =
+                    cust.addresses?.some((a: any) => a.latitude && a.longitude) ||
+                    cust.orders?.some((o: any) => o.latitude && o.longitude)
 
                   return (
                     <tr key={cust.id} className="hover:bg-slate-50/50 transition-colors">
@@ -148,6 +152,18 @@ export default function CustomersPage() {
                       </td>
 
                       <td className="py-3.5 px-4 font-semibold text-slate-700">{ordersCount} orders</td>
+
+                      <td className="py-3.5 px-4">
+                        {hasLocationShared ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <MapPin className="w-3 h-3 text-emerald-600" /> Location Shared
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-slate-400 bg-slate-50 border border-slate-200">
+                            ○ Location Not Shared
+                          </span>
+                        )}
+                      </td>
 
                       <td className="py-3.5 px-4">
                         <span className="font-extrabold text-emerald-700 text-sm">

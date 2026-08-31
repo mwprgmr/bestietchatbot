@@ -4,7 +4,7 @@ import {
   sendWhatsAppButtonsMessage,
   sendWhatsAppListMessage,
 } from './client'
-import { IncomingMessagePayload, BotState } from './types'
+import { IncomingMessagePayload, BotState, WhatsAppListRow } from './types'
 import { normalizePhoneNumber, getBusinessDate } from './phone-utils'
 
 const processedMessageIds = new Set<string>()
@@ -132,6 +132,10 @@ export type NormalizedAction =
   | 'QUANTITY_SELECTION'
   | 'CUT_SELECTION'
   | 'ADDRESS_SELECTION'
+  | 'SHARE_LOCATION'
+  | 'CONFIRM_LOCATION_ONLY'
+  | 'ADD_ADDRESS_WITH_LOCATION'
+  | 'REMARKS_INPUT'
   | 'UNKNOWN'
 
 export function normalizeWhatsAppAction(
@@ -221,28 +225,64 @@ export function normalizeWhatsAppAction(
 
   // 11. BRANCH_SELECTION
   const isBranchId = cleanId === 'b1111111-1111-1111-1111-111111111111' || cleanId === 'b2222222-2222-2222-2222-222222222222' || cleanId.startsWith('btn_branch_')
-  const isAddressContext = currentState === 'SELECTING_ADDRESS' || currentState === 'ADDING_ADDRESS' || isLikelyAddressText(rawText)
+  const isAddressContext =
+    currentState === 'SELECTING_ADDRESS' ||
+    currentState === 'AWAITING_LOCATION' ||
+    currentState === 'CONFIRMING_LOCATION' ||
+    currentState === 'ADDING_ADDRESS' ||
+    currentState === 'ADDING_ADDRESS_WITH_LOCATION' ||
+    currentState === 'CONFIRMING_NEW_ADDRESS' ||
+    isLikelyAddressText(rawText)
   const isBranchTitle = (combined.includes('manvila') || combined.includes('kazhakkoottam') || combined.includes('peroorkada')) && !isAddressContext
   if (isBranchId || isBranchTitle) {
     return 'BRANCH_SELECTION'
   }
 
-  // 11. QUANTITY_SELECTION
+  // 12. QUANTITY_SELECTION
   if (cleanId.startsWith('qty_')) {
     return 'QUANTITY_SELECTION'
   }
 
-  // 12. CUT_SELECTION
+  // 13. CUT_SELECTION
   if (cleanId.startsWith('cut_')) {
     return 'CUT_SELECTION'
   }
 
-  // 13. ADDRESS_SELECTION
-  if (cleanId.startsWith('addr_') || (isAddressContext && !isBranchId)) {
+  // 14. LOCATION ACTIONS
+  if (cleanId === 'btn_share_location' || cleanTitle.includes('share location') || cleanTitle.includes('share live location')) {
+    return 'SHARE_LOCATION'
+  }
+  if (cleanId === 'btn_confirm_location_only' || cleanTitle.includes('use location')) {
+    return 'CONFIRM_LOCATION_ONLY'
+  }
+  if (cleanId === 'btn_add_address_with_location' || cleanTitle.includes('add house address')) {
+    return 'ADD_ADDRESS_WITH_LOCATION'
+  }
+
+  // 15. REMARKS ACTIONS
+  if (
+    cleanId === 'btn_skip_remarks' ||
+    cleanTitle === 'skip' ||
+    cleanTitle.includes('skip') ||
+    currentState === 'ADDING_REMARKS'
+  ) {
+    if (cleanId !== 'btn_cancel_order' && cleanTitle !== 'cancel') {
+      return 'REMARKS_INPUT'
+    }
+  }
+
+  // 16. ADDRESS_SELECTION
+  if (
+    cleanId.startsWith('addr_') ||
+    cleanId === 'btn_add_new_address' ||
+    cleanId === 'btn_confirm_new_address' ||
+    cleanId === 'btn_edit_new_address' ||
+    (isAddressContext && !isBranchId)
+  ) {
     return 'ADDRESS_SELECTION'
   }
 
-  // 14. PRODUCT_SELECTION (Only IDs starting with fish_ or matching UUIDs)
+  // 16. PRODUCT_SELECTION (Only IDs starting with fish_ or matching UUIDs)
   if (cleanId.startsWith('fish_')) {
     return 'PRODUCT_SELECTION'
   }
@@ -323,6 +363,8 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
     }
   }
 
+  parseSessionLocation(session)
+
   // Normalize session cart for backward compatibility
   session.cart = normalizeCart(session.cart)
 
@@ -331,14 +373,14 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
   const userText = buttonOrListId || rawText
 
   // Save User Incoming Message to chat_messages Table
-  if (session?.id && (rawText || buttonOrListId)) {
+  if (session?.id && (rawText || buttonOrListId || payload.location)) {
     try {
       await supabase.from('chat_messages').insert([{
         session_id: session.id,
         customer_id: customer.id,
         phone: phone,
         sender: 'user',
-        text: rawText || buttonOrListId,
+        text: payload.location ? `📍 Shared Location (${payload.location.latitude}, ${payload.location.longitude})` : (rawText || buttonOrListId),
       }])
     } catch (e: any) {
       console.warn('[chat_messages insert user warning]:', e?.message)
@@ -348,15 +390,63 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
   const hasActiveCart = Array.isArray(session.cart) && session.cart.length > 0 && !!session.selected_branch_id
   const currentState: BotState = session.state || 'MAIN_MENU'
 
+  let botResponse: any = null
+
+  // Intercept location payload directly
+  if (payload.type === 'location' || payload.location) {
+    const loc = payload.location
+    if (loc && typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+      botResponse = await handleLocationReceived(phone, loc.latitude, loc.longitude, session, customer, supabase)
+    } else {
+      botResponse = await handleInvalidLocation(phone, session, supabase)
+    }
+
+    if (session?.id && botResponse) {
+      const replyText = botResponse.text || botResponse.reply || (typeof botResponse === 'string' ? botResponse : '')
+      if (replyText) {
+        try {
+          await supabase.from('chat_messages').insert([{
+            session_id: session.id,
+            customer_id: customer.id,
+            phone: phone,
+            sender: 'bot',
+            text: replyText,
+            buttons: botResponse.buttons || null,
+            list_sections: botResponse.listSections || null,
+          }])
+        } catch (e: any) {}
+      }
+    }
+    return botResponse
+  }
+
   // Centralized Action Normalizer Execution
   const action = normalizeWhatsAppAction(payload, session, currentState)
-
-  let botResponse: any = null
 
   // -------------------------------------------------------------
   // CENTRALIZED INTERACTION ACTION DISPATCHER
   // -------------------------------------------------------------
   switch (action) {
+    case 'SHARE_LOCATION':
+      botResponse = await handleShareLocationPrompt(phone, session, supabase)
+      break
+
+    case 'CONFIRM_LOCATION_ONLY':
+      botResponse = await handleConfirmLocationOnly(phone, session, customer, supabase)
+      break
+
+    case 'ADD_ADDRESS_WITH_LOCATION':
+      await updateSessionState(supabase, session.id, 'ADDING_ADDRESS_WITH_LOCATION')
+      botResponse = await sendWhatsAppTextMessage(
+        phone,
+        `📍 Please reply with your house name/number and complete street address:`
+      )
+      break
+
+    case 'REMARKS_INPUT':
+      botResponse = await handleRemarksInput(phone, userText, session, supabase, payload.buttonId)
+      break
+
     case 'CONFIRM_ORDER':
       botResponse = await handleOrderReview(phone, userText, session, customer.id, payload.messageId, supabase)
       break
@@ -1012,6 +1102,216 @@ async function handleClearCartAction(phone: string, session: any, supabase: any)
   }
 }
 
+function parseSessionLocation(session: any) {
+  if (!session) return
+  if (session.latitude && session.longitude) {
+    if (!session.maps_url) {
+      session.maps_url = `https://www.google.com/maps?q=${session.latitude},${session.longitude}`
+    }
+    return
+  }
+
+  const rawAddr = session.delivery_address || ''
+  if (rawAddr.includes('[GPS:')) {
+    const match = rawAddr.match(/\[GPS:(-?\d+\.?\d*),(-?\d+\.?\d*)\]/)
+    if (match) {
+      session.latitude = parseFloat(match[1])
+      session.longitude = parseFloat(match[2])
+      session.maps_url = `https://www.google.com/maps?q=${session.latitude},${session.longitude}`
+    }
+  }
+}
+
+function cleanAddressForDisplay(rawText?: string): string {
+  if (!rawText) return ''
+  return rawText.replace(/\[GPS:[^\]]+\]/g, '').trim()
+}
+
+function isPinOnlyInput(text: string): boolean {
+  const clean = text.trim()
+  return /^\d{6}$/.test(clean) || /^(pin|pincode)?\s*:?\s*\d{6}$/i.test(clean)
+}
+
+async function handleShareLocationPrompt(phone: string, session: any, supabase: any) {
+  await updateSessionState(supabase, session.id, 'AWAITING_LOCATION')
+  return await sendWhatsAppButtonsMessage(
+    phone,
+    `📍 *SHARE YOUR LOCATION*\n\nPlease share your current location using WhatsApp's location sharing feature:\n\n1. Tap the 📎 (attachment) or + icon in WhatsApp chat.\n2. Select *Location*.\n3. Tap *Send Your Current Location*.\n\n_If location sharing is unavailable, click Enter Address below._`,
+    [
+      { id: 'btn_add_new_address', title: '✏️ Enter Address' },
+      { id: 'btn_main_menu', title: '🐟 Main Menu' },
+    ]
+  )
+}
+
+async function handleInvalidLocation(phone: string, session: any, supabase: any) {
+  await updateSessionState(supabase, session.id, 'AWAITING_LOCATION')
+  return await sendWhatsAppButtonsMessage(
+    phone,
+    `⚠️ We couldn't read that location.\n\nPlease share your location again or enter your delivery address manually.`,
+    [
+      { id: 'btn_share_location', title: '📍 Share Location' },
+      { id: 'btn_add_new_address', title: '✏️ Enter Address' },
+    ]
+  )
+}
+
+async function handleLocationReceived(
+  phone: string,
+  lat: number,
+  lng: number,
+  session: any,
+  customer: any,
+  supabase: any
+) {
+  if (
+    typeof lat !== 'number' ||
+    typeof lng !== 'number' ||
+    isNaN(lat) ||
+    isNaN(lng) ||
+    lat < -90 ||
+    lat > 90 ||
+    lng < -180 ||
+    lng > 180
+  ) {
+    return await handleInvalidLocation(phone, session, supabase)
+  }
+
+  const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`
+  const gpsTag = `[GPS:${lat},${lng}]`
+  const deliveryAddr = `GPS Location Shared ${gpsTag}`
+
+  await updateSessionState(supabase, session.id, 'CONFIRMING_LOCATION', {
+    delivery_address: deliveryAddr,
+  })
+  session.latitude = lat
+  session.longitude = lng
+  session.maps_url = mapsUrl
+
+  return await sendWhatsAppButtonsMessage(
+    phone,
+    `📍 *DELIVERY LOCATION RECEIVED*\n\nCoordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}\n\nWould you also like to provide your house address (house name/number), or use this location directly for delivery?`,
+    [
+      { id: 'btn_confirm_location_only', title: '✅ Use Location' },
+      { id: 'btn_add_address_with_location', title: '🏠 Add House Address' },
+      { id: 'btn_share_location', title: '✏️ Share Again' },
+    ]
+  )
+}
+
+async function handleConfirmLocationOnly(phone: string, session: any, customer: any, supabase: any) {
+  const lat = session.latitude
+  const lng = session.longitude
+  const mapsUrl = session.maps_url || (lat && lng ? `https://www.google.com/maps?q=${lat},${lng}` : null)
+
+  const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+  let realCustomerId = customer?.id || session?.customer_id
+  if (!isUuid(realCustomerId)) {
+    const { data: cData } = await supabase.from('customers').select('id').eq('phone', phone).single()
+    if (cData?.id && isUuid(cData.id)) realCustomerId = cData.id
+  }
+
+  let addressIdToSave: string | null = null
+
+  if (isUuid(realCustomerId)) {
+    try {
+      const { data: directData } = await supabase
+        .from('addresses')
+        .insert([
+          {
+            customer_id: realCustomerId,
+            label: 'Location',
+            address_line: 'GPS Location Shared',
+            latitude: lat,
+            longitude: lng,
+            is_default: false,
+          },
+        ])
+        .select('id')
+        .single()
+
+      if (directData?.id && isUuid(directData.id)) {
+        addressIdToSave = directData.id
+      }
+    } catch (e) {}
+  }
+
+  await updateSessionState(supabase, session.id, 'ADDING_REMARKS', {
+    selected_address_id: addressIdToSave,
+    address_mode: 'location',
+    delivery_address: 'GPS Location Shared',
+    latitude: lat,
+    longitude: lng,
+    maps_url: mapsUrl,
+    pending_remarks: null,
+  })
+  session.selected_address_id = addressIdToSave
+  session.delivery_address = 'GPS Location Shared'
+  session.pending_remarks = null
+
+  return await promptAdditionalRemarks(phone, session, supabase)
+}
+
+async function promptAdditionalRemarks(phone: string, session: any, supabase: any) {
+  await updateSessionState(supabase, session.id, 'ADDING_REMARKS')
+  return await sendWhatsAppButtonsMessage(
+    phone,
+    `📝 *ADDITIONAL REMARKS*\n\nDo you have any special instructions for your order?\n\nFor example:\n• Please call before delivery\n• Leave at the gate\n• Please deliver after 5 PM\n• Any other delivery instruction\n\nYou can type your remarks below.`,
+    [
+      { id: 'btn_skip_remarks', title: '⏭️ Skip' },
+      { id: 'btn_cancel_order', title: '❌ Cancel Order' },
+    ]
+  )
+}
+
+async function handleRemarksInput(
+  phone: string,
+  userText: string,
+  session: any,
+  supabase: any,
+  buttonId?: string
+) {
+  const cleanId = (buttonId || '').toLowerCase().trim()
+  const cleanText = (userText || '').trim()
+  const lowerText = cleanText.toLowerCase()
+
+  // 1. Check if user clicked Skip button or typed 'skip'
+  const isSkip =
+    cleanId === 'btn_skip_remarks' ||
+    lowerText === 'skip' ||
+    lowerText === '⏭️ skip' ||
+    lowerText.includes('skip')
+
+  // 2. Check if user clicked Cancel
+  const isCancel =
+    cleanId === 'btn_cancel_order' ||
+    lowerText.includes('cancel')
+
+  if (isCancel) {
+    await updateSessionState(supabase, session.id, 'MAIN_MENU', {
+      cart: [],
+      selected_branch_id: null,
+      selected_address_id: null,
+      pending_remarks: null,
+      idempotency_key: null,
+    })
+    return await sendWhatsAppTextMessage(phone, '❌ Order cancelled. Returned to main menu.')
+  }
+
+  let finalRemarks: string | null = null
+
+  if (!isSkip && cleanText && !cleanText.startsWith('btn_') && cleanText.length > 0) {
+    finalRemarks = cleanText
+  }
+
+  await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER', {
+    pending_remarks: finalRemarks,
+  })
+  session.pending_remarks = finalRemarks
+
+  return await renderOrderReview(phone, session, session.selected_address_id, supabase)
+}
+
 async function handleCheckoutAction(phone: string, session: any, customer: any, supabase: any) {
   const cart = normalizeCart(session?.cart)
   const branchId = session?.selected_branch_id
@@ -1059,65 +1359,100 @@ async function handleCheckoutAction(phone: string, session: any, customer: any, 
     }
   }
 
-  let selectedAddrId = isUuid(session?.selected_address_id) ? session.selected_address_id : null
-  let deliveryAddrText = session?.delivery_address || null
+  // HARD RULE: ALWAYS reset pre-existing selected_address_id, location, AND pending_remarks parameters when Proceed Checkout is clicked!
+  await updateSessionState(supabase, session.id, 'SELECTING_ADDRESS', {
+    selected_address_id: null,
+    delivery_address: null,
+    pending_new_address: null,
+    pending_remarks: null,
+    address_mode: null,
+    latitude: null,
+    longitude: null,
+    maps_url: null,
+  })
+  session.selected_address_id = null
+  session.delivery_address = null
+  session.pending_remarks = null
+  session.latitude = null
+  session.longitude = null
+  session.maps_url = null
 
-  if (!selectedAddrId && isUuid(realCustomerId)) {
-    const { data: customerAddrs } = await supabase
-      .from('addresses')
-      .select('*')
-      .eq('customer_id', realCustomerId)
-      .order('created_at', { ascending: false })
+  // Fetch all saved addresses for this customer
+  const { data: customerAddrs } = await supabase
+    .from('addresses')
+    .select('*')
+    .eq('customer_id', realCustomerId)
+    .order('created_at', { ascending: false })
 
-    if (customerAddrs && customerAddrs.length > 0) {
-      if (customerAddrs.length === 1) {
-        const addr = customerAddrs[0]
-        selectedAddrId = addr.id
-        const line = addr.address_line || addr.address_line1 || addr.address || ''
-        deliveryAddrText = `${line}${addr.pincode ? ', ' + addr.pincode : ''}`.trim()
-        await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER', {
-          selected_address_id: selectedAddrId,
-          delivery_address: deliveryAddrText,
-        })
-      } else {
-        const rows = customerAddrs.map((addr: any) => ({
-          id: addr.id,
-          title: addr.title || 'Address',
-          description: `${addr.address_line1 || addr.address_line || addr.address || ''}, ${addr.city || 'Kochi'} ${addr.pincode || ''}`,
-        }))
-        rows.push({ id: 'addr_new', title: '+ Add New Address', description: 'Enter a new delivery address' })
-
-        await updateSessionState(supabase, session.id, 'SELECTING_ADDRESS')
-
-        return await sendWhatsAppListMessage(
-          phone,
-          `🏡 *Select Delivery Address*\nChoose your saved address for fresh delivery:`,
-          'Select Address',
-          [
-            {
-              title: 'Saved Delivery Addresses',
-              rows,
-            },
-          ]
-        )
-      }
-    }
-  }
-
-  if (!selectedAddrId && !deliveryAddrText) {
-    await updateSessionState(supabase, session.id, 'SELECTING_ADDRESS')
-    return await sendWhatsAppTextMessage(
+  // CASE 1: Customer has NO saved address
+  if (!customerAddrs || customerAddrs.length === 0) {
+    return await sendWhatsAppButtonsMessage(
       phone,
-      `📍 *Delivery Address Required*\nPlease reply with your full delivery address and 6-digit pincode (e.g., "Flat 4B, Marine Drive, Kochi 682031"):`
+      `📍 *DELIVERY LOCATION*\n\nYou don't have a saved delivery address yet.\n\nChoose how you would like to provide your delivery location:`,
+      [
+        { id: 'btn_share_location', title: '📍 Share Location' },
+        { id: 'btn_add_new_address', title: '✏️ Enter Address' },
+      ]
     )
   }
 
-  // 3. Render Order Summary
-  await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER', {
-    selected_address_id: selectedAddrId,
-    delivery_address: deliveryAddrText,
-  })
-  return await renderOrderReview(phone, session, selectedAddrId, supabase, deliveryAddrText)
+  // CASE 2: Customer has EXACTLY 1 saved address
+  if (customerAddrs.length === 1) {
+    const addr = customerAddrs[0]
+    const label = addr.label || addr.title || 'Home'
+    const line = addr.address_line || addr.address_line1 || addr.address || ''
+    const pin = addr.pincode ? `, ${addr.pincode}` : ''
+    const fullText = `${line}${pin}`.trim()
+    const hasCoords = addr.latitude && addr.longitude
+
+    return await sendWhatsAppButtonsMessage(
+      phone,
+      `📍 *DELIVERY ADDRESS*\n\nWe found a saved delivery address:\n\n🏠 *${label}*\n${fullText}${hasCoords ? '\n📍 *Location coordinates available*' : ''}\n\nChoose how you would like to provide your delivery location for this order:`,
+      [
+        { id: `addr_confirm_${addr.id}`, title: '🏠 Use Saved Address' },
+        { id: 'btn_share_location', title: '📍 Share Location' },
+        { id: 'btn_add_new_address', title: '✏️ Enter New Address' },
+      ]
+    )
+  }
+
+  // CASE 3: Customer has MULTIPLE saved addresses
+  const rows: WhatsAppListRow[] = [
+    {
+      id: 'btn_share_location',
+      title: '📍 Share Live Location',
+      description: 'Share current WhatsApp GPS coordinates',
+    },
+    ...customerAddrs.map((addr: any, idx: number) => {
+      const label = addr.label || addr.title || `Address ${idx + 1}`
+      const line = addr.address_line || addr.address_line1 || addr.address || ''
+      const pin = addr.pincode ? `, ${addr.pincode}` : ''
+      const desc = `${line}${pin}`.trim()
+      const hasCoords = addr.latitude && addr.longitude
+      return {
+        id: `addr_sel_${addr.id}`,
+        title: `🏠 ${label.slice(0, 20)}`,
+        description: `${hasCoords ? '📍 Location saved | ' : ''}${desc}`.slice(0, 72),
+      }
+    }),
+    {
+      id: 'btn_add_new_address',
+      title: '✏️ Add New Address',
+      description: 'Enter a new delivery address for this order',
+    },
+  ]
+
+  return await sendWhatsAppListMessage(
+    phone,
+    `📍 *SELECT DELIVERY ADDRESS*\n\nChoose your saved address or share live location:`,
+    'Select Address',
+    [
+      {
+        title: 'Delivery Options',
+        rows,
+      },
+    ]
+  )
 }
 
 async function handleCartRouter(phone: string, userText: string, session: any, supabase: any) {
@@ -1150,191 +1485,216 @@ async function handleAddressSelection(phone: string, userText: string, session: 
   const inputClean = (userText || '').trim()
   const rawClean = (rawText || '').trim()
 
-  // 1. Check if user selected "+ Add New Address" list row or button
-  if (inputClean === 'addr_new' || inputClean.toLowerCase().includes('add new address') || rawClean.toLowerCase().includes('add new address')) {
-    await updateSessionState(supabase, session.id, 'ADDING_ADDRESS')
+  // 1. Check if user clicked "Add New Address" or "Edit Address"
+  if (
+    inputClean === 'btn_add_new_address' ||
+    inputClean === 'btn_edit_new_address' ||
+    inputClean === 'addr_new' ||
+    inputClean.toLowerCase().includes('add new address') ||
+    inputClean.toLowerCase().includes('edit address')
+  ) {
+    await updateSessionState(supabase, session.id, 'ADDING_ADDRESS', {
+      pending_new_address: null,
+      selected_address_id: null,
+    })
     return await sendWhatsAppTextMessage(
       phone,
-      `📍 Please reply with your full delivery address and 6-digit pincode (e.g., "Flat 4B, Marine Drive, Kochi 682031"):`
+      `📍 *ADD DELIVERY ADDRESS*\n\nPlease enter your complete delivery address.\n\n*Example:*\nHouse Name, House Number\nStreet / Area\nCity\nPIN Code`
     )
   }
 
-  // 2. Check if userText or rawText is a direct UUID of a saved address
-  const targetId = isUuid(inputClean) ? inputClean : isUuid(rawClean) ? rawClean : null
+  // 2. Check if user confirmed selecting a saved address (ID: addr_confirm_<UUID> or addr_use_single_<UUID>)
+  if (inputClean.startsWith('addr_confirm_') || inputClean.startsWith('addr_use_single_')) {
+    const targetAddrId = inputClean.replace(/^addr_confirm_|^addr_use_single_/, '').trim()
+    if (isUuid(targetAddrId)) {
+      const { data: matchedAddr } = await supabase
+        .from('addresses')
+        .select('*')
+        .eq('id', targetAddrId)
+        .single()
 
-  if (targetId) {
-    const { data: matchedAddr } = await supabase
-      .from('addresses')
-      .select('*')
-      .eq('id', targetId)
-      .single()
+      if (matchedAddr) {
+        const line = matchedAddr.address_line || matchedAddr.address_line1 || matchedAddr.address || ''
+        const fullText = `${line}${matchedAddr.pincode ? ', ' + matchedAddr.pincode : ''}`.trim()
 
-    if (matchedAddr) {
-      const line = matchedAddr.address_line || matchedAddr.address_line1 || matchedAddr.address || ''
-      const fullText = `${line}${matchedAddr.pincode ? ', ' + matchedAddr.pincode : ''}`.trim()
-      await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER', {
-        selected_address_id: matchedAddr.id,
-        delivery_address: fullText,
-      })
-      return await renderOrderReview(phone, session, matchedAddr.id, supabase, fullText)
-    }
-  }
-
-  // 3. Query saved addresses for this customer to check if text matches a saved address row
-  let realCustomerId = session.customer_id
-  if (!isUuid(realCustomerId)) {
-    const { data: cData } = await supabase.from('customers').select('id').eq('phone', phone).single()
-    if (cData?.id && isUuid(cData.id)) {
-      realCustomerId = cData.id
-    }
-  }
-
-  if (isUuid(realCustomerId)) {
-    const { data: customerAddrs } = await supabase
-      .from('addresses')
-      .select('*')
-      .eq('customer_id', realCustomerId)
-
-    if (customerAddrs && customerAddrs.length > 0) {
-      const addressSearchText = rawClean.replace(/^Address[\s\n]*/i, '').trim().toLowerCase()
-      const inputSearchText = inputClean.replace(/^Address[\s\n]*/i, '').trim().toLowerCase()
-
-      const matched = customerAddrs.find((a: any) => {
-        if (a.id === inputClean || a.id === rawClean) return true
-        const line = (a.address_line || a.address_line1 || a.address || '').toLowerCase()
-        const pin = (a.pincode || '').toLowerCase()
-        if (line && (addressSearchText.includes(line) || line.includes(addressSearchText))) return true
-        if (line && (inputSearchText.includes(line) || line.includes(inputSearchText))) return true
-        if (pin && addressSearchText.includes(pin) && addressSearchText.length > 8) return true
-        return false
-      })
-
-      if (matched) {
-        const line = matched.address_line || matched.address_line1 || matched.address || ''
-        const fullText = `${line}${matched.pincode ? ', ' + matched.pincode : ''}`.trim()
-        await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER', {
-          selected_address_id: matched.id,
+        await updateSessionState(supabase, session.id, 'ADDING_REMARKS', {
+          selected_address_id: matchedAddr.id,
+          address_mode: 'saved',
           delivery_address: fullText,
+          pending_remarks: null,
         })
-        return await renderOrderReview(phone, session, matched.id, supabase, fullText)
+        session.selected_address_id = matchedAddr.id
+        session.delivery_address = fullText
+        session.pending_remarks = null
+
+        return await promptAdditionalRemarks(phone, session, supabase)
       }
     }
   }
 
-  // 4. Fallback: treat user text as a newly entered address string
-  return await handleAddingAddress(phone, rawClean || inputClean, session, realCustomerId, supabase)
+  // 3. Check if user selected a saved address from the List (ID: addr_sel_<UUID>)
+  if (inputClean.startsWith('addr_sel_')) {
+    const targetAddrId = inputClean.replace(/^addr_sel_/, '').trim()
+    if (isUuid(targetAddrId)) {
+      const { data: matchedAddr } = await supabase
+        .from('addresses')
+        .select('*')
+        .eq('id', targetAddrId)
+        .single()
+
+      if (matchedAddr) {
+        const label = matchedAddr.label || matchedAddr.title || 'Saved Address'
+        const line = matchedAddr.address_line || matchedAddr.address_line1 || matchedAddr.address || ''
+        const fullText = `${line}${matchedAddr.pincode ? ', ' + matchedAddr.pincode : ''}`.trim()
+
+        return await sendWhatsAppButtonsMessage(
+          phone,
+          `📍 *CONFIRM DELIVERY ADDRESS*\n\nUse this address for your order?\n\n🏠 *${label}*\n${fullText}`,
+          [
+            { id: `addr_confirm_${matchedAddr.id}`, title: '✅ Use This Address' },
+            { id: 'btn_add_new_address', title: '✏️ Add New Address' },
+          ]
+        )
+      }
+    }
+  }
+
+  // 4. Check if user confirmed NEW address (ID: btn_confirm_new_address)
+  if (inputClean === 'btn_confirm_new_address') {
+    const pendingAddress = session.pending_new_address || session.delivery_address
+    if (!pendingAddress || pendingAddress.trim().length < 5) {
+      await updateSessionState(supabase, session.id, 'ADDING_ADDRESS')
+      return await sendWhatsAppTextMessage(phone, `📍 Please enter your complete delivery address:`)
+    }
+
+    const trimmedAddress = pendingAddress.trim()
+    const pincodeMatch = trimmedAddress.match(/\b\d{6}\b/)
+    const pincode = pincodeMatch ? pincodeMatch[0] : '682031'
+
+    let realCustomerId = session.customer_id
+    if (!isUuid(realCustomerId)) {
+      const { data: cData } = await supabase.from('customers').select('id').eq('phone', phone).single()
+      if (cData?.id && isUuid(cData.id)) realCustomerId = cData.id
+    }
+
+    let addressIdToSave: string | null = null
+
+    if (isUuid(realCustomerId)) {
+      // Check for exact existing match first to avoid duplicate insertion
+      const { data: existingAddrs } = await supabase
+        .from('addresses')
+        .select('*')
+        .eq('customer_id', realCustomerId)
+
+      const existingMatch = existingAddrs?.find((a: any) => {
+        const line = (a.address_line || a.address_line1 || a.address || '').toLowerCase()
+        return line && (trimmedAddress.toLowerCase().includes(line) || line.includes(trimmedAddress.toLowerCase()))
+      })
+
+      if (existingMatch?.id && isUuid(existingMatch.id)) {
+        addressIdToSave = existingMatch.id
+      } else {
+        try {
+          const { data: directData } = await supabase
+            .from('addresses')
+            .insert([
+              {
+                customer_id: realCustomerId,
+                label: 'Home',
+                address_line: cleanAddressForDisplay(trimmedAddress),
+                pincode: pincode,
+                latitude: session.latitude || null,
+                longitude: session.longitude || null,
+                is_default: false,
+              },
+            ])
+            .select('id')
+            .single()
+
+          if (directData?.id && isUuid(directData.id)) {
+            addressIdToSave = directData.id
+          }
+        } catch (e) {}
+
+        if (!addressIdToSave) {
+          try {
+            const { data: rpcAddr } = await supabase.rpc('upsert_address_sec', {
+              p_customer_id: realCustomerId,
+              p_address_line1: trimmedAddress,
+              p_title: 'Home',
+              p_city: 'Kochi',
+              p_pincode: pincode,
+            })
+            const parsed = typeof rpcAddr === 'string' ? JSON.parse(rpcAddr) : rpcAddr
+            if (parsed?.id && isUuid(parsed.id)) addressIdToSave = parsed.id
+            else if (isUuid(rpcAddr)) addressIdToSave = rpcAddr
+          } catch (e) {}
+        }
+      }
+    }
+
+    await updateSessionState(supabase, session.id, 'ADDING_REMARKS', {
+      selected_address_id: addressIdToSave,
+      address_mode: 'new',
+      delivery_address: trimmedAddress,
+      pending_new_address: null,
+      pending_remarks: null,
+    })
+    session.selected_address_id = addressIdToSave
+    session.delivery_address = trimmedAddress
+    session.pending_remarks = null
+
+    return await promptAdditionalRemarks(phone, session, supabase)
+  }
+
+  // 5. If user typed text while in ADDING_ADDRESS or entered a raw address string
+  const textToValidate = rawClean || inputClean
+  if (textToValidate && !textToValidate.startsWith('btn_')) {
+    return await handleAddingAddress(phone, textToValidate, session, session.customer_id, supabase)
+  }
+
+  return await sendWhatsAppTextMessage(phone, `📍 Please reply with your delivery address or choose an option above.`)
 }
 
 async function handleAddingAddress(phone: string, addressText: string, session: any, customerId: string, supabase: any) {
-  // Strip leading "Address\n" or "Address " prefix if present from WhatsApp quotes
   const trimmedAddress = addressText.replace(/^Address[\s\n]*/i, '').trim()
 
-  // Validate 6-digit pincode
-  const pincodeMatch = trimmedAddress.match(/\b\d{6}\b/)
-  if (!pincodeMatch) {
-    await updateSessionState(supabase, session.id, 'SELECTING_ADDRESS')
+  if (!trimmedAddress || trimmedAddress.length < 5 || isPinOnlyInput(trimmedAddress)) {
+    await updateSessionState(supabase, session.id, 'ADDING_ADDRESS')
     return await sendWhatsAppTextMessage(
       phone,
-      `⚠️ Please include your 6-digit pincode in the delivery address (e.g., "Flat 4B, Marine Drive, Kochi 682031").`
+      `⚠️ Address entry is invalid or incomplete.\n\nPlease reply with your complete delivery address including house name/number, street, area, city, and 6-digit pincode:\n\n*(PIN code alone is not sufficient for delivery)*`
     )
   }
 
-  const pincode = pincodeMatch[0]
-  let addressIdToSave: string | null = null
-  const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+  const lat = session?.latitude
+  const lng = session?.longitude
+  const gpsTag = lat && lng ? ` [GPS:${lat},${lng}]` : ''
+  const fullDeliveryAddr = `${trimmedAddress}${gpsTag}`
 
-  let realCustomerId = customerId
-  if (!isUuid(realCustomerId)) {
-    const { data: cData } = await supabase.from('customers').select('id').eq('phone', phone).single()
-    if (cData?.id && isUuid(cData.id)) {
-      realCustomerId = cData.id
-    }
-  }
-
-  if (isUuid(realCustomerId)) {
-    // Check if exact address already exists for this customer to prevent duplicate insertion
-    const { data: existingAddrs } = await supabase
-      .from('addresses')
-      .select('*')
-      .eq('customer_id', realCustomerId)
-
-    const existingMatch = existingAddrs?.find((a: any) => {
-      const line = (a.address_line || a.address_line1 || a.address || '').toLowerCase()
-      return line && (trimmedAddress.toLowerCase().includes(line) || line.includes(trimmedAddress.toLowerCase()))
-    })
-
-    if (existingMatch?.id && isUuid(existingMatch.id)) {
-      addressIdToSave = existingMatch.id
-    } else {
-      // 1. Direct insert using actual database schema columns (address_line, label, pincode)
-      try {
-        const { data: directData } = await supabase
-          .from('addresses')
-          .insert([
-            {
-              customer_id: realCustomerId,
-              label: 'Home',
-              address_line: trimmedAddress,
-              pincode: pincode,
-              is_default: true,
-            },
-          ])
-          .select('id')
-          .single()
-
-        if (directData?.id && isUuid(directData.id)) {
-          addressIdToSave = directData.id
-        }
-      } catch (e) {}
-
-      // 2. Try SECURITY DEFINER helper upsert_address_sec RPC fallback
-      if (!addressIdToSave) {
-        try {
-          const { data: rpcAddr } = await supabase.rpc('upsert_address_sec', {
-            p_customer_id: realCustomerId,
-            p_address_line1: trimmedAddress,
-            p_title: 'Home',
-            p_city: 'Kochi',
-            p_pincode: pincode,
-          })
-
-          const parsed = typeof rpcAddr === 'string' ? JSON.parse(rpcAddr) : rpcAddr
-          if (parsed?.id && isUuid(parsed.id)) {
-            addressIdToSave = parsed.id
-          } else if (isUuid(rpcAddr)) {
-            addressIdToSave = rpcAddr
-          }
-        } catch (e) {}
-      }
-
-      // 3. Fallback: select most recent address for this customer
-      if (!addressIdToSave) {
-        const { data: latestAddrs } = await supabase
-          .from('addresses')
-          .select('id')
-          .eq('customer_id', realCustomerId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-
-        if (latestAddrs && latestAddrs.length > 0 && isUuid(latestAddrs[0].id)) {
-          addressIdToSave = latestAddrs[0].id
-        }
-      }
-    }
-  }
-
-  // Save selected_address_id and transition to CONFIRMING_ORDER
-  await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER', {
-    selected_address_id: addressIdToSave,
-    delivery_address: trimmedAddress,
+  // Store as pending_new_address and ask for confirmation
+  await updateSessionState(supabase, session.id, 'CONFIRMING_NEW_ADDRESS', {
+    pending_new_address: trimmedAddress,
+    delivery_address: fullDeliveryAddr,
   })
 
-  // Display Order Confirmation Summary immediately
-  return await renderOrderReview(phone, session, addressIdToSave, supabase, trimmedAddress)
+  return await sendWhatsAppButtonsMessage(
+    phone,
+    `📍 *ADDRESS RECEIVED*\n\n${trimmedAddress}\n\nIs this correct?`,
+    [
+      { id: 'btn_confirm_new_address', title: '✅ Use This Address' },
+      { id: 'btn_edit_new_address', title: '✏️ Edit Address' },
+    ]
+  )
 }
 
 async function renderOrderReview(phone: string, session: any, addressId: string | null, supabase: any, fallbackAddressText?: string) {
   let addressText = fallbackAddressText || session?.delivery_address || 'Saved Delivery Address, Kochi'
+
+  let locStatus = 'Not shared'
+  if (session?.latitude && session?.longitude) {
+    locStatus = 'Shared successfully'
+  }
 
   if (addressId) {
     const { data: addr } = await supabase
@@ -1343,11 +1703,18 @@ async function renderOrderReview(phone: string, session: any, addressId: string 
       .eq('id', addressId)
       .single()
 
-    const line = addr?.address_line || addr?.address_line1 || addr?.address
-    if (line) {
-      addressText = `${line}, ${addr.pincode || ''}`.trim()
+    if (addr) {
+      const line = addr?.address_line || addr?.address_line1 || addr?.address
+      if (line) {
+        addressText = `${line}${addr.pincode ? `, ${addr.pincode}` : ''}`.trim()
+      }
+      if (addr.latitude && addr.longitude) {
+        locStatus = 'Shared successfully'
+      }
     }
   }
+
+  const cleanAddr = cleanAddressForDisplay(addressText)
 
   let branchName = 'Bestiet Fresh'
   const branchId = session?.selected_branch_id
@@ -1373,10 +1740,10 @@ async function renderOrderReview(phone: string, session: any, addressId: string 
   reviewText += `Items Subtotal: ₹${itemsTotal}\n`
   reviewText += `Delivery Fee: ₹${deliveryFee}\n`
   reviewText += `*Grand Total: ₹${grandTotal}*\n\n`
-  reviewText += `📍 *Delivery Address:*\n${addressText}\n`
-  if (session?.pending_remarks) {
-    reviewText += `📝 *Order Remarks:* ${session.pending_remarks}\n`
-  }
+  reviewText += `📍 *Delivery Address:*\n${cleanAddr}\n\n`
+  reviewText += `📍 *Location:*\n${locStatus}\n\n`
+  const remarksText = session?.pending_remarks ? session.pending_remarks : 'None'
+  reviewText += `📝 *Remarks:*\n${remarksText}\n\n`
   reviewText += `💳 *Payment Method:* Cash on Delivery`
 
   return await sendWhatsAppButtonsMessage(phone, reviewText, [
@@ -1407,6 +1774,9 @@ async function handleOrderReview(
       selected_address_id: null,
       pending_remarks: null,
       idempotency_key: null,
+      latitude: null,
+      longitude: null,
+      maps_url: null,
     })
     return await sendWhatsAppTextMessage(phone, '❌ Order cancelled. Returned to main menu.')
   }
@@ -1438,7 +1808,6 @@ async function handleOrderReview(
 
   // 2. ADDRESS ID FALLBACK / RESOLUTION
   if (!validAddressId && isUuid(realCustomerId)) {
-    // A. Check if an address already exists in DB for this customer
     const { data: customerAddrs } = await supabase
       .from('addresses')
       .select('id')
@@ -1450,7 +1819,6 @@ async function handleOrderReview(
       validAddressId = customerAddrs[0].id
     }
 
-    // B. If still null, create address from delivery_address text
     const addrStringToUse = activeSession.delivery_address
     if (!validAddressId && addrStringToUse) {
       const trimmedAddr = addrStringToUse.trim()
@@ -1465,6 +1833,8 @@ async function handleOrderReview(
             label: 'Home',
             address_line: trimmedAddr,
             pincode: pincode,
+            latitude: activeSession.latitude || null,
+            longitude: activeSession.longitude || null,
             is_default: true,
           },
         ])
@@ -1517,6 +1887,8 @@ async function handleOrderReview(
     selected_branch_id: validBranchId,
     selected_product_ids: cart.map((c: any) => c.product_id),
     requested_quantities: cart.map((c: any) => c.quantity_kg),
+    latitude: activeSession.latitude,
+    longitude: activeSession.longitude,
   }, null, 2))
 
   // 6. CALL CANONICAL PRODUCTION RPC (using Service Role client)
@@ -1704,6 +2076,7 @@ async function updateSessionState(
     'selected_cutting_type',
     'selected_address_id',
     'delivery_address',
+    'pending_remarks',
     'cart',
   ]
 

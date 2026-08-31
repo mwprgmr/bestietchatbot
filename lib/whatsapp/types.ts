@@ -7,7 +7,11 @@ export type BotState =
   | 'SELECTING_CUT'
   | 'CART'
   | 'SELECTING_ADDRESS'
+  | 'AWAITING_LOCATION'
+  | 'CONFIRMING_LOCATION'
   | 'ADDING_ADDRESS'
+  | 'ADDING_ADDRESS_WITH_LOCATION'
+  | 'CONFIRMING_NEW_ADDRESS'
   | 'ADDING_REMARKS'
   | 'ORDER_REVIEW'
   | 'CONFIRMING_ORDER'
@@ -36,10 +40,16 @@ export interface WhatsAppListSection {
 export interface IncomingMessagePayload {
   from: string; // Phone number e.g. "15551964153"
   messageId: string;
-  type: 'text' | 'button_reply' | 'list_reply' | string;
+  type: 'text' | 'button_reply' | 'list_reply' | 'location' | string;
   text?: string;
   buttonId?: string;
   listId?: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+    name?: string;
+    address?: string;
+  };
 }
 
 export interface CartItem {
@@ -65,4 +75,10 @@ export interface ChatSessionData {
   selected_address_id?: string | null;
   selected_branch_id?: string | null;
   pending_remarks?: string | null;
+  pending_new_address?: string | null;
+  address_mode?: 'saved' | 'new' | 'location' | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  maps_url?: string | null;
+  location_confirmed?: boolean;
 }

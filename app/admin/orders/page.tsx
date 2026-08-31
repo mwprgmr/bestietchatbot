@@ -22,6 +22,7 @@ import {
   MessageSquare,
   Eye,
   RefreshCw,
+  ExternalLink,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useBranchContext } from '../BranchContext'
@@ -101,7 +102,6 @@ export default function OrdersPage() {
       }
 
       if (!data || !Array.isArray(data)) {
-        console.log(`[Dev Log]: Query returned non-array or 0 orders for branch scope: ${assignedBranchId}`)
         setOrders([])
         return
       }
@@ -114,6 +114,31 @@ export default function OrdersPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const getLocationInfo = (ord: any) => {
+    if (!ord) return null
+    let lat = ord.latitude ?? ord.address?.latitude
+    let lng = ord.longitude ?? ord.address?.longitude
+    let mapsUrl = ord.maps_url ?? ord.address?.maps_url
+
+    if ((!lat || !lng) && ord.customer_remarks) {
+      const match = ord.customer_remarks.match(/https:\/\/www\.google\.com\/maps\?q=(-?\d+\.?\d*),(-?\d+\.?\d*)/)
+      if (match) {
+        lat = parseFloat(match[1])
+        lng = parseFloat(match[2])
+        mapsUrl = match[0]
+      }
+    }
+
+    if (lat && lng && !mapsUrl) {
+      mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`
+    }
+
+    if (lat && lng && mapsUrl) {
+      return { lat: Number(lat), lng: Number(lng), mapsUrl }
+    }
+    return null
   }
 
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
@@ -249,7 +274,7 @@ export default function OrdersPage() {
             Order Management
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Monitor incoming WhatsApp customer orders for your assigned branch, update statuses, and send notifications.
+            Monitor incoming WhatsApp customer orders for your assigned branch, update statuses, and view customer GPS delivery locations.
           </p>
         </div>
         <button
@@ -338,6 +363,7 @@ export default function OrdersPage() {
                   <th className="py-3.5 px-4">Branch</th>
                   <th className="py-3.5 px-4">Customer</th>
                   <th className="py-3.5 px-4">Items & Remarks</th>
+                  <th className="py-3.5 px-4">Location</th>
                   <th className="py-3.5 px-4">Total</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4">Date & Time</th>
@@ -353,6 +379,7 @@ export default function OrdersPage() {
                       : 'Manvila Kazhakkoottam Branch')
 
                   const totalAmt = ord.total_amount ?? ord.total ?? 0
+                  const locInfo = getLocationInfo(ord)
 
                   return (
                     <tr key={ord.id} className="hover:bg-slate-50/50 transition-colors">
@@ -391,6 +418,23 @@ export default function OrdersPage() {
                       </td>
 
                       <td className="py-3.5 px-4">
+                        {locInfo ? (
+                          <a
+                            href={locInfo.mapsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-2xs whitespace-nowrap"
+                          >
+                            <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>🗺️ View on Map</span>
+                            <ExternalLink className="w-2.5 h-2.5 text-emerald-500" />
+                          </a>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 italic">No GPS location</span>
+                        )}
+                      </td>
+
+                      <td className="py-3.5 px-4">
                         <span className="font-extrabold text-slate-900 text-sm">₹{totalAmt}</span>
                         <span className="text-[10px] text-slate-400 block">{ord.payment_status || 'COD'}</span>
                       </td>
@@ -420,215 +464,247 @@ export default function OrdersPage() {
       )}
 
       {/* Order Detail Drawer */}
-      {isDrawerOpen && selectedOrder && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex justify-end">
-          <div className="bg-white w-full max-w-lg h-full shadow-2xl flex flex-col justify-between border-l border-slate-200 animate-in slide-in-from-right duration-200">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <span className="font-mono text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg text-xs">
-                  {selectedOrder.order_number || 'Order Details'}
-                </span>
-                <p className="text-xs text-slate-500 mt-1">
-                  Placed on {selectedOrder.created_at ? format(new Date(selectedOrder.created_at), 'dd MMM yyyy, hh:mm a') : 'Recent'}
-                </p>
-              </div>
-              <button
-                onClick={() => setIsDrawerOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 font-bold text-sm"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-5 flex-1 overflow-y-auto space-y-6">
-              {/* Status Header & Badges */}
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500">Current Status:</span>
-                  {getStatusBadge(selectedOrder.status)}
+      {isDrawerOpen && selectedOrder && (() => {
+        const drawerLoc = getLocationInfo(selectedOrder)
+        return (
+          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex justify-end">
+            <div className="bg-white w-full max-w-lg h-full shadow-2xl flex flex-col justify-between border-l border-slate-200 animate-in slide-in-from-right duration-200">
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <span className="font-mono text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg text-xs">
+                    {selectedOrder.order_number || 'Order Details'}
+                  </span>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Placed on {selectedOrder.created_at ? format(new Date(selectedOrder.created_at), 'dd MMM yyyy, hh:mm a') : 'Recent'}
+                  </p>
                 </div>
-
-                {/* Status Quick Actions */}
-                <div className="pt-2 border-t border-slate-200/60">
-                  <p className="text-[11px] font-bold text-slate-600 uppercase mb-2">Update Status Workflow:</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {selectedOrder.status?.toUpperCase() === 'PENDING' && (
-                      <button
-                        disabled={updating}
-                        onClick={() => handleUpdateStatus(selectedOrder.id, 'ACCEPTED')}
-                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Accept Order
-                      </button>
-                    )}
-
-                    {['PENDING', 'ACCEPTED'].includes((selectedOrder.status || '').toUpperCase()) && (
-                      <button
-                        disabled={updating}
-                        onClick={() => handleUpdateStatus(selectedOrder.id, 'PREPARING')}
-                        className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
-                      >
-                        <Fish className="w-3.5 h-3.5" /> Start Preparing
-                      </button>
-                    )}
-
-                    {['PREPARING'].includes((selectedOrder.status || '').toUpperCase()) && (
-                      <button
-                        disabled={updating}
-                        onClick={() => handleUpdateStatus(selectedOrder.id, 'PACKED')}
-                        className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
-                      >
-                        <Package className="w-3.5 h-3.5" /> Mark Packed
-                      </button>
-                    )}
-
-                    {['PACKED'].includes((selectedOrder.status || '').toUpperCase()) && (
-                      <button
-                        disabled={updating}
-                        onClick={() => handleUpdateStatus(selectedOrder.id, 'OUT_FOR_DELIVERY')}
-                        className="px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
-                      >
-                        <Truck className="w-3.5 h-3.5" /> Out for Delivery
-                      </button>
-                    )}
-
-                    {['OUT_FOR_DELIVERY'].includes((selectedOrder.status || '').toUpperCase()) && (
-                      <button
-                        disabled={updating}
-                        onClick={() => handleUpdateStatus(selectedOrder.id, 'DELIVERED')}
-                        className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
-                      >
-                        <CheckCheck className="w-3.5 h-3.5" /> Mark Delivered
-                      </button>
-                    )}
-
-                    {selectedOrder.status?.toUpperCase() !== 'CANCELLED' && selectedOrder.status?.toUpperCase() !== 'DELIVERED' && (
-                      <button
-                        disabled={updating}
-                        onClick={() => {
-                          const r = prompt('Reason for cancelling order:')
-                          if (r !== null) {
-                            handleUpdateStatus(selectedOrder.id, 'CANCELLED')
-                          }
-                        }}
-                        className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-red-200"
-                      >
-                        <XCircle className="w-3.5 h-3.5" /> Cancel Order
-                      </button>
-                    )}
-                  </div>
-                </div>
+                <button
+                  onClick={() => setIsDrawerOpen(false)}
+                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 font-bold text-sm"
+                >
+                  ✕
+                </button>
               </div>
 
-              {/* Customer & Address & Branch Details */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Order & Branch Information</h4>
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
-                  <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-                    <span className="text-slate-500 font-medium">Fulfilling Branch:</span>
-                    <span className="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
-                      <Store className="w-3.5 h-3.5 text-blue-600" />
-                      {selectedOrder.branch?.name || (selectedOrder.branch_id === 'b2222222-2222-2222-2222-222222222222' ? 'Peroorkada Branch' : 'Manvila Kazhakkoottam Branch')}
-                    </span>
+              <div className="p-5 flex-1 overflow-y-auto space-y-6">
+                {/* Status Header & Badges */}
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-500">Current Status:</span>
+                    {getStatusBadge(selectedOrder.status)}
                   </div>
 
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="font-bold text-slate-800">{selectedOrder.customer?.name || 'WhatsApp Customer'}</span>
-                    <span className="text-slate-500 font-mono flex items-center gap-1">
-                      <Phone className="w-3 h-3 text-slate-400" />
-                      {selectedOrder.customer?.phone || 'N/A'}
-                    </span>
-                  </div>
+                  {/* Status Quick Actions */}
+                  <div className="pt-2 border-t border-slate-200/60">
+                    <p className="text-[11px] font-bold text-slate-600 uppercase mb-2">Update Status Workflow:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {selectedOrder.status?.toUpperCase() === 'PENDING' && (
+                        <button
+                          disabled={updating}
+                          onClick={() => handleUpdateStatus(selectedOrder.id, 'ACCEPTED')}
+                          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Accept Order
+                        </button>
+                      )}
 
-                  {/* Delivery Address with safe fallbacks */}
-                  <div className="pt-2 border-t border-slate-200/60 text-slate-600 flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-slate-800">{selectedOrder.address?.label || selectedOrder.address?.title || 'Delivery Address'}</p>
-                      <p>
-                        {selectedOrder.delivery_address ||
-                          selectedOrder.address?.address_line ||
-                          selectedOrder.address?.address_line1 ||
-                          'Address not specified'}
-                      </p>
-                      {selectedOrder.address?.pincode && <p className="text-slate-500 text-[11px]">Pincode: {selectedOrder.address.pincode}</p>}
+                      {['PENDING', 'ACCEPTED'].includes((selectedOrder.status || '').toUpperCase()) && (
+                        <button
+                          disabled={updating}
+                          onClick={() => handleUpdateStatus(selectedOrder.id, 'PREPARING')}
+                          className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <Fish className="w-3.5 h-3.5" /> Start Preparing
+                        </button>
+                      )}
+
+                      {['PREPARING'].includes((selectedOrder.status || '').toUpperCase()) && (
+                        <button
+                          disabled={updating}
+                          onClick={() => handleUpdateStatus(selectedOrder.id, 'PACKED')}
+                          className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <Package className="w-3.5 h-3.5" /> Mark Packed
+                        </button>
+                      )}
+
+                      {['PACKED'].includes((selectedOrder.status || '').toUpperCase()) && (
+                        <button
+                          disabled={updating}
+                          onClick={() => handleUpdateStatus(selectedOrder.id, 'OUT_FOR_DELIVERY')}
+                          className="px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <Truck className="w-3.5 h-3.5" /> Out for Delivery
+                        </button>
+                      )}
+
+                      {['OUT_FOR_DELIVERY'].includes((selectedOrder.status || '').toUpperCase()) && (
+                        <button
+                          disabled={updating}
+                          onClick={() => handleUpdateStatus(selectedOrder.id, 'DELIVERED')}
+                          className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <CheckCheck className="w-3.5 h-3.5" /> Mark Delivered
+                        </button>
+                      )}
+
+                      {selectedOrder.status?.toUpperCase() !== 'CANCELLED' && selectedOrder.status?.toUpperCase() !== 'DELIVERED' && (
+                        <button
+                          disabled={updating}
+                          onClick={() => {
+                            const r = prompt('Reason for cancelling order:')
+                            if (r !== null) {
+                              handleUpdateStatus(selectedOrder.id, 'CANCELLED')
+                            }
+                          }}
+                          className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-red-200"
+                        >
+                          <XCircle className="w-3.5 h-3.5" /> Cancel Order
+                        </button>
+                      )}
                     </div>
                   </div>
+                </div>
 
-                  {selectedOrder.customer_remarks && (
-                    <div className="pt-2 border-t border-slate-200/60 text-slate-700 flex items-start gap-2 bg-amber-50/80 p-2.5 rounded-xl border border-amber-200/80 mt-2">
-                      <MessageSquare className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                {/* Delivery Information Section */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Delivery Information</h4>
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3 text-xs">
+                    <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+                      <span className="text-slate-500 font-medium">Fulfilling Branch:</span>
+                      <span className="inline-flex items-center gap-1 font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
+                        <Store className="w-3.5 h-3.5 text-blue-600" />
+                        {selectedOrder.branch?.name || (selectedOrder.branch_id === 'b2222222-2222-2222-2222-222222222222' ? 'Peroorkada Branch' : 'Manvila Kazhakkoottam Branch')}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="font-bold text-slate-800">{selectedOrder.customer?.name || 'WhatsApp Customer'}</span>
+                      <span className="text-slate-500 font-mono flex items-center gap-1">
+                        <Phone className="w-3 h-3 text-slate-400" />
+                        {selectedOrder.customer?.phone || 'N/A'}
+                      </span>
+                    </div>
+
+                    {/* Text Address */}
+                    <div className="pt-2 border-t border-slate-200/60 text-slate-600 flex items-start gap-2">
+                      <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                       <div>
-                        <p className="font-bold text-amber-900">Customer Remarks / Special Instructions:</p>
-                        <p className="font-medium text-amber-800">{selectedOrder.customer_remarks}</p>
+                        <p className="font-semibold text-slate-800">{selectedOrder.address?.label || selectedOrder.address?.title || 'Delivery Address'}</p>
+                        <p>
+                          {selectedOrder.delivery_address ||
+                            selectedOrder.address?.address_line ||
+                            selectedOrder.address?.address_line1 ||
+                            'Address not specified'}
+                        </p>
+                        {selectedOrder.address?.pincode && <p className="text-slate-500 text-[11px]">Pincode: {selectedOrder.address.pincode}</p>}
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
 
-              {/* Order Items Breakdown */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Order Items</h4>
-                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                  <div className="divide-y divide-slate-100">
-                    {Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? (
-                      selectedOrder.items.map((item) => (
-                        <div key={item.id || item.product_id} className="p-3.5 flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
-                              <Fish className="w-4 h-4 text-emerald-600" />
+                    {/* Prominent Customer Location Section for Delivery Staff */}
+                    <div className="pt-3 border-t border-slate-200/60 space-y-2">
+                      <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">📌 Customer Location</p>
+                      {drawerLoc ? (
+                        <div className="bg-emerald-50/90 p-3.5 rounded-xl border border-emerald-200 space-y-2.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-600 font-medium">Latitude:</span>
+                            <span className="font-mono text-slate-900 font-bold">{drawerLoc.lat.toFixed(4)}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-600 font-medium">Longitude:</span>
+                            <span className="font-mono text-slate-900 font-bold">{drawerLoc.lng.toFixed(4)}</span>
+                          </div>
+                          <a
+                            href={drawerLoc.mapsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors mt-2"
+                          >
+                            <MapPin className="w-4 h-4" />
+                            <span>🗺️ View on Google Maps</span>
+                            <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+                          </a>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400 italic bg-slate-100 p-2.5 rounded-xl">📍 Location: Not shared by customer</p>
+                      )}
+                    </div>
+
+                    {selectedOrder.customer_remarks && (
+                      <div className="pt-2 border-t border-slate-200/60 text-slate-700 flex items-start gap-2 bg-amber-50/80 p-2.5 rounded-xl border border-amber-200/80 mt-2">
+                        <MessageSquare className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-bold text-amber-900">Customer Remarks / Special Instructions:</p>
+                          <p className="font-medium text-amber-800">{selectedOrder.customer_remarks}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Order Items Breakdown */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Order Items</h4>
+                  <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                    <div className="divide-y divide-slate-100">
+                      {Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? (
+                        selectedOrder.items.map((item) => (
+                          <div key={item.id || item.product_id} className="p-3.5 flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+                                <Fish className="w-4 h-4 text-emerald-600" />
+                              </div>
+                              <div>
+                                <p className="font-bold text-slate-900">{item.product?.name || 'Fresh Fish'}</p>
+                                <p className="text-[11px] text-slate-500 capitalize">
+                                  Cut: <span className="font-semibold text-slate-700">{(item.cutting_type || 'whole').replace('_', ' ')}</span>
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-bold text-slate-900">{item.product?.name || 'Fresh Fish'}</p>
-                              <p className="text-[11px] text-slate-500 capitalize">
-                                Cut: <span className="font-semibold text-slate-700">{(item.cutting_type || 'whole').replace('_', ' ')}</span>
+
+                            <div className="text-right">
+                              <p className="font-extrabold text-slate-900">₹{item.subtotal || 0}</p>
+                              <p className="text-[10px] text-slate-400">
+                                {item.quantity_kg} kg × ₹{item.unit_price}/kg
                               </p>
                             </div>
                           </div>
-
-                          <div className="text-right">
-                            <p className="font-extrabold text-slate-900">₹{item.subtotal || 0}</p>
-                            <p className="text-[10px] text-slate-400">
-                              {item.quantity_kg} kg × ₹{item.unit_price}/kg
-                            </p>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-4 text-center text-xs text-slate-500">No items specified for this order</div>
-                    )}
-                  </div>
-
-                  <div className="p-3.5 bg-slate-50 border-t border-slate-200 space-y-1.5 text-xs">
-                    <div className="flex justify-between text-slate-600">
-                      <span>Subtotal:</span>
-                      <span>₹{(Number(selectedOrder.total_amount || selectedOrder.total || 0) - Number(selectedOrder.delivery_fee || selectedOrder.delivery_charge || 30)).toFixed(2)}</span>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center text-xs text-slate-500">No items specified for this order</div>
+                      )}
                     </div>
-                    <div className="flex justify-between text-slate-600">
-                      <span>Delivery Fee:</span>
-                      <span>₹{selectedOrder.delivery_fee || selectedOrder.delivery_charge || 30}</span>
-                    </div>
-                    <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
-                      <span>Total Paid:</span>
-                      <span className="text-emerald-700">₹{selectedOrder.total_amount || selectedOrder.total || 0}</span>
+
+                    <div className="p-3.5 bg-slate-50 border-t border-slate-200 space-y-1.5 text-xs">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Subtotal:</span>
+                        <span>₹{(Number(selectedOrder.total_amount || selectedOrder.total || 0) - Number(selectedOrder.delivery_fee || selectedOrder.delivery_charge || 30)).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Delivery Fee:</span>
+                        <span>₹{selectedOrder.delivery_fee || selectedOrder.delivery_charge || 30}</span>
+                      </div>
+                      <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
+                        <span>Total Paid:</span>
+                        <span className="text-emerald-700">₹{selectedOrder.total_amount || selectedOrder.total || 0}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50 text-right">
-              <button
-                onClick={() => setIsDrawerOpen(false)}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-semibold transition-colors"
-              >
-                Close Drawer
-              </button>
+              <div className="p-4 border-t border-slate-100 bg-slate-50 text-right">
+                <button
+                  onClick={() => setIsDrawerOpen(false)}
+                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-semibold transition-colors"
+                >
+                  Close Drawer
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

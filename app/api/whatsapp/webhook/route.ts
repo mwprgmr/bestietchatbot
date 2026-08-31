@@ -140,6 +140,8 @@ export async function POST(req: Request) {
       let buttonId = undefined
       let listId = undefined
 
+      let locationPayload: { latitude: number; longitude: number; name?: string; address?: string } | undefined = undefined
+
       if (type === 'interactive' || message.interactive) {
         const interactive = message.interactive || message
         if (interactive?.type === 'button_reply' || interactive?.button_reply) {
@@ -156,6 +158,14 @@ export async function POST(req: Request) {
         userText = message.text?.body || ''
       } else if (type === 'location' || message.location) {
         const loc = message.location
+        if (loc && typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+          locationPayload = {
+            latitude: Number(loc.latitude),
+            longitude: Number(loc.longitude),
+            name: loc.name || undefined,
+            address: loc.address || undefined,
+          }
+        }
         userText = loc?.address || loc?.name || `${loc?.latitude}, ${loc?.longitude}`
       } else {
         userText = message.text?.body || message.body || ''
@@ -164,7 +174,7 @@ export async function POST(req: Request) {
       userText = userText.trim()
       const text = userText
 
-      console.log(`[WHATSAPP WEBHOOK] message received: id=${messageId}, from=${from}, type=${type}, text="${userText}"`)
+      console.log(`[WHATSAPP WEBHOOK] message received: id=${messageId}, from=${from}, type=${type}, text="${userText}", location=${JSON.stringify(locationPayload)}`)
       console.log(`[WHATSAPP BOT] processing message for ${from}...`)
 
       // Process message through state machine (dispatches reply to Meta Graph API)
@@ -175,6 +185,7 @@ export async function POST(req: Request) {
         buttonId,
         listId,
         messageId,
+        location: locationPayload,
       })
 
       console.log(`[WHATSAPP BOT] reply generated: ${botResponse ? 'success' : 'empty'}`)
