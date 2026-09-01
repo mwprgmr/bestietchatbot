@@ -82,9 +82,17 @@ export default function ReportsPage() {
 
       const dailyMap: Record<string, { date: string; sales: number; orders: number }> = {}
 
-      const validOrders = (allOrders || []).filter(
-        (ord: any) => (ord.status || '').toLowerCase() !== 'cancelled'
-      )
+      const validOrders = (allOrders || []).filter((ord: any) => {
+        if ((ord.status || '').toLowerCase() === 'cancelled') return false
+        if (ord.source === 'test') return false
+        const remarks = ord.customer_remarks || ''
+        const custName = ord.customer?.name || ''
+        const phone = ord.customer?.phone || ''
+        if (remarks.includes('[TEST_ORDER]') || remarks.includes('Tester') || custName.includes('Tester') || phone.startsWith('91987654')) {
+          return false
+        }
+        return true
+      })
 
       validOrders.forEach((ord: any) => {
         const amt = Number(ord.total_amount || ord.total || 0)

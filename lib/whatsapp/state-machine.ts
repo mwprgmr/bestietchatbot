@@ -513,6 +513,22 @@ export async function processWhatsAppMessage(payload: IncomingMessagePayload) {
 
     case 'BRANCH_SELECTION':
       botResponse = await handleBranchSelection(phone, userText, session, supabase)
+      
+      // 8. UPDATE ORDER WITH GPS LOCATION COORDINATES AND MAPS URL IF SHARED
+      if (botResponse?.order_id && (session.latitude || session.longitude)) {
+        try {
+          const lat = session.latitude
+          const lng = session.longitude
+          const mapsUrl = session.maps_url || `https://www.google.com/maps?q=${lat},${lng}`
+          await supabase.from('orders').update({
+            latitude: lat,
+            longitude: lng,
+            maps_url: mapsUrl
+          }).eq('id', botResponse.order_id)
+        } catch (e) {
+          console.error('[Order location update error]:', e)
+        }
+      }
       break
 
     case 'MAIN_MENU': {
@@ -686,7 +702,7 @@ async function handleMainMenuRouter(phone: string, userText: string, session: an
 }
 
 async function getOrRollForwardBranchInventory(supabase: any, branchId: string, targetDate?: string) {
-  const today = targetDate || getBusinessDate()
+  const today = targetDate || getTodayDateIST()
 
   // Query ALL inventory records for this branch <= today ordered by inventory_date DESC, created_at DESC
   const { data: allItems } = await supabase
@@ -725,28 +741,40 @@ async function getOrRollForwardBranchInventory(supabase: any, branchId: string, 
   for (const item of activeItems) {
     if (item.inventory_date !== today) {
       try {
-        const avail = Number(item.available_stock ?? item.opening_stock ?? 0)
-        const { data: created } = await supabase
+        const { data: existingToday } = await supabase
           .from('inventory')
-          .insert([
-            {
-              product_id: item.product_id,
-              branch_id: branchId,
-              inventory_date: today,
-              price_per_kg: item.price_per_kg,
-              opening_stock: avail,
-              available_stock: avail,
-              available_stock_kg: avail,
-              low_stock_threshold: item.low_stock_threshold || 2,
-            },
-          ])
           .select('*, product:products(*)')
-          .single()
+          .eq('product_id', item.product_id)
+          .eq('branch_id', branchId)
+          .eq('inventory_date', today)
 
-        if (created) {
-          productMap.set(item.product_id, created)
+        if (existingToday && existingToday.length > 0) {
+          productMap.set(item.product_id, existingToday[0])
+        } else {
+          const avail = Number(item.available_stock ?? item.opening_stock ?? 0)
+          const { data: created } = await supabase
+            .from('inventory')
+            .insert([
+              {
+                product_id: item.product_id,
+                branch_id: branchId,
+                inventory_date: today,
+                price_per_kg: item.price_per_kg,
+                opening_stock: avail,
+                available_stock: avail,
+                available_stock_kg: avail,
+                low_stock_threshold: item.low_stock_threshold || 2,
+              },
+            ])
+            .select('*, product:products(*)')
+
+          if (created && created.length > 0) {
+            productMap.set(item.product_id, created[0])
+          }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error('[getOrRollForwardBranchInventory carry forward error]:', e)
+      }
     }
   }
 
@@ -807,10 +835,51 @@ async function handleBranchSelection(phone: string, userInput: string, session: 
   })
 
   const selectedBranchId = matchedBranch?.id || cleanInput
+  const previousBranchId = session?.selected_branch_id
+  let cartWasUpdated = false
+
+  // Revalidate cart items if branch changed
+  let updatedCart = normalizeCart(session?.cart)
+  if (previousBranchId && previousBranchId !== selectedBranchId && updatedCart.length > 0) {
+    const today = getTodayDateIST()
+    const newBranchInventory = await getOrRollForwardBranchInventory(supabase, selectedBranchId, today)
+    const validCartItems: any[] = []
+
+    for (const item of updatedCart) {
+      const inv = newBranchInventory.find((i: any) => i.product_id === item.product_id)
+      const avail = Number(inv?.available_stock ?? inv?.opening_stock ?? 0)
+      if (inv && avail > 0) {
+        const unitPrice = Number(inv.price_per_kg || item.unit_price)
+        const qty = Math.min(Number(item.quantity_kg || 1.0), avail)
+        const subtotal = Math.round(unitPrice * qty * 100) / 100
+        validCartItems.push({
+          ...item,
+          branch_id: selectedBranchId,
+          unit_price: unitPrice,
+          price_per_kg: unitPrice,
+          quantity_kg: qty,
+          quantity: qty,
+          subtotal,
+        })
+      } else {
+        cartWasUpdated = true
+      }
+    }
+    updatedCart = validCartItems
+  }
 
   await updateSessionState(supabase, session.id, 'SELECTING_FISH', {
     selected_branch_id: selectedBranchId,
+    cart: updatedCart,
   })
+
+  if (cartWasUpdated) {
+    const branchName = matchedBranch?.name || 'Selected Branch'
+    await sendWhatsAppTextMessage(
+      phone,
+      `⚠️ *Branch Changed to ${branchName}*\nSome items in your cart were updated or removed as they are not available at this branch.`
+    )
+  }
 
   return await showDailyFishMenu(phone, session, supabase, selectedBranchId)
 }
@@ -1755,18 +1824,49 @@ async function renderOrderReview(phone: string, session: any, addressId: string 
     if (bData?.name) branchName = bData.name
   }
 
-  const cart = normalizeCart(session?.cart)
+  // Re-fetch current database inventory price_per_kg for each cart item to guarantee summary total == order total
+  const today = getTodayDateIST()
+  const rawCart = normalizeCart(session?.cart)
   let itemsTotal = 0
+  const refreshedCart: any[] = []
+
+  if (branchId) {
+    const activeStockItems = await getOrRollForwardBranchInventory(supabase, branchId, today)
+    for (const item of rawCart) {
+      const inv = activeStockItems.find((i: any) => i.product_id === item.product_id)
+      let unitPrice = Number(item.unit_price || item.price_per_kg || 220)
+      if (inv && inv.price_per_kg && Number(inv.price_per_kg) > 0) {
+        unitPrice = Number(inv.price_per_kg)
+      }
+      const qty = Number(item.quantity_kg || item.quantity || 1.0)
+      const subtotal = Math.round(unitPrice * qty * 100) / 100
+      refreshedCart.push({
+        ...item,
+        unit_price: unitPrice,
+        price_per_kg: unitPrice,
+        subtotal,
+      })
+      itemsTotal += subtotal
+    }
+  } else {
+    refreshedCart.push(...rawCart)
+    itemsTotal = rawCart.reduce((sum: number, i: any) => sum + (Number(i.subtotal) || 0), 0)
+  }
+
+  // Update session cart with refreshed prices
+  await updateSessionState(supabase, session.id, 'CONFIRMING_ORDER', {
+    cart: refreshedCart,
+  })
+
   let reviewText = `📋 *ORDER CONFIRMATION SUMMARY*\n\n`
   reviewText += `🏪 *Branch:* ${branchName}\n\n`
 
-  cart.forEach((i: any, idx: number) => {
-    reviewText += `${idx + 1}. *${i.product_name}* — ${i.quantity_kg}kg (${i.cutting_type.replace('_', ' ')})\n   ₹${i.subtotal}\n`
-    itemsTotal += i.subtotal
+  refreshedCart.forEach((i: any, idx: number) => {
+    reviewText += `${idx + 1}. *${i.product_name}* — ${i.quantity_kg}kg (${(i.cutting_type || 'whole').replace('_', ' ')})\n   ₹${i.subtotal}\n`
   })
 
   const deliveryFee = 30.00
-  const grandTotal = itemsTotal + deliveryFee
+  const grandTotal = Math.round((itemsTotal + deliveryFee) * 100) / 100
 
   reviewText += `-----------------------\n`
   reviewText += `Items Subtotal: ₹${itemsTotal}\n`
@@ -1837,6 +1937,19 @@ async function handleOrderReview(
   }
 
   let validAddressId: string | null = isUuid(activeSession.selected_address_id) ? activeSession.selected_address_id : null
+
+  if (validAddressId && isUuid(realCustomerId)) {
+    const { data: addrCheck } = await supabase
+      .from('addresses')
+      .select('id')
+      .eq('id', validAddressId)
+      .eq('customer_id', realCustomerId)
+      .maybeSingle()
+
+    if (!addrCheck) {
+      validAddressId = null
+    }
+  }
 
   // 2. ADDRESS ID FALLBACK / RESOLUTION
   if (!validAddressId && isUuid(realCustomerId)) {
@@ -1911,7 +2024,7 @@ async function handleOrderReview(
   const stableIdempotencyKey = `wa_chk:${customerId}:${activeSession.id}:${msgTag}`
   await updateSessionState(supabase, activeSession.id, 'PROCESSING_ORDER')
 
-  const today = getBusinessDate()
+  const today = getTodayDateIST()
   const validCustomerId = isUuid(customerId) ? customerId : null
   const customerRemarks = activeSession.pending_remarks || null
 
@@ -1935,7 +2048,9 @@ async function handleOrderReview(
     longitude: activeSession.longitude,
   }, null, 2))
 
-  // 6. CALL CANONICAL PRODUCTION RPC (using Service Role client)
+  // 6. ENSURE INVENTORY IS ROLLED FORWARD FOR TODAY AND CALL CANONICAL PRODUCTION RPC
+  await getOrRollForwardBranchInventory(supabase, validBranchId, today)
+
   const { data: result, error: orderErr } = await supabase.rpc('create_order_atomic', {
     p_customer_id: validCustomerId,
     p_address_id: validAddressId,
@@ -1949,22 +2064,55 @@ async function handleOrderReview(
 
   const resObj = typeof result === 'string' ? JSON.parse(result) : result
 
-  // 7. CART MUST NOT BE CLEARED ON FAILURE
+  // 7. RESET AND CLEAR CART ON FAILED ORDER AS DIRECTED BY USER
   if (orderErr || !resObj?.success) {
-    const errMsg = resObj?.error || orderErr?.message || 'Stock allocation failed'
-    // Preserve cart, branch, address on error
-    await updateSessionState(supabase, activeSession.id, 'CONFIRMING_ORDER')
+    const rawErrMsg = resObj?.error || orderErr?.message || 'Stock allocation failed'
+    console.error('[CHECKOUT INVENTORY ERROR LOG]:', rawErrMsg)
+
+    let friendlyMsg = `⚠️ *Order Could Not Be Completed*\n\nSome items in your cart are currently unavailable or out of stock at this branch.\n\nYour cart has been cleared. Please choose available items from our menu.`
+    
+    if (rawErrMsg.includes('NO_INVENTORY')) {
+      friendlyMsg = `⚠️ *Order Could Not Be Completed*\n\nThe selected fish is currently unavailable at your selected branch for today.\n\nYour cart has been cleared. Please select another fish from our menu.`
+    } else if (rawErrMsg.includes('INSUFFICIENT_STOCK')) {
+      friendlyMsg = `⚠️ *Order Could Not Be Completed*\n\n${rawErrMsg.replace('INSUFFICIENT_STOCK:', '').trim()}\n\nYour cart has been cleared. Please browse our menu for available fish.`
+    }
+
+    await updateSessionState(supabase, activeSession.id, 'MAIN_MENU', {
+      cart: [],
+      selected_address_id: null,
+      pending_remarks: null,
+      idempotency_key: null,
+      latitude: null,
+      longitude: null,
+      maps_url: null,
+    })
+
     return await sendWhatsAppButtonsMessage(
       phone,
-      `🚫 *Order Placement Failed*\nReason: ${errMsg}\n\nYour cart is preserved. Would you like to retry or cancel?`,
+      friendlyMsg,
       [
-        { id: 'btn_confirm_order', title: '🔁 Retry Order' },
-        { id: 'btn_cancel_order', title: '❌ Cancel Order' },
+        { id: 'btn_main_menu', title: '🐟 Main Menu' },
       ]
     )
   }
 
-  // 8. CLEAR CART & SESSION ONLY AFTER SUCCESSFUL RPC ORDER CREATION
+  // 8. UPDATE ORDER WITH GPS LOCATION COORDINATES AND MAPS URL IF SHARED
+  if (resObj?.order_id && (activeSession.latitude || activeSession.longitude)) {
+    try {
+      const lat = activeSession.latitude
+      const lng = activeSession.longitude
+      const mapsUrl = activeSession.maps_url || `https://www.google.com/maps?q=${lat},${lng}`
+      await supabase.from('orders').update({
+        latitude: lat,
+        longitude: lng,
+        maps_url: mapsUrl
+      }).eq('id', resObj.order_id)
+    } catch (e) {
+      console.error('[Order location update error]:', e)
+    }
+  }
+
+  // 9. CLEAR CART & SESSION ONLY AFTER SUCCESSFUL RPC ORDER CREATION
   await updateSessionState(supabase, activeSession.id, 'MAIN_MENU', {
     cart: [],
     selected_branch_id: null,

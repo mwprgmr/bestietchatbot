@@ -106,7 +106,19 @@ export default function OrdersPage() {
         return
       }
 
-      setOrders(data)
+      // Filter out automated test orders and non-production records
+      const productionOrders = data.filter((ord: any) => {
+        if (ord.source === 'test') return false
+        const remarks = ord.customer_remarks || ''
+        const custName = ord.customer?.name || ''
+        const phone = ord.customer?.phone || ''
+        if (remarks.includes('[TEST_ORDER]') || remarks.includes('Tester') || custName.includes('Tester') || phone.startsWith('91987654')) {
+          return false
+        }
+        return true
+      })
+
+      setOrders(productionOrders)
     } catch (err: any) {
       console.error('[Unhandled error fetching orders]:', err?.message || err)
       setQueryError(err?.message || 'An unexpected error occurred while fetching orders.')

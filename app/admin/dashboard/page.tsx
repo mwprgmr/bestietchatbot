@@ -73,9 +73,17 @@ export default function DashboardPage() {
       let totalKgAllTime = 0
       let totalSalesAllTime = 0
 
-      const validOrders = (allBranchOrders || []).filter(
-        (o: any) => (o.status || '').toLowerCase() !== 'cancelled'
-      )
+      const validOrders = (allBranchOrders || []).filter((o: any) => {
+        if ((o.status || '').toLowerCase() === 'cancelled') return false
+        if (o.source === 'test') return false
+        const remarks = o.customer_remarks || ''
+        const custName = o.customer?.name || ''
+        const phone = o.customer?.phone || ''
+        if (remarks.includes('[TEST_ORDER]') || remarks.includes('Tester') || custName.includes('Tester') || phone.startsWith('91987654')) {
+          return false
+        }
+        return true
+      })
 
       validOrders.forEach((o: any) => {
         const oDate = new Date(o.created_at)
@@ -109,17 +117,29 @@ export default function DashboardPage() {
         avgOrderValue: Math.round(avgOrder),
       })
 
-      // 2. Fetch Recent Orders list (branch filtered)
+      // 2. Fetch Recent Orders list (branch filtered, excluding test orders)
       const recentQuery = supabase
         .from('orders')
         .select('*, customer:customers(*)')
         .eq('branch_id', targetBranchId)
         .order('created_at', { ascending: false })
-        .limit(5)
+        .limit(20)
 
       const { data: recent, error: recentErr } = await recentQuery
 
-      if (!recentErr) setRecentOrders(recent || [])
+      if (!recentErr && recent) {
+        const filteredRecent = recent.filter((o: any) => {
+          if (o.source === 'test') return false
+          const remarks = o.customer_remarks || ''
+          const custName = o.customer?.name || ''
+          const phone = o.customer?.phone || ''
+          if (remarks.includes('[TEST_ORDER]') || remarks.includes('Tester') || custName.includes('Tester') || phone.startsWith('91987654')) {
+            return false
+          }
+          return true
+        }).slice(0, 5)
+        setRecentOrders(filteredRecent)
+      }
 
       // 3. Fetch Today's Inventory Status (branch filtered)
       const { data: invData, error: invErr } = await supabase
