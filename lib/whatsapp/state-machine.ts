@@ -2256,8 +2256,8 @@ async function updateSessionState(
 ) {
   if (!sessionOrId) return
 
-  const sessionId = typeof sessionOrId === 'string' ? sessionOrId : sessionOrId?.id
-  const customerId = typeof sessionOrId === 'object' ? sessionOrId?.customer_id : null
+  let sessionId = typeof sessionOrId === 'string' ? sessionOrId : sessionOrId?.id
+  let customerId = typeof sessionOrId === 'object' ? sessionOrId?.customer_id : null
 
   if (typeof sessionOrId === 'object') {
     sessionOrId.state = state
@@ -2282,6 +2282,15 @@ async function updateSessionState(
 
   const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
 
+  // Extract raw UUID if sessionId has prefix like "sess_<UUID>"
+  let extractedUuidFromSessionId: string | null = null
+  if (typeof sessionId === 'string' && sessionId.startsWith('sess_')) {
+    const rawUuid = sessionId.replace('sess_', '')
+    if (isUuid(rawUuid)) {
+      extractedUuidFromSessionId = rawUuid
+    }
+  }
+
   const dbPayload: Record<string, any> = { state, updated_at: new Date().toISOString() }
   for (const key of allowedColumns) {
     if (key in extra) {
@@ -2293,6 +2302,7 @@ async function updateSessionState(
     }
   }
 
+  // 1. Primary update by sessionId if valid UUID
   if (sessionId && isUuid(sessionId)) {
     const { error } = await supabase
       .from('chat_sessions')
@@ -2300,16 +2310,20 @@ async function updateSessionState(
       .eq('id', sessionId)
 
     if (error) {
-      console.warn('[updateSessionState warning]:', error.message)
+      console.warn('[updateSessionState by id warning]:', error.message)
     }
-  } else if (customerId && isUuid(customerId)) {
+  }
+
+  // 2. Fallback update by customer_id if session is referenced by customer_id or sess_ prefix
+  const targetCustId = (customerId && isUuid(customerId)) ? customerId : extractedUuidFromSessionId
+  if (targetCustId && isUuid(targetCustId)) {
     const { error } = await supabase
       .from('chat_sessions')
       .update(dbPayload)
-      .eq('customer_id', customerId)
+      .eq('customer_id', targetCustId)
 
     if (error) {
-      console.warn('[updateSessionState customer_id warning]:', error.message)
+      console.warn('[updateSessionState by customer_id warning]:', error.message)
     }
   }
 }
