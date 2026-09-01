@@ -1108,6 +1108,18 @@ async function handleCutSelection(phone: string, userText: string, session: any,
   const unitPrice = Number(inv.price_per_kg)
   const subtotal = Math.round(unitPrice * qty * 100) / 100
 
+  // 1. Re-fetch current cart directly from database as single source of truth
+  if (session?.id || session?.customer_id) {
+    let cartQuery = supabase.from('chat_sessions').select('cart')
+    if (session.id) cartQuery = cartQuery.eq('id', session.id)
+    else cartQuery = cartQuery.eq('customer_id', session.customer_id)
+
+    const { data: dbSess } = await cartQuery.single()
+    if (dbSess) {
+      session.cart = normalizeCart(dbSess.cart)
+    }
+  }
+
   const currentCart = normalizeCart(session.cart)
   currentCart.push({
     product_id: productId,
@@ -1146,8 +1158,26 @@ async function handleCutSelection(phone: string, userText: string, session: any,
 
 async function handleClearCartAction(phone: string, session: any, supabase: any) {
   const branchId = session?.selected_branch_id
+  const customerId = session?.customer_id
 
-  await updateSessionState(supabase, session.id, 'SELECTING_FISH', {
+  // 1. Invalidate in-memory session object cart immediately
+  if (session && typeof session === 'object') {
+    session.cart = []
+    session.selected_product_id = null
+    session.selected_quantity = null
+    session.selected_cutting_type = null
+    session.selected_address_id = null
+    session.delivery_address = null
+    session.pending_remarks = null
+    session.idempotency_key = null
+    session.latitude = null
+    session.longitude = null
+    session.maps_url = null
+  }
+
+  // 2. Commit empty cart and state reset directly to Database
+  const resetPayload = {
+    state: 'SELECTING_FISH',
     cart: [],
     selected_product_id: null,
     selected_quantity: null,
@@ -1155,10 +1185,41 @@ async function handleClearCartAction(phone: string, session: any, supabase: any)
     selected_address_id: null,
     delivery_address: null,
     pending_remarks: null,
-    idempotency_key: null,
-    selected_branch_id: branchId, // Preserve selected branch!
-  })
+    selected_branch_id: branchId || null,
+    updated_at: new Date().toISOString()
+  }
 
+  if (session?.id) {
+    await supabase.from('chat_sessions').update(resetPayload).eq('id', session.id)
+  }
+  if (customerId) {
+    await supabase.from('chat_sessions').update(resetPayload).eq('customer_id', customerId)
+  }
+
+  // Helper update
+  await updateSessionState(supabase, session, 'SELECTING_FISH', resetPayload)
+
+  // 3. Re-fetch cart from database to VERIFY zero cart items
+  let isVerifiedEmpty = false
+  if (session?.id || customerId) {
+    let query = supabase.from('chat_sessions').select('cart')
+    if (session?.id) query = query.eq('id', session.id)
+    else query = query.eq('customer_id', customerId)
+
+    const { data: verifiedSession } = await query.single()
+    const verifiedCart = normalizeCart(verifiedSession?.cart)
+    if (verifiedCart.length === 0) {
+      isVerifiedEmpty = true
+    }
+  } else {
+    isVerifiedEmpty = true
+  }
+
+  if (!isVerifiedEmpty) {
+    console.error('[CRITICAL]: Clear Cart verification failed! Cart still contained items.')
+  }
+
+  // 4. Send Confirmation Message only after DB verification
   await sendWhatsAppTextMessage(
     phone,
     `🗑️ *Cart Cleared!*\nYour cart has been reset. You can now select fresh fish from the same branch:`
@@ -2077,15 +2138,28 @@ async function handleOrderReview(
       friendlyMsg = `⚠️ *Order Could Not Be Completed*\n\n${rawErrMsg.replace('INSUFFICIENT_STOCK:', '').trim()}\n\nYour cart has been cleared. Please browse our menu for available fish.`
     }
 
-    await updateSessionState(supabase, activeSession.id, 'MAIN_MENU', {
+    if (activeSession && typeof activeSession === 'object') {
+      activeSession.cart = []
+      activeSession.selected_address_id = null
+      activeSession.pending_remarks = null
+    }
+
+    const failPayload = {
+      state: 'MAIN_MENU',
       cart: [],
       selected_address_id: null,
       pending_remarks: null,
-      idempotency_key: null,
-      latitude: null,
-      longitude: null,
-      maps_url: null,
-    })
+      updated_at: new Date().toISOString()
+    }
+
+    if (activeSession?.id) {
+      await supabase.from('chat_sessions').update(failPayload).eq('id', activeSession.id)
+    }
+    if (validCustomerId) {
+      await supabase.from('chat_sessions').update(failPayload).eq('customer_id', validCustomerId)
+    }
+
+    await updateSessionState(supabase, activeSession, 'MAIN_MENU', failPayload)
 
     return await sendWhatsAppButtonsMessage(
       phone,
@@ -2266,6 +2340,7 @@ async function updateSessionState(
 
   const allowedColumns = [
     'state',
+    'cart',
     'selected_branch_id',
     'selected_product_id',
     'selected_quantity',
@@ -2273,11 +2348,6 @@ async function updateSessionState(
     'selected_address_id',
     'delivery_address',
     'pending_remarks',
-    'cart',
-    'idempotency_key',
-    'latitude',
-    'longitude',
-    'maps_url',
   ]
 
   const isUuid = (val: any) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
