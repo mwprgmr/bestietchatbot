@@ -55,8 +55,18 @@ body {
 
 /* Category Circle Exception for round plate design */
 .category-circle,
+.category-circle *,
 .category-circle img,
-.category-circle div {
+.category-circle div,
+.category-circle a,
+.category-circle span,
+.category-item,
+.category-item *,
+.category-item img,
+.category-item div,
+#categories .category-circle,
+#categories .category-circle *,
+#categories img {
   border-radius: 9999px !important;
 }
 

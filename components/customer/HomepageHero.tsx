@@ -171,13 +171,13 @@ export default function HomepageHero() {
             <Link
               key={cat.id}
               href={`/category/${cat.slug}`}
-              className="group flex flex-col items-center shrink-0 snap-start cursor-pointer transition-all active:scale-95 animate-fade-in-up"
+              className="category-circle category-item group flex flex-col items-center shrink-0 snap-start cursor-pointer transition-all active:scale-95 animate-fade-in-up"
             >
-              <div className="category-circle w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 overflow-hidden shadow-md group-hover:shadow-2xl group-hover:-translate-y-1 transition-all duration-300">
+              <div className="category-circle category-item w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shadow-md group-hover:shadow-2xl group-hover:-translate-y-1 transition-all duration-300 border-2 border-[#8B9A6E]/30 bg-[#EEEEEE] relative flex items-center justify-center">
                 <img
                   src={cat.image}
                   alt={cat.name}
-                  className="w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-500 ease-out"
+                  className="category-circle category-item w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-500 ease-out"
                 />
               </div>
               <span className="text-xs sm:text-sm font-black text-[#232B1E] group-hover:text-[#8B9A6E] transition-colors mt-2.5 text-center line-clamp-1 max-w-[100px] sm:max-w-[120px]">
