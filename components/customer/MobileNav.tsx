@@ -17,26 +17,43 @@ export default function MobileNav() {
     return null
   }
 
+  const handleCategoriesClick = (e: React.MouseEvent) => {
+    if (pathname === '/') {
+      e.preventDefault()
+      const catEl = document.getElementById('categories')
+      if (catEl) {
+        catEl.scrollIntoView({ behavior: 'smooth' })
+      } else {
+        window.scrollTo({ top: 380, behavior: 'smooth' })
+      }
+    }
+  }
+
+  const handleCartClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsCartOpen(true)
+  }
+
   return (
-    <div className="fixed bottom-0 inset-x-0 z-40 md:hidden pointer-events-none">
+    <div className="fixed bottom-0 inset-x-0 z-50 md:hidden flex flex-col pointer-events-auto">
       {/* Sticky Cart Bar */}
       {totalItems > 0 && (
-        <div className="p-3 px-4 bg-[#8B9A6E] text-white shadow-xl flex items-center justify-between pointer-events-auto border-t border-[#8B9A6E]/50 animate-in slide-in-from-bottom duration-300">
+        <div className="p-3 px-4 bg-[#8B9A6E] text-white shadow-xl flex items-center justify-between border-t border-[#8B9A6E]/50 animate-in slide-in-from-bottom duration-300">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#232B1E] flex items-center justify-center font-extrabold text-xs text-white">
+            <div className="w-7 h-7 rounded-none bg-[#232B1E] flex items-center justify-center font-extrabold text-xs text-white">
               {totalItems}
             </div>
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider text-[#F7F2EB]/90">
                 {totalItems} ITEM{totalItems > 1 ? 'S' : ''} ADDED
               </div>
-              <div className="text-sm font-extrabold text-white">₹{grandTotal}</div>
+              <div className="text-xs font-extrabold text-white">₹{grandTotal}</div>
             </div>
           </div>
 
           <button
             onClick={() => setIsCartOpen(true)}
-            className="py-1.5 px-3.5 bg-[#F7F2EB] text-[#232B1E] font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-xs hover:bg-white transition-colors"
+            className="py-1.5 px-3 bg-[#F7F2EB] text-[#232B1E] font-extrabold rounded-none text-xs flex items-center gap-1.5 shadow-xs hover:bg-white active:scale-95 transition-all cursor-pointer"
           >
             <span>VIEW CART</span>
             <ArrowRight className="w-3.5 h-3.5 text-[#8B9A6E]" />
@@ -45,10 +62,11 @@ export default function MobileNav() {
       )}
 
       {/* Bottom Navigation Bar */}
-      <nav className="bg-[#F7F2EB] border-t border-[#EEEEEE] py-2 px-3 flex items-center justify-around text-[#232B1E]/70 pointer-events-auto shadow-2xl">
+      <nav className="bg-[#F7F2EB] border-t border-[#EEEEEE] pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] px-2 flex items-center justify-around text-[#232B1E]/70 shadow-2xl">
+        {/* HOME */}
         <Link
           href="/"
-          className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
+          className={`flex flex-col items-center gap-1 text-[10px] font-bold py-1 px-2.5 rounded-none transition-all active:scale-95 cursor-pointer ${
             pathname === '/' ? 'text-[#8B9A6E]' : 'hover:text-[#232B1E]'
           }`}
         >
@@ -56,9 +74,11 @@ export default function MobileNav() {
           <span>Home</span>
         </Link>
 
+        {/* CATEGORIES */}
         <Link
-          href="/category/fish"
-          className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
+          href="/#categories"
+          onClick={handleCategoriesClick}
+          className={`flex flex-col items-center gap-1 text-[10px] font-bold py-1 px-2.5 rounded-none transition-all active:scale-95 cursor-pointer ${
             pathname?.startsWith('/category') ? 'text-[#8B9A6E]' : 'hover:text-[#232B1E]'
           }`}
         >
@@ -66,9 +86,10 @@ export default function MobileNav() {
           <span>Categories</span>
         </Link>
 
+        {/* SEARCH */}
         <Link
           href="/search"
-          className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
+          className={`flex flex-col items-center gap-1 text-[10px] font-bold py-1 px-2.5 rounded-none transition-all active:scale-95 cursor-pointer ${
             pathname === '/search' ? 'text-[#8B9A6E]' : 'hover:text-[#232B1E]'
           }`}
         >
@@ -76,9 +97,10 @@ export default function MobileNav() {
           <span>Search</span>
         </Link>
 
+        {/* ORDERS */}
         <Link
           href="/orders"
-          className={`flex flex-col items-center gap-0.5 text-[10px] font-bold ${
+          className={`flex flex-col items-center gap-1 text-[10px] font-bold py-1 px-2.5 rounded-none transition-all active:scale-95 cursor-pointer ${
             pathname === '/orders' ? 'text-[#8B9A6E]' : 'hover:text-[#232B1E]'
           }`}
         >
@@ -86,20 +108,23 @@ export default function MobileNav() {
           <span>Orders</span>
         </Link>
 
-        <button
-          onClick={() => setIsCartOpen(true)}
-          className="flex flex-col items-center gap-0.5 text-[10px] font-bold text-[#232B1E]/70 hover:text-[#8B9A6E] relative"
+        {/* CART */}
+        <Link
+          href="/cart"
+          onClick={handleCartClick}
+          className="flex flex-col items-center gap-1 text-[10px] font-bold text-[#232B1E]/70 hover:text-[#8B9A6E] relative py-1 px-2.5 rounded-none transition-all active:scale-95 cursor-pointer"
         >
-          <ShoppingBag className="w-5 h-5" />
+          <div className="relative">
+            <ShoppingBag className="w-5 h-5" />
+            {totalItems > 0 && (
+              <span className="absolute -top-1.5 -right-2.5 bg-[#8B9A6E] text-white text-[9px] font-black w-4 h-4 rounded-none flex items-center justify-center border border-[#F7F2EB]">
+                {totalItems}
+              </span>
+            )}
+          </div>
           <span>Cart</span>
-          {totalItems > 0 && (
-            <span className="absolute -top-1 right-2 bg-[#8B9A6E] text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border border-[#F7F2EB]">
-              {totalItems}
-            </span>
-          )}
-        </button>
+        </Link>
       </nav>
     </div>
   )
 }
-

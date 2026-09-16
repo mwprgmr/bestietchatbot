@@ -75,7 +75,7 @@ export default function HomepageHero() {
       <div
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className="relative rounded-none overflow-hidden bg-[#232B1E] shadow-lg border border-[#EEEEEE] aspect-[16/6] sm:aspect-[21/7] max-h-[420px] w-full group transition-all"
+        className="relative rounded-none overflow-hidden bg-[#232B1E] shadow-lg border border-[#EEEEEE] h-[220px] xs:h-[260px] sm:h-[360px] md:h-[460px] lg:h-[500px] w-full group transition-all"
       >
         <Link href={currentPoster.cta_link || '/category/fish'} className="block w-full h-full relative">
           <img
@@ -128,7 +128,7 @@ export default function HomepageHero() {
       </div>
 
       {/* Shop by Category Section (Boxy Design) */}
-      <section className="space-y-6 pt-2">
+      <section id="categories" className="space-y-6 pt-2 scroll-mt-20">
         <h2 className="text-xl sm:text-2xl font-black text-[#232B1E] text-center tracking-tight uppercase">
           Shop by Category
         </h2>

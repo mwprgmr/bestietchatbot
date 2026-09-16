@@ -54,23 +54,23 @@ export default function CartPage() {
         </div>
 
         {cart.length === 0 ? (
-          <div className="bg-[#F7F2EB] p-12 rounded-3xl border border-[#EEEEEE] text-center space-y-4 max-w-md mx-auto">
-            <div className="w-20 h-20 bg-[#EEEEEE] rounded-full flex items-center justify-center mx-auto text-[#8B9A6E]">
-              <ShoppingBag className="w-10 h-10" />
+          <div className="bg-[#F7F2EB] p-8 sm:p-12 rounded-none border border-[#EEEEEE] text-center space-y-4 max-w-md mx-auto">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#EEEEEE] rounded-none flex items-center justify-center mx-auto text-[#8B9A6E]">
+              <ShoppingBag className="w-8 h-8 sm:w-10 sm:h-10" />
             </div>
-            <h2 className="text-lg font-extrabold text-[#232B1E]">Your Cart is Currently Empty</h2>
+            <h2 className="text-base sm:text-lg font-extrabold text-[#232B1E]">Your Cart is Currently Empty</h2>
             <p className="text-xs text-[#232B1E]/70">
               Explore today's fresh ocean fish, tender chicken, and mutton catch.
             </p>
             <Link
               href="/"
-              className="inline-block px-6 py-3 bg-[#8B9A6E] hover:bg-[#7A895D] text-white font-extrabold text-xs rounded-xl shadow-md"
+              className="inline-block px-6 py-3 bg-[#8B9A6E] hover:bg-[#7A895D] text-white font-extrabold text-xs rounded-none shadow-md"
             >
               BROWSE FRESH PRODUCTS
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
             {/* Left: Cart Items List */}
             <div className="lg:col-span-2 space-y-4">
               {cart.map((item) => {
@@ -78,37 +78,37 @@ export default function CartPage() {
                 return (
                   <div
                     key={item.cart_key}
-                    className="p-4 bg-white rounded-2xl border border-[#EEEEEE] shadow-xs flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between"
+                    className="p-3.5 sm:p-4 bg-white rounded-none border border-[#EEEEEE] shadow-xs flex flex-col xs:flex-row gap-3 sm:gap-4 items-start xs:items-center justify-between"
                   >
-                    <div className="flex gap-3 items-center">
+                    <div className="flex gap-3 items-center min-w-0">
                       <img
                         src={item.image_url || '/logo.png'}
                         alt={item.product_name}
-                        className="w-16 h-16 object-cover rounded-xl bg-[#EEEEEE] shrink-0"
+                        className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-none bg-[#EEEEEE] shrink-0"
                       />
-                      <div>
+                      <div className="min-w-0">
                         <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B9A6E]">
                           {item.category}
                         </span>
-                        <h3 className="text-sm font-extrabold text-[#232B1E]">{item.product_name}</h3>
-                        <p className="text-xs text-[#232B1E]/70 mt-0.5">
+                        <h3 className="text-xs sm:text-sm font-extrabold text-[#232B1E] truncate">{item.product_name}</h3>
+                        <p className="text-[11px] sm:text-xs text-[#232B1E]/70 mt-0.5">
                           Cut: <span className="font-bold text-[#232B1E]">{item.cleaning_option}</span> • Pack:{' '}
                           <span className="font-bold text-[#232B1E]">
                             {item.weight_kg === 0.5 ? '500g' : `${item.weight_kg}kg`}
                           </span>
                         </p>
-                        <div className="text-xs font-bold text-[#232B1E]/50 mt-0.5">
+                        <div className="text-[11px] sm:text-xs font-bold text-[#232B1E]/50 mt-0.5">
                           Base Price: ₹{item.price_per_kg} / kg
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-[#EEEEEE]">
+                    <div className="flex items-center justify-between xs:justify-end gap-4 sm:gap-6 w-full xs:w-auto pt-2.5 xs:pt-0 border-t xs:border-t-0 border-[#EEEEEE]">
                       {/* QTY Control */}
-                      <div className="flex items-center gap-2 bg-[#8B9A6E] text-white rounded-xl p-1 shadow-xs">
+                      <div className="flex items-center gap-2 bg-[#8B9A6E] text-white rounded-none p-1 shadow-xs">
                         <button
                           onClick={() => updateCartQuantity(item.cart_key, -1)}
-                          className="w-6 h-6 rounded-lg bg-[#232B1E]/20 hover:bg-[#232B1E]/40 flex items-center justify-center text-white"
+                          className="w-6 h-6 rounded-none bg-[#232B1E]/20 hover:bg-[#232B1E]/40 flex items-center justify-center text-white cursor-pointer"
                         >
                           <Minus className="w-3 h-3 text-white" />
                         </button>
@@ -117,7 +117,7 @@ export default function CartPage() {
                         </span>
                         <button
                           onClick={() => updateCartQuantity(item.cart_key, 1)}
-                          className="w-6 h-6 rounded-lg bg-[#232B1E]/20 hover:bg-[#232B1E]/40 flex items-center justify-center text-white"
+                          className="w-6 h-6 rounded-none bg-[#232B1E]/20 hover:bg-[#232B1E]/40 flex items-center justify-center text-white cursor-pointer"
                         >
                           <Plus className="w-3 h-3 text-white" />
                         </button>
@@ -128,7 +128,7 @@ export default function CartPage() {
                         <div className="text-sm font-black text-[#232B1E]">₹{itemTotal}</div>
                         <button
                           onClick={() => removeFromCart(item.cart_key)}
-                          className="text-[11px] font-bold text-[#232B1E]/60 hover:text-[#232B1E] transition-colors flex items-center gap-0.5 mt-0.5 ml-auto"
+                          className="text-[11px] font-bold text-[#232B1E]/60 hover:text-[#232B1E] transition-colors flex items-center gap-0.5 mt-0.5 ml-auto cursor-pointer"
                         >
                           <Trash2 className="w-3 h-3" /> Remove
                         </button>
@@ -138,7 +138,7 @@ export default function CartPage() {
                 )
               })}
 
-              <div className="p-4 rounded-2xl bg-[#8B9A6E]/15 border border-[#8B9A6E]/30 text-xs text-[#232B1E] flex items-center gap-3">
+              <div className="p-3.5 sm:p-4 rounded-none bg-[#8B9A6E]/15 border border-[#8B9A6E]/30 text-xs text-[#232B1E] flex items-center gap-3">
                 <ShieldCheck className="w-5 h-5 text-[#8B9A6E] shrink-0" />
                 <div>
                   <span className="font-extrabold">Bestiet Fresh Guarantee:</span> All items are custom cleaned and packed in ice cold-chain boxes right before dispatch.
@@ -149,34 +149,34 @@ export default function CartPage() {
             {/* Right: Order Summary & Coupon */}
             <div className="space-y-4">
               {/* Coupon Box */}
-              <div className="p-5 bg-white rounded-2xl border border-[#EEEEEE] shadow-xs space-y-3">
+              <div className="p-4 sm:p-5 bg-white rounded-none border border-[#EEEEEE] shadow-xs space-y-3">
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#232B1E] flex items-center gap-1.5">
                   <Tag className="w-4 h-4 text-[#8B9A6E]" /> Apply Promo Coupon
                 </h3>
 
                 {appliedCoupon ? (
-                  <div className="p-3 rounded-xl bg-[#8B9A6E]/20 border border-[#8B9A6E]/40 flex items-center justify-between text-xs">
+                  <div className="p-3 rounded-none bg-[#8B9A6E]/20 border border-[#8B9A6E]/40 flex items-center justify-between text-xs">
                     <div>
                       <div className="font-extrabold text-[#232B1E]">'{appliedCoupon.code}' APPLIED</div>
                       <div className="text-[10px] text-[#8B9A6E]">Saved ₹{discountAmount} on this order</div>
                     </div>
-                    <button onClick={removeCoupon} className="text-xs font-bold text-[#232B1E] hover:underline">
+                    <button onClick={removeCoupon} className="text-xs font-bold text-[#232B1E] hover:underline cursor-pointer">
                       Remove
                     </button>
                   </div>
                 ) : (
                   <form onSubmit={handleApplyCoupon} className="space-y-2">
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         type="text"
                         value={couponInput}
                         onChange={(e) => setCouponInput(e.target.value)}
                         placeholder="ENTER COUPON (e.g. BESTIET100)"
-                        className="flex-1 px-3 py-2 bg-[#EEEEEE] border border-[#EEEEEE] rounded-xl text-xs font-bold uppercase focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8B9A6E] text-[#232B1E]"
+                        className="flex-1 px-3 py-2 bg-[#EEEEEE] border border-[#EEEEEE] rounded-none text-xs font-bold uppercase focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8B9A6E] text-[#232B1E]"
                       />
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-[#8B9A6E] hover:bg-[#7A895D] text-white text-xs font-bold rounded-xl transition-colors"
+                        className="px-4 py-2 bg-[#8B9A6E] hover:bg-[#7A895D] text-white text-xs font-bold rounded-none transition-colors cursor-pointer"
                       >
                         Apply
                       </button>
@@ -195,7 +195,7 @@ export default function CartPage() {
               </div>
 
               {/* Bill Details Box */}
-              <div className="p-5 bg-[#EEEEEE] rounded-2xl border border-[#EEEEEE] shadow-xs space-y-4">
+              <div className="p-4 sm:p-5 bg-[#EEEEEE] rounded-none border border-[#EEEEEE] shadow-xs space-y-4">
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#232B1E]">
                   Bill Details
                 </h3>
@@ -231,7 +231,7 @@ export default function CartPage() {
 
                 <button
                   onClick={() => router.push('/checkout')}
-                  className="w-full py-3.5 px-4 bg-[#8B9A6E] hover:bg-[#7A895D] text-white font-extrabold rounded-xl text-sm shadow-md shadow-[#8B9A6E]/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 group cursor-pointer"
+                  className="w-full py-3.5 px-4 bg-[#8B9A6E] hover:bg-[#7A895D] text-white font-extrabold rounded-none text-sm shadow-md shadow-[#8B9A6E]/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 group cursor-pointer"
                 >
                   <span>PROCEED TO CHECKOUT</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
