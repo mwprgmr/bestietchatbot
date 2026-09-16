@@ -15,10 +15,7 @@ export default function Footer() {
           {/* Col 1: Brand Info */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
-              <img src="/logo.png" alt="Bestiet Fresh" className="h-10 w-auto object-contain bg-white p-1 rounded-xl" />
-              <span className="font-black text-lg tracking-tight text-white uppercase">
-                BESTIET <span className="text-[#8B9A6E]">FRESH</span>
-              </span>
+              <img src="/logo-white.png" alt="Bestiet Fresh" className="h-10 w-auto object-contain" />
             </div>
 
             <p className="text-xs text-[#EEEEEE]/80 leading-relaxed">

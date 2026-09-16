@@ -73,8 +73,8 @@ export default function SuperAdminLoginPage() {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md z-10">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-white shadow-xl border border-slate-100 mb-4 transform hover:scale-105 transition-transform">
-            <img src="/logo.png" alt="Bestiet Fresh Logo" className="w-20 h-20 object-contain" />
+          <div className="inline-flex items-center justify-center mb-4 transform hover:scale-105 transition-transform">
+            <img src="/logo.png" alt="Bestiet Fresh Logo" className="h-20 w-auto object-contain" />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
             BESTIET FRESH

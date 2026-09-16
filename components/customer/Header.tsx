@@ -33,7 +33,7 @@ export default function Header() {
         <div className="flex items-center justify-between gap-3 sm:gap-6 lg:gap-10">
           
           {/* 1. BRAND LOGO ONLY */}
-          <Link href="/" className="flex items-center shrink-0">
+          <Link href="/" className="flex items-center shrink-0 hover:scale-105 transition-transform duration-300">
             <img src="/logo.png" alt="Bestiet Fresh Logo" className="h-10 sm:h-12 md:h-14 w-auto object-contain" />
           </Link>
 
@@ -42,7 +42,7 @@ export default function Header() {
             onClick={() => setIsLocationOpen(true)}
             className="flex items-center gap-1.5 sm:gap-2 text-left cursor-pointer group hover:opacity-85 transition-opacity px-2.5 sm:px-4 py-1.5 bg-white sm:bg-transparent rounded-lg sm:rounded-none border sm:border-0 border-[#EEEEEE] sm:border-l shrink-0 max-w-[160px] sm:max-w-xs"
           >
-            <Zap className="w-4 h-4 text-[#8B9A6E] fill-[#8B9A6E] shrink-0 hidden sm:block" />
+            <Zap className="w-4 h-4 text-[#8B9A6E] fill-[#8B9A6E] shrink-0 hidden sm:block animate-pulse-slow" />
             <MapPin className="w-4 h-4 text-[#8B9A6E] shrink-0 sm:hidden" />
             <div className="flex flex-col leading-tight min-w-0">
               <span className="text-[10px] sm:text-xs font-black text-[#232B1E] uppercase hidden sm:block">
@@ -88,7 +88,7 @@ export default function Header() {
               <div className="relative">
                 <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform" />
                 {totalItemCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 bg-[#8B9A6E] text-white text-[10px] font-extrabold w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white">
+                  <span className="absolute -top-1.5 -right-2 bg-[#8B9A6E] text-white text-[10px] font-extrabold w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white animate-bounce-subtle">
                     {totalItemCount}
                   </span>
                 )}
