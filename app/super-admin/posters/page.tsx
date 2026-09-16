@@ -8,26 +8,18 @@ import {
   Plus,
   Trash2,
   Edit,
-  Eye,
   CheckCircle2,
   XCircle,
-  ArrowUp,
-  ArrowDown,
-  Sparkles,
   Link as LinkIcon,
   RefreshCw,
+  ExternalLink,
 } from 'lucide-react'
 
 export interface HomepagePoster {
   id: string
-  title: string
-  subtitle?: string | null
-  badge_text?: string | null
+  title?: string | null
   image_url: string
-  cta_text?: string | null
   cta_link?: string | null
-  secondary_cta_text?: string | null
-  secondary_cta_link?: string | null
   sort_order: number
   active: boolean
   created_at?: string
@@ -36,40 +28,25 @@ export interface HomepagePoster {
 const DEFAULT_POSTERS: HomepagePoster[] = [
   {
     id: 'default-1',
-    title: 'FRESH FROM OUR DOOR TO YOUR TABLE.',
-    subtitle: 'Fresh ocean fish, backwater seafood, tender farm chicken, and Kerala goat meat — custom cleaned, cut, and delivered fresh to your door.',
-    badge_text: 'CHEMICAL-FREE DAILY FRESH CATCH',
+    title: 'Fresh Catch Banner',
     image_url: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?auto=format&fit=crop&w=1600&q=80',
-    cta_text: 'SHOP FRESH NOW',
     cta_link: '/category/fish',
-    secondary_cta_text: "TODAY'S DEALS",
-    secondary_cta_link: '/offers',
     sort_order: 1,
     active: true,
   },
   {
     id: 'default-2',
-    title: 'ANTIBIOTIC-FREE TENDER FARM CHICKEN',
-    subtitle: 'Hygienically cut & 100% clean chicken parts. Whole, Curry Cut, Boneless Breast & Drumsticks delivered cold-packed.',
-    badge_text: '100% SAFE & HYGIENIC',
+    title: 'Tender Farm Chicken Banner',
     image_url: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=1600&q=80',
-    cta_text: 'ORDER CHICKEN',
     cta_link: '/category/chicken',
-    secondary_cta_text: 'VIEW ALL CUTS',
-    secondary_cta_link: '/category/chicken',
     sort_order: 2,
     active: true,
   },
   {
     id: 'default-3',
-    title: 'PREMIUM SEER FISH & TIGER PRAWNS',
-    subtitle: 'Daily morning harbor landings. Chemical-free Neymeen, Karimeen, Mathi, and Fresh Prawns cleaned to your preference.',
-    badge_text: 'DAILY MORNING LANDINGS',
+    title: 'Seafood & Prawns Banner',
     image_url: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=1600&q=80',
-    cta_text: 'EXPLORE SEAFOOD',
     cta_link: '/category/fish',
-    secondary_cta_text: 'FLASH OFFERS',
-    secondary_cta_link: '/offers',
     sort_order: 3,
     active: true,
   },
@@ -90,19 +67,14 @@ function PostersManager() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  // Modal / Form state
+  // Modal state
   const [showModal, setShowModal] = useState(false)
   const [editingPoster, setEditingPoster] = useState<HomepagePoster | null>(null)
 
   const [formData, setFormData] = useState({
     title: '',
-    subtitle: '',
-    badge_text: '',
     image_url: '',
-    cta_text: 'SHOP FRESH NOW',
     cta_link: '/category/fish',
-    secondary_cta_text: "TODAY'S DEALS",
-    secondary_cta_link: '/offers',
     sort_order: 1,
     active: true,
   })
@@ -134,14 +106,9 @@ function PostersManager() {
   const handleOpenAddModal = () => {
     setEditingPoster(null)
     setFormData({
-      title: '',
-      subtitle: '',
-      badge_text: 'CHEMICAL-FREE FRESH CATCH',
+      title: 'New Banner Poster',
       image_url: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?auto=format&fit=crop&w=1600&q=80',
-      cta_text: 'SHOP FRESH NOW',
       cta_link: '/category/fish',
-      secondary_cta_text: "TODAY'S DEALS",
-      secondary_cta_link: '/offers',
       sort_order: posters.length + 1,
       active: true,
     })
@@ -151,14 +118,9 @@ function PostersManager() {
   const handleOpenEditModal = (poster: HomepagePoster) => {
     setEditingPoster(poster)
     setFormData({
-      title: poster.title,
-      subtitle: poster.subtitle || '',
-      badge_text: poster.badge_text || '',
+      title: poster.title || 'Banner Poster',
       image_url: poster.image_url,
-      cta_text: poster.cta_text || 'SHOP FRESH NOW',
       cta_link: poster.cta_link || '/category/fish',
-      secondary_cta_text: poster.secondary_cta_text || "TODAY'S DEALS",
-      secondary_cta_link: poster.secondary_cta_link || '/offers',
       sort_order: poster.sort_order || 1,
       active: poster.active ?? true,
     })
@@ -180,7 +142,7 @@ function PostersManager() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this hero poster?')) return
+    if (!confirm('Are you sure you want to delete this poster?')) return
     setPosters((prev) => prev.filter((p) => p.id !== id))
 
     try {
@@ -194,25 +156,19 @@ function PostersManager() {
 
     try {
       if (editingPoster) {
-        // Update existing poster
+        // Update poster
         const { error } = await supabase
           .from('homepage_posters')
           .update({
             title: formData.title,
-            subtitle: formData.subtitle,
-            badge_text: formData.badge_text,
             image_url: formData.image_url,
-            cta_text: formData.cta_text,
             cta_link: formData.cta_link,
-            secondary_cta_text: formData.secondary_cta_text,
-            secondary_cta_link: formData.secondary_cta_link,
             sort_order: Number(formData.sort_order),
             active: formData.active,
           })
           .eq('id', editingPoster.id)
 
         if (error) {
-          // Local fallback update
           setPosters((prev) =>
             prev.map((p) =>
               p.id === editingPoster.id ? { ...p, ...formData } : p
@@ -220,16 +176,11 @@ function PostersManager() {
           )
         }
       } else {
-        // Insert new poster
+        // Create new poster
         const newObj = {
           title: formData.title,
-          subtitle: formData.subtitle,
-          badge_text: formData.badge_text,
           image_url: formData.image_url,
-          cta_text: formData.cta_text,
           cta_link: formData.cta_link,
-          secondary_cta_text: formData.secondary_cta_text,
-          secondary_cta_link: formData.secondary_cta_link,
           sort_order: Number(formData.sort_order),
           active: formData.active,
         }
@@ -263,11 +214,11 @@ function PostersManager() {
           <div className="flex items-center gap-2">
             <ImageIcon className="w-6 h-6 text-emerald-600" />
             <h1 className="text-xl font-black text-slate-900 tracking-tight">
-              Homepage Hero Posters Manager
+              Posters Manager
             </h1>
           </div>
           <p className="text-xs text-slate-500 font-medium mt-1">
-            Add, update, or reorder promotional hero posters shown in the homepage banner slider.
+            Add, update, or reorder homepage banner posters.
           </p>
         </div>
 
@@ -292,11 +243,11 @@ function PostersManager() {
       {/* Posters List */}
       {loading ? (
         <div className="py-16 text-center text-xs font-bold text-slate-500">
-          Loading Hero Posters...
+          Loading Posters...
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {posters.map((poster, index) => (
+          {posters.map((poster) => (
             <div
               key={poster.id}
               className={`bg-white rounded-2xl border transition-all overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-md ${
@@ -304,47 +255,31 @@ function PostersManager() {
               }`}
             >
               {/* Poster Image Preview */}
-              <div className="relative aspect-16/9 bg-slate-900 overflow-hidden group">
+              <div className="relative aspect-16/7 bg-slate-900 overflow-hidden group">
                 <img
                   src={poster.image_url}
-                  alt={poster.title}
+                  alt={poster.title || 'Poster'}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
-                <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[1px] p-4 flex flex-col justify-between text-white">
-                  <div>
-                    {poster.badge_text && (
-                      <span className="bg-emerald-500/30 text-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-400/30">
-                        {poster.badge_text}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <span className="bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
-                      Order: #{poster.sort_order}
-                    </span>
-                  </div>
+                <div className="absolute top-2 right-2 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
+                  Order: #{poster.sort_order}
                 </div>
               </div>
 
               {/* Poster Meta */}
               <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 className="font-extrabold text-slate-900 text-sm leading-snug line-clamp-2">
-                    {poster.title}
+                  <h3 className="font-extrabold text-slate-900 text-sm leading-snug">
+                    {poster.title || 'Banner Poster'}
                   </h3>
-                  {poster.subtitle && (
-                    <p className="text-xs text-slate-500 line-clamp-2 mt-1">
-                      {poster.subtitle}
-                    </p>
-                  )}
+                  <div className="flex items-center gap-1 text-xs text-emerald-700 font-semibold mt-1">
+                    <ExternalLink className="w-3 h-3" />
+                    <span className="truncate">{poster.cta_link || '/category/fish'}</span>
+                  </div>
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="font-bold text-emerald-700 flex items-center gap-1">
-                    <LinkIcon className="w-3 h-3" />
-                    {poster.cta_text}
-                  </span>
-
+                  <span className="text-[11px] font-bold text-slate-400">STATUS</span>
                   <button
                     onClick={() => handleToggleActive(poster)}
                     className={`px-2.5 py-1 rounded-full font-extrabold text-[10px] flex items-center gap-1 cursor-pointer transition-all ${
@@ -373,7 +308,7 @@ function PostersManager() {
                   className="text-xs font-bold text-slate-700 hover:text-emerald-700 flex items-center gap-1.5 cursor-pointer"
                 >
                   <Edit className="w-3.5 h-3.5" />
-                  <span>Edit Poster</span>
+                  <span>Edit</span>
                 </button>
 
                 <button
@@ -392,10 +327,10 @@ function PostersManager() {
       {/* Add / Edit Poster Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 className="text-lg font-black text-slate-900">
-                {editingPoster ? 'Edit Hero Poster' : 'Add New Hero Poster'}
+                {editingPoster ? 'Edit Poster' : 'Add New Poster'}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
@@ -408,61 +343,21 @@ function PostersManager() {
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  Poster Title / Main Headline *
+                  Poster Label / Title *
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="e.g. FRESH FROM OUR DOOR TO YOUR TABLE."
+                  placeholder="e.g. Seer Fish Banner"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  Subtitle / Description
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.subtitle}
-                  onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                  placeholder="Fresh ocean fish, chicken cuts, and mutton delivered to your doorstep."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Top Badge Tag Text
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.badge_text}
-                    onChange={(e) => setFormData({ ...formData, badge_text: e.target.value })}
-                    placeholder="CHEMICAL-FREE DAILY FRESH CATCH"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-semibold text-slate-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Sort Order (Display Priority)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.sort_order}
-                    onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 1 })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-900"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Image URL (Unsplash or CDN) *
+                  Poster Image URL *
                 </label>
                 <input
                   type="url"
@@ -477,27 +372,26 @@ function PostersManager() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">
-                    Primary CTA Text
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.cta_text}
-                    onChange={(e) => setFormData({ ...formData, cta_text: e.target.value })}
-                    placeholder="SHOP FRESH NOW"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    Primary CTA Link
+                    Click Link / Route
                   </label>
                   <input
                     type="text"
                     value={formData.cta_link}
                     onChange={(e) => setFormData({ ...formData, cta_link: e.target.value })}
                     placeholder="/category/fish"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-medium text-slate-900"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Sort Order
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.sort_order}
+                    onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 1 })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-900"
                   />
                 </div>
               </div>

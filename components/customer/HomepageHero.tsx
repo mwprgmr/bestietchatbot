@@ -3,54 +3,32 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { CATEGORIES } from '@/lib/data/ecommerce-data'
-import { ArrowRight, Sparkles, ShieldCheck, Truck, Utensils, HeartHandshake, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ShieldCheck, Truck, Utensils, HeartHandshake, ChevronLeft, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export interface PosterProps {
   id: string
-  title: string
-  subtitle?: string | null
-  badge_text?: string | null
   image_url: string
-  cta_text?: string | null
   cta_link?: string | null
-  secondary_cta_text?: string | null
-  secondary_cta_link?: string | null
+  sort_order?: number
+  active?: boolean
 }
 
 const DEFAULT_POSTERS: PosterProps[] = [
   {
     id: 'default-1',
-    title: 'FRESH FROM OUR DOOR TO YOUR TABLE.',
-    subtitle: 'Fresh ocean fish, backwater seafood, tender farm chicken, and Kerala goat meat — custom cleaned, cut, and delivered fresh to your door.',
-    badge_text: 'CHEMICAL-FREE DAILY FRESH CATCH',
     image_url: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?auto=format&fit=crop&w=1600&q=80',
-    cta_text: 'SHOP FRESH NOW',
     cta_link: '/category/fish',
-    secondary_cta_text: "TODAY'S DEALS",
-    secondary_cta_link: '/offers',
   },
   {
     id: 'default-2',
-    title: 'ANTIBIOTIC-FREE TENDER FARM CHICKEN',
-    subtitle: 'Hygienically cut & 100% clean chicken parts. Whole, Curry Cut, Boneless Breast & Drumsticks delivered cold-packed.',
-    badge_text: '100% SAFE & HYGIENIC',
     image_url: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=1600&q=80',
-    cta_text: 'ORDER CHICKEN',
     cta_link: '/category/chicken',
-    secondary_cta_text: 'VIEW ALL CUTS',
-    secondary_cta_link: '/category/chicken',
   },
   {
     id: 'default-3',
-    title: 'PREMIUM SEER FISH & TIGER PRAWNS',
-    subtitle: 'Daily morning harbor landings. Chemical-free Neymeen, Karimeen, Mathi, and Fresh Prawns cleaned to your preference.',
-    badge_text: 'DAILY MORNING LANDINGS',
     image_url: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=1600&q=80',
-    cta_text: 'EXPLORE SEAFOOD',
     cta_link: '/category/fish',
-    secondary_cta_text: 'FLASH OFFERS',
-    secondary_cta_link: '/offers',
   },
 ]
 
@@ -72,9 +50,7 @@ export default function HomepageHero() {
         if (!error && data && data.length > 0) {
           setPosters(data)
         }
-      } catch (_) {
-        // Fallback to DEFAULT_POSTERS
-      }
+      } catch (_) {}
     }
     loadPosters()
   }, [])
@@ -94,69 +70,45 @@ export default function HomepageHero() {
   const currentPoster = posters[currentIndex] || DEFAULT_POSTERS[0]
 
   return (
-    <div className="space-y-10 mb-10">
-      {/* Dynamic Poster Slider Carousel */}
+    <div className="space-y-8 mb-10">
+      {/* Pure Image Poster Slider (No Text Content) */}
       <div
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-slate-950 via-[#101814] to-emerald-950 text-white p-6 sm:p-12 shadow-xl border border-slate-800 min-h-[360px] flex flex-col justify-between group transition-all"
+        className="relative rounded-3xl overflow-hidden bg-slate-900 shadow-lg border border-slate-200/80 aspect-[16/6] sm:aspect-[21/7] max-h-[420px] w-full group transition-all"
       >
-        {/* Decorative Poster Background Image */}
-        <div className="absolute inset-0 z-0 opacity-40 mix-blend-overlay transition-opacity duration-700">
+        <Link href={currentPoster.cta_link || '/category/fish'} className="block w-full h-full relative">
           <img
             key={currentPoster.id}
             src={currentPoster.image_url}
-            alt={currentPoster.title}
-            className="w-full h-full object-cover animate-fade-in"
+            alt="Bestiet Fresh Poster"
+            className="w-full h-full object-cover transition-opacity duration-700"
           />
-        </div>
-
-        {/* Poster Content */}
-        <div className="relative z-10 max-w-2xl space-y-4 my-auto">
-          {currentPoster.badge_text && (
-            <div className="inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-xs">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{currentPoster.badge_text}</span>
-            </div>
-          )}
-
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-none text-white">
-            {currentPoster.title}
-          </h1>
-
-          {currentPoster.subtitle && (
-            <p className="text-sm sm:text-base text-slate-300 font-medium max-w-lg leading-relaxed">
-              {currentPoster.subtitle}
-            </p>
-          )}
-
-          <div className="pt-2 flex flex-wrap items-center gap-3">
-            {currentPoster.cta_text && (
-              <Link
-                href={currentPoster.cta_link || '/category/fish'}
-                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs sm:text-sm shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-2 group/btn"
-              >
-                <span>{currentPoster.cta_text}</span>
-                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-              </Link>
-            )}
-
-            {currentPoster.secondary_cta_text && (
-              <Link
-                href={currentPoster.secondary_cta_link || '/offers'}
-                className="px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-extrabold rounded-xl text-xs sm:text-sm backdrop-blur-xs border border-white/20 transition-all"
-              >
-                {currentPoster.secondary_cta_text}
-              </Link>
-            )}
-          </div>
-        </div>
+        </Link>
 
         {/* Slider Controls: Arrows & Pagination Dots */}
         {posters.length > 1 && (
-          <div className="relative z-20 pt-4 flex items-center justify-between">
-            {/* Dots */}
-            <div className="flex items-center gap-2">
+          <>
+            <button
+              type="button"
+              onClick={prevSlide}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-slate-950/40 hover:bg-slate-950/70 text-white backdrop-blur-xs border border-white/20 transition-all opacity-80 group-hover:opacity-100 cursor-pointer"
+              aria-label="Previous Poster"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={nextSlide}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-slate-950/40 hover:bg-slate-950/70 text-white backdrop-blur-xs border border-white/20 transition-all opacity-80 group-hover:opacity-100 cursor-pointer"
+              aria-label="Next Poster"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+
+            {/* Pagination Dots */}
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-slate-950/40 backdrop-blur-xs px-3 py-1.5 rounded-full border border-white/10">
               {posters.map((_, idx) => (
                 <button
                   key={idx}
@@ -164,34 +116,14 @@ export default function HomepageHero() {
                   onClick={() => setCurrentIndex(idx)}
                   className={`h-2 rounded-full transition-all cursor-pointer ${
                     currentIndex === idx
-                      ? 'w-7 bg-emerald-400'
-                      : 'w-2 bg-white/40 hover:bg-white/70'
+                      ? 'w-6 bg-emerald-400'
+                      : 'w-2 bg-white/50 hover:bg-white/80'
                   }`}
-                  aria-label={`Go to slide ${idx + 1}`}
+                  aria-label={`Go to poster ${idx + 1}`}
                 />
               ))}
             </div>
-
-            {/* Left & Right Arrow Buttons */}
-            <div className="flex items-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-              <button
-                type="button"
-                onClick={prevSlide}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white backdrop-blur-xs transition-all cursor-pointer"
-                aria-label="Previous Slide"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={nextSlide}
-                className="p-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white backdrop-blur-xs transition-all cursor-pointer"
-                aria-label="Next Slide"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+          </>
         )}
       </div>
 
@@ -263,4 +195,3 @@ export default function HomepageHero() {
     </div>
   )
 }
-
