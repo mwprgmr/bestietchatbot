@@ -36,13 +36,13 @@ export default function Header() {
           {/* 1. BRAND LOGO + LOCATION SELECTOR */}
           <div className="flex items-center gap-4 sm:gap-6 shrink-0">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="p-1 rounded-xl bg-white border border-[#EEEEEE] shadow-2xs group-hover:scale-105 transition-transform">
-                <img src="/logo.png" alt="Bestiet Fresh" className="w-8 h-8 object-contain" />
-              </div>
-              <div className="font-black text-lg tracking-tight text-[#232B1E] leading-tight">
-                bestiet<span className="text-[#8B9A6E]">fresh</span>
-              </div>
+              <img src="/logo.png" alt="Bestiet Fresh" className="h-9 w-auto object-contain group-hover:scale-105 transition-transform" />
+              <span className="font-black text-xl tracking-tight text-[#232B1E] uppercase">
+                BESTIET <span className="text-[#8B9A6E]">FRESH</span>
+              </span>
             </Link>
+
+
 
             {/* Delivery / Location Block (Zepto Style) */}
             <button

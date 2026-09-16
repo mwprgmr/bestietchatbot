@@ -55,17 +55,13 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 py-12">
           {/* Col 1: Brand Info */}
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded-xl bg-[#F7F2EB]">
-                <img src="/logo.png" alt="Bestiet Fresh Logo" className="w-10 h-10 object-contain" />
-              </div>
-              <div>
-                <h3 className="text-base font-black text-white tracking-tight">BESTIET FRESH</h3>
-                <p className="text-[10px] font-extrabold text-[#8B9A6E] uppercase tracking-widest">
-                  Your Fresh Friend At The Door
-                </p>
-              </div>
+            <div className="flex items-center gap-2.5">
+              <img src="/logo.png" alt="Bestiet Fresh" className="h-10 w-auto object-contain bg-white p-1 rounded-xl" />
+              <span className="font-black text-lg tracking-tight text-white uppercase">
+                BESTIET <span className="text-[#8B9A6E]">FRESH</span>
+              </span>
             </div>
+
             <p className="text-xs text-[#EEEEEE]/80 leading-relaxed">
               Bestiet Fresh delivers chemical-free ocean fish, backwater seafood, tender chicken, and fresh goat meat directly to your kitchen.
             </p>
