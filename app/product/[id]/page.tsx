@@ -35,11 +35,12 @@ export default function ProductDetailsPage() {
           setSelectedCut(categoryCuts[0])
         }
 
+        const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
         const { data: inv } = await supabase
           .from('inventory')
           .select('*')
           .eq('product_id', productId)
-          .eq('branch_id', selectedBranch.id)
+          .eq('branch_id', targetBranchId)
           .maybeSingle()
 
         setInventory(inv)
@@ -51,7 +52,7 @@ export default function ProductDetailsPage() {
     }
 
     if (productId) loadProductDetails()
-  }, [productId, selectedBranch.id])
+  }, [productId, selectedBranch?.id])
 
   if (loading) {
     return (

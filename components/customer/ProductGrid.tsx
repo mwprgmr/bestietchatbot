@@ -32,10 +32,11 @@ export default function ProductGrid() {
         if (pErr) throw pErr
 
         // Fetch latest inventory for the selected branch
+        const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
         const { data: rawInventory, error: iErr } = await supabase
           .from('inventory')
           .select('*')
-          .eq('branch_id', selectedBranch.id)
+          .eq('branch_id', targetBranchId)
 
         if (iErr) console.warn('Inventory fetch warning:', iErr.message)
 
@@ -61,13 +62,12 @@ export default function ProductGrid() {
 
         setProducts(mapped)
       } finally {
-
         setLoading(false)
       }
     }
 
     loadBranchProducts()
-  }, [selectedBranch.id])
+  }, [selectedBranch?.id])
 
   if (loading) {
     return (

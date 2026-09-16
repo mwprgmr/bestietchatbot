@@ -44,10 +44,11 @@ export default function CategoryPage() {
           .ilike('category', `%${queryCategory}%`)
           .eq('active', true)
 
+        const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
         const { data: rawInventory } = await supabase
           .from('inventory')
           .select('*')
-          .eq('branch_id', selectedBranch.id)
+          .eq('branch_id', targetBranchId)
 
         const mapped: ProductProps[] = (rawProducts || []).map((p) => {
           const invMatch = (rawInventory || []).find((i) => i.product_id === p.id)
@@ -76,7 +77,7 @@ export default function CategoryPage() {
     }
 
     loadCategoryProducts()
-  }, [slug, selectedBranch.id])
+  }, [slug, selectedBranch?.id])
 
   return (
     <StorefrontLayout>

@@ -89,7 +89,10 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
     try {
       const savedBranch = localStorage.getItem('bestiet_selected_branch')
       if (savedBranch) {
-        setSelectedBranchState(JSON.parse(savedBranch))
+        const parsed = JSON.parse(savedBranch)
+        if (parsed && typeof parsed === 'object' && parsed.id && parsed.name) {
+          setSelectedBranchState(parsed)
+        }
       }
       const savedAddress = localStorage.getItem('bestiet_delivery_address')
       if (savedAddress) {
@@ -97,7 +100,10 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
       }
       const savedCart = localStorage.getItem('bestiet_cart')
       if (savedCart) {
-        setCart(JSON.parse(savedCart))
+        const parsedCart = JSON.parse(savedCart)
+        if (Array.isArray(parsedCart)) {
+          setCart(parsedCart)
+        }
       }
     } catch (e) {
       console.warn('Failed to load local storage state:', e)

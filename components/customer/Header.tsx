@@ -49,7 +49,7 @@ export default function Header() {
                 Delivery in 15-30 Mins*
               </span>
               <span className="text-[11px] font-bold text-[#232B1E] sm:text-[#232B1E]/70 truncate">
-                {deliveryAddress || selectedBranch.name}
+                {deliveryAddress || selectedBranch?.name || 'Kazhakkoottam Branch'}
               </span>
             </div>
             <ChevronDown className="w-3 h-3 shrink-0 text-[#8B9A6E] group-hover:translate-y-0.5 transition-transform ml-0.5" />

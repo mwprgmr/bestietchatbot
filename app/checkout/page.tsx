@@ -98,13 +98,14 @@ export default function CheckoutPage() {
       const orderNum = `BF${Math.floor(100000 + Math.random() * 900000)}`
       const fullAddressString = `${houseAddress.trim()}, Landmark: ${landmark.trim() || 'N/A'}, Pincode: ${pincode}`
 
+      const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
       const { data: newOrder, error: oErr } = await supabase
         .from('orders')
         .insert([
           {
             order_number: orderNum,
             customer_id: customerId,
-            branch_id: selectedBranch.id,
+            branch_id: targetBranchId,
             status: 'PLACED',
             total_amount: grandTotal,
             subtotal_amount: cartSubtotal,
@@ -130,7 +131,7 @@ export default function CheckoutPage() {
           {
             order_id: newOrder.id,
             product_id: item.product_id,
-            branch_id: selectedBranch.id,
+            branch_id: targetBranchId,
             product_name: item.product_name,
             quantity_kg: totalWeightKg,
             unit_price: item.price_per_kg,
@@ -143,7 +144,7 @@ export default function CheckoutPage() {
           .from('inventory')
           .select('id, available_stock, sold_stock')
           .eq('product_id', item.product_id)
-          .eq('branch_id', selectedBranch.id)
+          .eq('branch_id', targetBranchId)
           .maybeSingle()
 
         if (inv?.id) {
