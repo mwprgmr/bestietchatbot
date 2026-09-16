@@ -8,48 +8,7 @@ export default function Footer() {
   return (
     <footer className="bg-[#232B1E] text-[#EEEEEE] pt-16 pb-24 md:pb-12 border-t border-[#8B9A6E]/30">
       <div className="max-w-7xl mx-auto px-4">
-        {/* Brand Value Props Strip */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pb-12 border-b border-[#8B9A6E]/30 text-xs">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-[#8B9A6E]/20 border border-[#8B9A6E]/40 text-[#8B9A6E] shrink-0">
-              <Truck className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-black text-white">Daily Doorstep Delivery</h4>
-              <p className="text-[11px] text-[#EEEEEE]/70 mt-0.5">Express morning & evening slots</p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-[#8B9A6E]/20 border border-[#8B9A6E]/40 text-[#8B9A6E] shrink-0">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-black text-white">100% Fresh Catch Guarantee</h4>
-              <p className="text-[11px] text-[#EEEEEE]/70 mt-0.5">Chemical-free & wild caught</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-[#8B9A6E]/20 border border-[#8B9A6E]/40 text-[#8B9A6E] shrink-0">
-              <Heart className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-black text-white">Cleaned Your Way</h4>
-              <p className="text-[11px] text-[#EEEEEE]/70 mt-0.5">Whole, Curry Cut, Fillet or Fry Cut</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-[#8B9A6E]/20 border border-[#8B9A6E]/40 text-[#8B9A6E] shrink-0">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-black text-white">WhatsApp & Online Order</h4>
-              <p className="text-[11px] text-[#EEEEEE]/70 mt-0.5">Instant order processing</p>
-            </div>
-          </div>
-        </div>
 
         {/* Footer Navigation Columns */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 py-12">

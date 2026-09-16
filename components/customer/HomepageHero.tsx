@@ -156,42 +156,7 @@ export default function HomepageHero() {
       </section>
 
 
-      {/* Why Bestiet Fresh Visual Strip */}
-      <section className="bg-[#EEEEEE] rounded-3xl p-6 border border-[#EEEEEE]">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <div className="space-y-1.5 p-2">
-            <div className="w-10 h-10 rounded-2xl bg-[#F7F2EB] shadow-xs border border-[#8B9A6E]/30 text-[#8B9A6E] flex items-center justify-center mx-auto">
-              <Truck className="w-5 h-5" />
-            </div>
-            <h3 className="text-xs font-black text-[#232B1E]">FRESHLY SOURCED</h3>
-            <p className="text-[11px] text-[#232B1E]/70 font-medium">Directly from harbors & local farms</p>
-          </div>
 
-          <div className="space-y-1.5 p-2">
-            <div className="w-10 h-10 rounded-2xl bg-[#F7F2EB] shadow-xs border border-[#8B9A6E]/30 text-[#8B9A6E] flex items-center justify-center mx-auto">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <h3 className="text-xs font-black text-[#232B1E]">QUALITY CHECKED</h3>
-            <p className="text-[11px] text-[#232B1E]/70 font-medium">100% chemical & ammonia free</p>
-          </div>
-
-          <div className="space-y-1.5 p-2">
-            <div className="w-10 h-10 rounded-2xl bg-[#F7F2EB] shadow-xs border border-[#8B9A6E]/30 text-[#8B9A6E] flex items-center justify-center mx-auto">
-              <Utensils className="w-5 h-5" />
-            </div>
-            <h3 className="text-xs font-black text-[#232B1E]">CLEANED YOUR WAY</h3>
-            <p className="text-[11px] text-[#232B1E]/70 font-medium">Curry Cut, Fry Cut, Fillet or Whole</p>
-          </div>
-
-          <div className="space-y-1.5 p-2">
-            <div className="w-10 h-10 rounded-2xl bg-[#F7F2EB] shadow-xs border border-[#8B9A6E]/30 text-[#8B9A6E] flex items-center justify-center mx-auto">
-              <HeartHandshake className="w-5 h-5" />
-            </div>
-            <h3 className="text-xs font-black text-[#232B1E]">DOORSTEP DELIVERY</h3>
-            <p className="text-[11px] text-[#232B1E]/70 font-medium">Morning & evening express slots</p>
-          </div>
-        </div>
-      </section>
     </div>
   )
 }
