@@ -9,12 +9,17 @@
   --text-dark: #232B1E;
 }
 
+html,
 body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
   color: #232B1E;
   background-color: #F7F2EB;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
