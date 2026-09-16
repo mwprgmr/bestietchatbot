@@ -75,12 +75,12 @@ export default function ProductCard({ product }: { product: ProductProps }) {
   return (
     <div className="group flex flex-col justify-between transition-all">
       <Link href={`/product/${product.id}`} className="block relative group">
-        {/* 1. PRODUCT IMAGE CONTAINER (With rounded corners & floating ADD button) */}
-        <div className="relative aspect-4/3 w-full bg-[#F7F8F5] rounded-2xl md:rounded-3xl overflow-hidden shadow-2xs border border-slate-200/80">
+        {/* 1. PRODUCT IMAGE CONTAINER (With fixed height & ratio so all images match identically) */}
+        <div className="relative aspect-[4/3] h-44 sm:h-52 w-full bg-[#F7F8F5] rounded-2xl md:rounded-3xl overflow-hidden shadow-2xs border border-slate-200/80">
           <img
             src={imageSrc}
             alt={product.name}
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
+            className={`w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 ${
               isOutOfStock ? 'grayscale opacity-60' : ''
             }`}
             loading="lazy"

@@ -132,11 +132,11 @@ export default function ProductDetailsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs">
           {/* Left Column: Product Imagery */}
           <div className="space-y-4">
-            <div className="relative aspect-4/3 w-full rounded-2xl bg-[#F7F8F5] overflow-hidden border border-slate-200/60">
+            <div className="relative aspect-[4/3] h-64 sm:h-80 w-full rounded-2xl bg-[#F7F8F5] overflow-hidden border border-slate-200/60">
               <img
                 src={imageSrc}
                 alt={product.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-center"
               />
               {isOutOfStock && (
                 <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center">
