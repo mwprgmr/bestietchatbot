@@ -173,7 +173,7 @@ export default function HomepageHero() {
               href={`/category/${cat.slug}`}
               className="group flex flex-col items-center shrink-0 snap-start cursor-pointer transition-all active:scale-95 animate-fade-in-up"
             >
-              <div className="category-circle w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 overflow-hidden bg-white p-1 shadow-md border-2 border-[#EEEEEE] group-hover:border-[#8B9A6E] group-hover:shadow-xl group-hover:-translate-y-1 transition-all duration-300">
+              <div className="category-circle w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 overflow-hidden shadow-md group-hover:shadow-2xl group-hover:-translate-y-1 transition-all duration-300">
                 <img
                   src={cat.image}
                   alt={cat.name}
