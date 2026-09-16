@@ -165,7 +165,8 @@ export default function ProductDetailsPage() {
           <div className="space-y-6">
             <div>
               <span className="text-xs font-extrabold uppercase tracking-wider text-[#8B9A6E]">
-                {product.category} • {selectedBranch.name.replace(' Branch', '')}
+                {product.category} • {selectedBranch?.name ? selectedBranch.name.replace(' Branch', '') : ''}
+
               </span>
               <h1 className="text-2xl sm:text-3xl font-black text-[#232B1E] mt-1">
                 {product.name}

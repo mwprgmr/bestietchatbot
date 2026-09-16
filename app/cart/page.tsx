@@ -48,7 +48,8 @@ export default function CartPage() {
           </Link>
           <h1 className="text-2xl font-black text-[#232B1E] tracking-tight">YOUR FRESH SHOPPING CART</h1>
           <p className="text-xs text-[#232B1E]/70">
-            Delivering to <span className="font-bold text-[#232B1E]">{deliveryAddress}</span> ({selectedBranch.name})
+            Delivering to <span className="font-bold text-[#232B1E]">{deliveryAddress}</span> ({selectedBranch?.name || ''})
+
           </p>
         </div>
 

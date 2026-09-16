@@ -11,12 +11,17 @@ import Link from 'next/link'
 
 function SearchContent() {
   const searchParams = useSearchParams()
-  const initialQuery = searchParams.get('q') || ''
+  const qParam = searchParams?.get('q') || ''
   const { selectedBranch } = useCustomer()
 
-  const [query, setQuery] = useState(initialQuery)
+  const [query, setQuery] = useState(qParam)
   const [products, setProducts] = useState<ProductProps[]>([])
   const [loading, setLoading] = useState(false)
+
+  // Sync query state when URL param changes
+  useEffect(() => {
+    setQuery(qParam)
+  }, [qParam])
 
   useEffect(() => {
     async function executeSearch() {
@@ -34,13 +39,14 @@ function SearchContent() {
           .select('*')
           .eq('active', true)
 
+        const branchId = selectedBranch?.id || ''
         const { data: rawInventory } = await supabase
           .from('inventory')
           .select('*')
-          .eq('branch_id', selectedBranch.id)
+          .eq('branch_id', branchId)
 
         const filtered = (rawProducts || []).filter((p) => {
-          const nameMatch = p.name.toLowerCase().includes(searchTerm)
+          const nameMatch = (p.name || '').toLowerCase().includes(searchTerm)
           const catMatch = (p.category || '').toLowerCase().includes(searchTerm)
           const descMatch = (p.description || '').toLowerCase().includes(searchTerm)
           return nameMatch || catMatch || descMatch
@@ -73,22 +79,24 @@ function SearchContent() {
     }
 
     executeSearch()
-  }, [query, selectedBranch.id])
+  }, [query, selectedBranch?.id])
+
+  const branchDisplayName = selectedBranch?.name ? selectedBranch.name.replace(' Branch', '') : ''
 
   return (
     <div className="space-y-6">
       {/* Back Link */}
       <Link
         href="/"
-        className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-emerald-700 transition-colors"
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#232B1E]/70 hover:text-[#8B9A6E] transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         <span>Back to Storefront</span>
       </Link>
 
       {/* Search Input Box */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-        <h1 className="text-xl font-black text-slate-900">SEARCH FRESH PRODUCTS</h1>
+      <div className="bg-white p-6 rounded-3xl border border-[#EEEEEE] shadow-xs space-y-4">
+        <h1 className="text-xl font-black text-[#232B1E]">SEARCH FRESH PRODUCTS</h1>
 
         <div className="relative">
           <input
@@ -96,14 +104,14 @@ function SearchContent() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Type fish or meat name e.g. Neymeen, Ayala, Prawns, Chicken, Mutton..."
-            className="w-full pl-11 pr-4 py-3 bg-[#F7F8F5] border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-inner"
+            className="w-full pl-11 pr-4 py-3 bg-[#F7F2EB] border border-[#EEEEEE] rounded-2xl text-sm font-semibold text-[#232B1E] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8B9A6E] shadow-inner"
           />
-          <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-5 h-5 text-[#232B1E]/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
         </div>
 
         {/* Quick Search Chips */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1">
-          <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider shrink-0">
+          <span className="text-[11px] font-extrabold text-[#232B1E]/50 uppercase tracking-wider shrink-0">
             Popular Searches:
           </span>
           {['Neymeen', 'Ayala', 'Mathi', 'Prawns', 'Chicken', 'Mutton', 'Karimeen', 'Salmon'].map((tag) => (
@@ -111,7 +119,7 @@ function SearchContent() {
               key={tag}
               type="button"
               onClick={() => setQuery(tag)}
-              className="px-3 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 font-bold rounded-full text-xs transition-colors border border-slate-200 shrink-0"
+              className="px-3 py-1 bg-[#EEEEEE] hover:bg-[#8B9A6E]/20 hover:text-[#232B1E] text-[#232B1E] font-bold rounded-full text-xs transition-colors border border-[#EEEEEE] shrink-0 cursor-pointer"
             >
               {tag}
             </button>
@@ -122,20 +130,20 @@ function SearchContent() {
       {/* Search Results */}
       {loading ? (
         <div className="py-12 text-center space-y-2">
-          <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs font-bold text-slate-500">Searching fresh inventory...</p>
+          <div className="w-8 h-8 border-4 border-[#8B9A6E] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs font-bold text-[#232B1E]/70">Searching fresh inventory...</p>
         </div>
       ) : query && products.length === 0 ? (
-        <div className="p-12 text-center bg-[#F7F8F5] rounded-3xl border border-slate-200 text-slate-500 space-y-2">
-          <AlertCircle className="w-8 h-8 mx-auto text-slate-400" />
-          <h3 className="text-base font-extrabold text-slate-900">No products found for "{query}"</h3>
+        <div className="p-12 text-center bg-white rounded-3xl border border-[#EEEEEE] text-[#232B1E]/70 space-y-2">
+          <AlertCircle className="w-8 h-8 mx-auto text-[#8B9A6E]" />
+          <h3 className="text-base font-extrabold text-[#232B1E]">No products found for "{query}"</h3>
           <p className="text-xs">Try searching for alternative names like Neymeen, Chicken, or Prawns.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {query && (
-            <p className="text-xs font-bold text-slate-500">
-              Found {products.length} product(s) for "{query}" in {selectedBranch.name.replace(' Branch', '')}
+            <p className="text-xs font-bold text-[#232B1E]/70">
+              Found {products.length} product(s) for "{query}" {branchDisplayName ? `in ${branchDisplayName}` : ''}
             </p>
           )}
 
@@ -153,7 +161,7 @@ function SearchContent() {
 export default function SearchPage() {
   return (
     <StorefrontLayout>
-      <Suspense fallback={<div className="py-10 text-center text-xs">Loading search...</div>}>
+      <Suspense fallback={<div className="py-10 text-center text-xs text-[#232B1E]/70">Loading search...</div>}>
         <SearchContent />
       </Suspense>
     </StorefrontLayout>

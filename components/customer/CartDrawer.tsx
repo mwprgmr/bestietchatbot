@@ -78,7 +78,8 @@ export default function CartDrawer() {
               <span className="text-[#8B9A6E] font-semibold">{deliveryAddress}</span>
             </div>
             <span className="shrink-0 font-bold text-[10px] uppercase bg-[#8B9A6E] text-white px-2 py-0.5 rounded-full">
-              {selectedBranch.name.replace(' Branch', '')}
+              {selectedBranch?.name ? selectedBranch.name.replace(' Branch', '') : ''}
+
             </span>
           </div>
 

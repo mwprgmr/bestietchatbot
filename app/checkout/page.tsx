@@ -186,7 +186,8 @@ export default function CheckoutPage() {
           </Link>
           <h1 className="text-2xl font-black text-[#232B1E] tracking-tight">EXPRESS CHECKOUT</h1>
           <p className="text-xs text-[#232B1E]/70">
-            Completing order for <span className="font-bold text-[#232B1E]">{selectedBranch.name}</span>
+            Completing order for <span className="font-bold text-[#232B1E]">{selectedBranch?.name || ''}</span>
+
           </p>
         </div>
 

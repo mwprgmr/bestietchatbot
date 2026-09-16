@@ -74,7 +74,8 @@ export default function ProductGrid() {
       <div className="py-16 text-center space-y-4">
         <div className="w-10 h-10 border-4 border-[#8B9A6E] border-t-transparent rounded-full animate-spin mx-auto" />
         <p className="text-xs font-bold text-[#232B1E]/70 uppercase tracking-wider">
-          Fetching Today's Fresh Catch for {selectedBranch.name}...
+          Fetching Today's Fresh Catch for {selectedBranch?.name || 'Branch'}...
+
         </p>
       </div>
     )
