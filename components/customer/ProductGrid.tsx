@@ -126,8 +126,8 @@ export default function ProductGrid() {
         </div>
       </section>
 
-      {/* 2. FLASH SALE WITH COUNTDOWN */}
-      <FlashSale products={products.length > 4 ? products.slice(2, 6) : products} />
+
+
 
       {/* 3. FISH & SEAFOOD SECTION */}
       {fishProducts.length > 0 && (

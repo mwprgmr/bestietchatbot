@@ -127,34 +127,34 @@ export default function HomepageHero() {
         )}
       </div>
 
-      {/* Category Shortcuts Navigation */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#232B1E]/70">
-            Explore Categories
-          </h2>
-          <Link href="/category/fish" className="text-xs font-bold text-[#8B9A6E] hover:underline">
-            View All →
-          </Link>
-        </div>
+      {/* Shop by Category Section (Matching Reference Design) */}
+      <section className="space-y-6 pt-2">
+        <h2 className="text-xl sm:text-2xl font-black text-[#232B1E] text-center tracking-tight">
+          Shop by Category
+        </h2>
 
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 sm:gap-6 justify-items-center">
           {CATEGORIES.map((cat) => (
             <Link
               key={cat.id}
               href={`/category/${cat.slug}`}
-              className="group bg-[#F7F2EB] rounded-2xl p-3 border border-[#EEEEEE] shadow-2xs hover:shadow-md hover:border-[#8B9A6E] transition-all text-center flex flex-col items-center gap-2"
+              className="group text-center flex flex-col items-center cursor-pointer transition-all"
             >
-              <div className="w-14 h-14 rounded-full overflow-hidden bg-[#EEEEEE] border border-[#EEEEEE] group-hover:scale-105 transition-transform shrink-0">
-                <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden bg-white p-1.5 shadow-md border border-[#EEEEEE] group-hover:shadow-lg group-hover:border-[#8B9A6E] group-hover:scale-105 transition-all">
+                <img
+                  src={cat.image}
+                  alt={cat.name}
+                  className="w-full h-full object-cover rounded-full"
+                />
               </div>
-              <span className="text-xs font-black text-[#232B1E] group-hover:text-[#8B9A6E] transition-colors line-clamp-1">
+              <span className="text-xs sm:text-sm font-bold text-[#232B1E] group-hover:text-[#8B9A6E] transition-colors mt-2.5 line-clamp-2 max-w-[110px]">
                 {cat.name}
               </span>
             </Link>
           ))}
         </div>
       </section>
+
 
       {/* Why Bestiet Fresh Visual Strip */}
       <section className="bg-[#EEEEEE] rounded-3xl p-6 border border-[#EEEEEE]">
