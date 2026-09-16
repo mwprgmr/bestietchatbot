@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useCustomer } from '@/lib/context/CustomerContext'
 import StorefrontLayout from '@/components/customer/StorefrontLayout'
 import ProductCard, { ProductProps } from '@/components/customer/ProductCard'
-import { CATEGORIES, CategoryInfo } from '@/lib/data/ecommerce-data'
+import { CATEGORIES } from '@/lib/data/ecommerce-data'
 import { Filter, ArrowLeft, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 
@@ -31,7 +31,6 @@ export default function CategoryPage() {
       try {
         const supabase = createClient()
 
-        // Match category string
         let queryCategory = 'Fish'
         if (slug === 'chicken') queryCategory = 'Chicken'
         else if (slug === 'mutton') queryCategory = 'Mutton'
@@ -86,29 +85,29 @@ export default function CategoryPage() {
         <div>
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-emerald-700 transition-colors mb-3"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#232B1E]/70 hover:text-[#8B9A6E] transition-colors mb-3"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Storefront</span>
           </Link>
 
-          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-emerald-950 via-[#101814] to-slate-900 text-white p-6 sm:p-8 border border-slate-800 shadow-md">
+          <div className="relative rounded-3xl overflow-hidden bg-[#232B1E] text-white p-6 sm:p-8 border border-[#8B9A6E]/30 shadow-md">
             <div className="relative z-10 max-w-xl space-y-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-400">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8B9A6E]">
                 Fresh Category
               </span>
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white uppercase">
                 {categoryObj.name}
               </h1>
-              <p className="text-xs text-slate-300">{categoryObj.description}</p>
+              <p className="text-xs text-[#EEEEEE]/80">{categoryObj.description}</p>
             </div>
           </div>
         </div>
 
         {/* Filter Bar */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-          <span className="text-xs font-bold text-slate-500 flex items-center gap-1 mr-2 shrink-0">
-            <Filter className="w-3.5 h-3.5 text-slate-400" /> Filter:
+          <span className="text-xs font-bold text-[#232B1E]/70 flex items-center gap-1 mr-2 shrink-0">
+            <Filter className="w-3.5 h-3.5 text-[#8B9A6E]" /> Filter:
           </span>
           {['ALL', 'Cleaned', 'Curry Cut', 'Boneless', 'In Stock Only'].map((f) => (
             <button
@@ -116,8 +115,8 @@ export default function CategoryPage() {
               onClick={() => setFilterCut(f)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 filterCut === f
-                  ? 'bg-emerald-700 text-white shadow-xs'
-                  : 'bg-[#F7F8F5] text-slate-700 border border-slate-200 hover:border-emerald-300'
+                  ? 'bg-[#8B9A6E] text-white shadow-xs'
+                  : 'bg-[#F7F2EB] text-[#232B1E] border border-[#EEEEEE] hover:border-[#8B9A6E]'
               }`}
             >
               {f}
@@ -128,13 +127,13 @@ export default function CategoryPage() {
         {/* Product Grid */}
         {loading ? (
           <div className="py-16 text-center space-y-3">
-            <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs font-bold text-slate-500 uppercase">Loading {categoryObj.name}...</p>
+            <div className="w-8 h-8 border-4 border-[#8B9A6E] border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-xs font-bold text-[#232B1E]/70 uppercase">Loading {categoryObj.name}...</p>
           </div>
         ) : products.length === 0 ? (
-          <div className="p-12 text-center bg-[#F7F8F5] rounded-3xl border border-slate-200 text-slate-500 space-y-2">
-            <AlertCircle className="w-8 h-8 mx-auto text-slate-400" />
-            <h3 className="text-sm font-extrabold text-slate-900">No products found in this category</h3>
+          <div className="p-12 text-center bg-[#F7F2EB] rounded-3xl border border-[#EEEEEE] text-[#232B1E]/70 space-y-2">
+            <AlertCircle className="w-8 h-8 mx-auto text-[#8B9A6E]" />
+            <h3 className="text-sm font-extrabold text-[#232B1E]">No products found in this category</h3>
             <p className="text-xs">Try selecting another branch or category.</p>
           </div>
         ) : (

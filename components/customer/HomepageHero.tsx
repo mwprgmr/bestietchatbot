@@ -108,7 +108,7 @@ export default function HomepageHero() {
             </button>
 
             {/* Pagination Dots */}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-slate-950/40 backdrop-blur-xs px-3 py-1.5 rounded-full border border-white/10">
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-[#232B1E]/60 backdrop-blur-xs px-3 py-1.5 rounded-full border border-white/10">
               {posters.map((_, idx) => (
                 <button
                   key={idx}
@@ -116,7 +116,7 @@ export default function HomepageHero() {
                   onClick={() => setCurrentIndex(idx)}
                   className={`h-2 rounded-full transition-all cursor-pointer ${
                     currentIndex === idx
-                      ? 'w-6 bg-emerald-400'
+                      ? 'w-6 bg-[#8B9A6E]'
                       : 'w-2 bg-white/50 hover:bg-white/80'
                   }`}
                   aria-label={`Go to poster ${idx + 1}`}
@@ -130,10 +130,10 @@ export default function HomepageHero() {
       {/* Category Shortcuts Navigation */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+          <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#232B1E]/70">
             Explore Categories
           </h2>
-          <Link href="/category/fish" className="text-xs font-bold text-emerald-700 hover:underline">
+          <Link href="/category/fish" className="text-xs font-bold text-[#8B9A6E] hover:underline">
             View All →
           </Link>
         </div>
@@ -143,12 +143,12 @@ export default function HomepageHero() {
             <Link
               key={cat.id}
               href={`/category/${cat.slug}`}
-              className="group bg-white rounded-2xl p-3 border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-emerald-400 transition-all text-center flex flex-col items-center gap-2"
+              className="group bg-[#F7F2EB] rounded-2xl p-3 border border-[#EEEEEE] shadow-2xs hover:shadow-md hover:border-[#8B9A6E] transition-all text-center flex flex-col items-center gap-2"
             >
-              <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-100 border border-slate-200 group-hover:scale-105 transition-transform shrink-0">
+              <div className="w-14 h-14 rounded-full overflow-hidden bg-[#EEEEEE] border border-[#EEEEEE] group-hover:scale-105 transition-transform shrink-0">
                 <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
               </div>
-              <span className="text-xs font-extrabold text-[#101814] group-hover:text-emerald-700 transition-colors line-clamp-1">
+              <span className="text-xs font-black text-[#232B1E] group-hover:text-[#8B9A6E] transition-colors line-clamp-1">
                 {cat.name}
               </span>
             </Link>
@@ -157,38 +157,38 @@ export default function HomepageHero() {
       </section>
 
       {/* Why Bestiet Fresh Visual Strip */}
-      <section className="bg-[#F7F8F5] rounded-3xl p-6 border border-slate-200/80">
+      <section className="bg-[#EEEEEE] rounded-3xl p-6 border border-[#EEEEEE]">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           <div className="space-y-1.5 p-2">
-            <div className="w-10 h-10 rounded-2xl bg-white shadow-xs border border-slate-200 text-emerald-700 flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 rounded-2xl bg-[#F7F2EB] shadow-xs border border-[#8B9A6E]/30 text-[#8B9A6E] flex items-center justify-center mx-auto">
               <Truck className="w-5 h-5" />
             </div>
-            <h3 className="text-xs font-extrabold text-slate-900">FRESHLY SOURCED</h3>
-            <p className="text-[11px] text-slate-500">Directly from harbors & local farms</p>
+            <h3 className="text-xs font-black text-[#232B1E]">FRESHLY SOURCED</h3>
+            <p className="text-[11px] text-[#232B1E]/70 font-medium">Directly from harbors & local farms</p>
           </div>
 
           <div className="space-y-1.5 p-2">
-            <div className="w-10 h-10 rounded-2xl bg-white shadow-xs border border-slate-200 text-emerald-700 flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 rounded-2xl bg-[#F7F2EB] shadow-xs border border-[#8B9A6E]/30 text-[#8B9A6E] flex items-center justify-center mx-auto">
               <ShieldCheck className="w-5 h-5" />
             </div>
-            <h3 className="text-xs font-extrabold text-slate-900">QUALITY CHECKED</h3>
-            <p className="text-[11px] text-slate-500">100% chemical & ammonia free</p>
+            <h3 className="text-xs font-black text-[#232B1E]">QUALITY CHECKED</h3>
+            <p className="text-[11px] text-[#232B1E]/70 font-medium">100% chemical & ammonia free</p>
           </div>
 
           <div className="space-y-1.5 p-2">
-            <div className="w-10 h-10 rounded-2xl bg-white shadow-xs border border-slate-200 text-emerald-700 flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 rounded-2xl bg-[#F7F2EB] shadow-xs border border-[#8B9A6E]/30 text-[#8B9A6E] flex items-center justify-center mx-auto">
               <Utensils className="w-5 h-5" />
             </div>
-            <h3 className="text-xs font-extrabold text-slate-900">CLEANED YOUR WAY</h3>
-            <p className="text-[11px] text-slate-500">Curry Cut, Fry Cut, Fillet or Whole</p>
+            <h3 className="text-xs font-black text-[#232B1E]">CLEANED YOUR WAY</h3>
+            <p className="text-[11px] text-[#232B1E]/70 font-medium">Curry Cut, Fry Cut, Fillet or Whole</p>
           </div>
 
           <div className="space-y-1.5 p-2">
-            <div className="w-10 h-10 rounded-2xl bg-white shadow-xs border border-slate-200 text-emerald-700 flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 rounded-2xl bg-[#F7F2EB] shadow-xs border border-[#8B9A6E]/30 text-[#8B9A6E] flex items-center justify-center mx-auto">
               <HeartHandshake className="w-5 h-5" />
             </div>
-            <h3 className="text-xs font-extrabold text-slate-900">DOORSTEP DELIVERY</h3>
-            <p className="text-[11px] text-slate-500">Morning & evening express slots</p>
+            <h3 className="text-xs font-black text-[#232B1E]">DOORSTEP DELIVERY</h3>
+            <p className="text-[11px] text-[#232B1E]/70 font-medium">Morning & evening express slots</p>
           </div>
         </div>
       </section>

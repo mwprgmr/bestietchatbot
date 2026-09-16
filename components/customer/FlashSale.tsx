@@ -30,18 +30,18 @@ export default function FlashSale({ products }: { products: ProductProps[] }) {
   const formatNum = (num: number) => String(num).padStart(2, '0')
 
   return (
-    <section className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-slate-900 rounded-3xl p-6 text-white shadow-xl my-8 overflow-hidden relative">
-      {/* Decorative Blob */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+    <section className="bg-[#232B1E] rounded-3xl p-6 text-[#EEEEEE] shadow-xl my-8 overflow-hidden relative border border-[#8B9A6E]/30">
+      {/* Decorative Accent */}
+      <div className="absolute top-0 right-0 w-80 h-80 bg-[#8B9A6E]/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Flash Sale Header & Timer */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-emerald-700/60 mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#8B9A6E]/40 mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/30 flex items-center justify-center animate-bounce">
-            <Flame className="w-6 h-6 fill-slate-950" />
+          <div className="p-2.5 rounded-2xl bg-[#8B9A6E] text-white font-black shadow-lg shadow-[#8B9A6E]/30 flex items-center justify-center animate-bounce">
+            <Flame className="w-6 h-6 fill-white" />
           </div>
           <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-400">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8B9A6E]">
               Limited Time Deals
             </span>
             <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
@@ -51,19 +51,19 @@ export default function FlashSale({ products }: { products: ProductProps[] }) {
         </div>
 
         {/* Countdown Timer */}
-        <div className="flex items-center gap-2 bg-emerald-950/80 px-4 py-2 rounded-2xl border border-emerald-700/80 shadow-inner">
-          <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-          <span className="text-[11px] font-bold text-emerald-200 uppercase mr-1">Ends In:</span>
-          <div className="flex items-center gap-1 font-mono text-sm font-black text-amber-400">
-            <span className="bg-slate-900 px-2 py-0.5 rounded-lg border border-emerald-800">
+        <div className="flex items-center gap-2 bg-[#F7F2EB]/10 px-4 py-2 rounded-2xl border border-[#8B9A6E]/40 shadow-inner">
+          <Clock className="w-4 h-4 text-[#8B9A6E] shrink-0" />
+          <span className="text-[11px] font-bold text-[#EEEEEE] uppercase mr-1">Ends In:</span>
+          <div className="flex items-center gap-1 font-mono text-sm font-black text-[#8B9A6E]">
+            <span className="bg-[#232B1E] px-2 py-0.5 rounded-lg border border-[#8B9A6E]/40 text-white">
               {formatNum(timeLeft.hours)}
             </span>
-            <span>:</span>
-            <span className="bg-slate-900 px-2 py-0.5 rounded-lg border border-emerald-800">
+            <span className="text-white">:</span>
+            <span className="bg-[#232B1E] px-2 py-0.5 rounded-lg border border-[#8B9A6E]/40 text-white">
               {formatNum(timeLeft.minutes)}
             </span>
-            <span>:</span>
-            <span className="bg-slate-900 px-2 py-0.5 rounded-lg border border-emerald-800">
+            <span className="text-white">:</span>
+            <span className="bg-[#232B1E] px-2 py-0.5 rounded-lg border border-[#8B9A6E]/40 text-white">
               {formatNum(timeLeft.seconds)}
             </span>
           </div>

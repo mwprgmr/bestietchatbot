@@ -76,7 +76,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
     <div className="group flex flex-col justify-between transition-all">
       <Link href={`/product/${product.id}`} className="block relative group">
         {/* 1. PRODUCT IMAGE CONTAINER (With fixed height & ratio so all images match identically) */}
-        <div className="relative aspect-[4/3] h-44 sm:h-52 w-full bg-[#F7F8F5] rounded-2xl md:rounded-3xl overflow-hidden shadow-2xs border border-slate-200/80">
+        <div className="relative aspect-[4/3] h-44 sm:h-52 w-full bg-[#EEEEEE] rounded-2xl md:rounded-3xl overflow-hidden shadow-2xs border border-[#EEEEEE]">
           <img
             src={imageSrc}
             alt={product.name}
@@ -88,15 +88,15 @@ export default function ProductCard({ product }: { product: ProductProps }) {
 
           {/* Low Stock Badge */}
           {isLowStock && !isOutOfStock && (
-            <span className="absolute top-2.5 left-2.5 z-10 bg-amber-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
+            <span className="absolute top-2.5 left-2.5 z-10 bg-[#8B9A6E] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
               Only {product.available_stock} kg left
             </span>
           )}
 
           {/* Out of stock Overlay */}
           {isOutOfStock && (
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[1px] flex items-center justify-center z-10">
-              <span className="bg-slate-900 text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider border border-slate-700">
+            <div className="absolute inset-0 bg-[#232B1E]/60 backdrop-blur-[1px] flex items-center justify-center z-10">
+              <span className="bg-[#232B1E] text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider border border-[#8B9A6E]">
                 Out of Stock
               </span>
             </div>
@@ -111,22 +111,22 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                     e.preventDefault()
                     e.stopPropagation()
                   }}
-                  className="flex items-center gap-1.5 bg-white text-emerald-800 border-2 border-emerald-600 rounded-xl px-2 py-1 shadow-lg backdrop-blur-xs"
+                  className="flex items-center gap-1.5 bg-[#F7F2EB] text-[#8B9A6E] border-2 border-[#8B9A6E] rounded-xl px-2 py-1 shadow-lg backdrop-blur-xs"
                 >
                   <button
                     type="button"
                     onClick={(e) => handleQtyChange(e, -1)}
-                    className="w-5 h-5 rounded-md bg-emerald-100 hover:bg-emerald-200 flex items-center justify-center transition-colors cursor-pointer"
+                    className="w-5 h-5 rounded-md bg-[#EEEEEE] hover:bg-[#8B9A6E]/20 flex items-center justify-center transition-colors cursor-pointer"
                   >
-                    <Minus className="w-3 h-3 text-emerald-800 stroke-[3]" />
+                    <Minus className="w-3 h-3 text-[#232B1E] stroke-[3]" />
                   </button>
-                  <span className="text-xs font-black px-1 min-w-4 text-center text-slate-900">
+                  <span className="text-xs font-black px-1 min-w-4 text-center text-[#232B1E]">
                     {currentPackQty}
                   </span>
                   <button
                     type="button"
                     onClick={(e) => handleQtyChange(e, 1)}
-                    className="w-5 h-5 rounded-md bg-emerald-600 hover:bg-emerald-700 flex items-center justify-center transition-colors cursor-pointer"
+                    className="w-5 h-5 rounded-md bg-[#8B9A6E] hover:bg-[#7A895D] flex items-center justify-center transition-colors cursor-pointer"
                   >
                     <Plus className="w-3 h-3 text-white stroke-[3]" />
                   </button>
@@ -135,7 +135,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                 <button
                   type="button"
                   onClick={handleInitialAdd}
-                  className="bg-white hover:bg-rose-50 border-2 border-rose-500 text-rose-600 font-black text-xs md:text-sm px-3.5 sm:px-4 py-1.5 rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer uppercase tracking-wider"
+                  className="bg-[#F7F2EB] hover:bg-[#EEEEEE] border-2 border-[#8B9A6E] text-[#8B9A6E] font-black text-xs md:text-sm px-3.5 sm:px-4 py-1.5 rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer uppercase tracking-wider"
                 >
                   ADD
                 </button>
@@ -146,13 +146,13 @@ export default function ProductCard({ product }: { product: ProductProps }) {
 
         {/* 2. CARD CONTENT BELOW IMAGE */}
         <div className="mt-2.5 space-y-1">
-          {/* PRICE ROW: Green Solid Badge + Strikethrough Price */}
+          {/* PRICE ROW: Sage Solid Badge + Strikethrough Price */}
           <div className="flex items-center gap-2">
-            <span className="bg-[#36A852] text-white text-base md:text-lg font-black px-2.5 py-0.5 rounded-lg shadow-2xs">
+            <span className="bg-[#8B9A6E] text-white text-base md:text-lg font-black px-2.5 py-0.5 rounded-lg shadow-2xs">
               ₹{itemPrice}
             </span>
             {originalPrice > itemPrice && (
-              <span className="text-slate-400 font-bold text-xs md:text-sm line-through">
+              <span className="text-[#232B1E]/60 font-bold text-xs md:text-sm line-through">
                 ₹{originalPrice}
               </span>
             )}
@@ -161,20 +161,20 @@ export default function ProductCard({ product }: { product: ProductProps }) {
           {/* SAVINGS TAG + DASHED DIVIDER LINE */}
           {savings > 0 && (
             <div className="flex items-center gap-1.5 pt-0.5">
-              <span className="text-[#36A852] font-black text-xs tracking-tight">
+              <span className="text-[#8B9A6E] font-black text-xs tracking-tight">
                 ₹{savings} OFF
               </span>
-              <div className="flex-1 border-b border-dashed border-slate-300"></div>
+              <div className="flex-1 border-b border-dashed border-[#EEEEEE]"></div>
             </div>
           )}
 
           {/* PRODUCT TITLE */}
-          <h3 className="font-bold text-[#101814] text-sm md:text-base leading-snug line-clamp-2 group-hover:text-emerald-700 transition-colors pt-1">
+          <h3 className="font-bold text-[#232B1E] text-sm md:text-base leading-snug line-clamp-2 group-hover:text-[#8B9A6E] transition-colors pt-1">
             {product.name}
           </h3>
 
           {/* PACK SIZE / WEIGHT & QUICK WEIGHT TOGGLE */}
-          <div className="flex items-center justify-between gap-1 text-slate-500 text-xs font-medium pt-0.5">
+          <div className="flex items-center justify-between gap-1 text-[#232B1E]/70 text-xs font-medium pt-0.5">
             <span>1 pack ({selectedWeight === 0.5 ? '450 g' : '1 kg'})</span>
 
             {/* Quick Weight Selector */}
@@ -190,8 +190,8 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                   }}
                   className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
                     selectedWeight === w
-                      ? 'bg-slate-800 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'bg-[#8B9A6E] text-white'
+                      : 'bg-[#EEEEEE] text-[#232B1E] hover:bg-[#8B9A6E]/20'
                   }`}
                 >
                   {w === 0.5 ? '450g' : '1kg'}
@@ -200,11 +200,11 @@ export default function ProductCard({ product }: { product: ProductProps }) {
             </div>
           </div>
 
-          {/* RATING BADGE: Green Star Icon + Score + Count */}
+          {/* RATING BADGE: Sage Star Icon + Score + Count */}
           <div className="flex items-center gap-1 text-xs pt-1">
-            <Star className="w-3.5 h-3.5 fill-[#36A852] text-[#36A852]" />
-            <span className="font-bold text-slate-800">{ratingScore}</span>
-            <span className="text-slate-500 font-medium">({reviewCount})</span>
+            <Star className="w-3.5 h-3.5 fill-[#8B9A6E] text-[#8B9A6E]" />
+            <span className="font-bold text-[#232B1E]">{ratingScore}</span>
+            <span className="text-[#232B1E]/60 font-medium">({reviewCount})</span>
           </div>
         </div>
       </Link>
