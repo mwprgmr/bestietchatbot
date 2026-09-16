@@ -8,7 +8,9 @@ import { createClient } from '@/lib/supabase/client'
 
 export interface PosterProps {
   id: string
+  title?: string | null
   image_url: string
+  media_type?: 'image' | 'video'
   cta_link?: string | null
   sort_order?: number
   active?: boolean
@@ -17,18 +19,24 @@ export interface PosterProps {
 const DEFAULT_POSTERS: PosterProps[] = [
   {
     id: 'default-1',
-    image_url: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?auto=format&fit=crop&w=1600&q=80',
+    title: 'Fresh Catch Video Showcase',
+    image_url: 'https://assets.mixkit.co/videos/preview/mixkit-fresh-fish-and-seafood-in-a-market-display-42861-large.mp4',
+    media_type: 'video',
     cta_link: '/category/fish',
   },
   {
     id: 'default-2',
-    image_url: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=1600&q=80',
-    cta_link: '/category/chicken',
+    title: 'Farm Fresh Selection',
+    image_url: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?auto=format&fit=crop&w=1600&q=80',
+    media_type: 'image',
+    cta_link: '/category/fish',
   },
   {
     id: 'default-3',
-    image_url: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=1600&q=80',
-    cta_link: '/category/fish',
+    title: 'Tender Chicken Banner',
+    image_url: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=1600&q=80',
+    media_type: 'image',
+    cta_link: '/category/chicken',
   },
 ]
 
@@ -60,7 +68,7 @@ export default function HomepageHero() {
     if (isPaused || posters.length <= 1) return
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % posters.length)
-    }, 5000)
+    }, 6000)
     return () => clearInterval(timer)
   }, [isPaused, posters.length])
 
@@ -68,22 +76,36 @@ export default function HomepageHero() {
   const prevSlide = () => setCurrentIndex((prev) => (prev - 1 + posters.length) % posters.length)
 
   const currentPoster = posters[currentIndex] || DEFAULT_POSTERS[0]
+  const isVideo = currentPoster.media_type === 'video' ||
+    (currentPoster.image_url && /\.(mp4|webm|mov|ogg)($|\?)/i.test(currentPoster.image_url))
 
   return (
     <div className="space-y-8 mb-10">
-      {/* Pure Image Poster Slider (Boxy design) */}
+      {/* Pure Image/Video Poster Slider (Boxy design) */}
       <div
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         className="relative rounded-none overflow-hidden bg-[#232B1E] shadow-lg border border-[#EEEEEE] h-[220px] xs:h-[260px] sm:h-[360px] md:h-[460px] lg:h-[500px] w-full group transition-all"
       >
         <Link href={currentPoster.cta_link || '/category/fish'} className="block w-full h-full relative">
-          <img
-            key={currentPoster.id}
-            src={currentPoster.image_url}
-            alt="Bestiet Fresh Poster"
-            className="w-full h-full object-cover transition-opacity duration-700"
-          />
+          {isVideo ? (
+            <video
+              key={currentPoster.id}
+              src={currentPoster.image_url}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-full object-cover transition-opacity duration-700"
+            />
+          ) : (
+            <img
+              key={currentPoster.id}
+              src={currentPoster.image_url}
+              alt={currentPoster.title || 'Bestiet Fresh Poster'}
+              className="w-full h-full object-cover transition-opacity duration-700"
+            />
+          )}
         </Link>
 
         {/* Slider Controls */}
