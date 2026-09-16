@@ -11,7 +11,8 @@ import Footer from './Footer'
 export default function StorefrontLayout({ children }: { children: React.ReactNode }) {
   return (
     <CustomerProvider>
-      <div className="min-h-screen bg-[#F7F2EB] text-[#232B1E] flex flex-col font-sans overflow-x-hidden w-full max-w-full">
+      <div className="min-h-screen bg-[#F7F2EB] text-[#232B1E] flex flex-col font-sans overflow-x-hidden w-full max-w-full storefront-boxy">
+
 
         <Header />
         <LocationModal />

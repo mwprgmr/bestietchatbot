@@ -42,7 +42,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
     : Math.round(itemPrice * 1.35)
   const savings = Math.max(0, originalPrice - itemPrice)
 
-  // Product rating score & review count for design matching
+  // Product rating score & review count
   const ratingScore = product.rating || (4.2 + (product.name.length % 7) * 0.1).toFixed(1)
   const reviewCount = product.reviews_count || `${(10.5 + (product.name.length % 15) * 2.3).toFixed(1)}k`
 
@@ -75,8 +75,8 @@ export default function ProductCard({ product }: { product: ProductProps }) {
   return (
     <div className="group flex flex-col justify-between transition-all">
       <Link href={`/product/${product.id}`} className="block relative group">
-        {/* 1. PRODUCT IMAGE CONTAINER (With fixed height & ratio so all images match identically) */}
-        <div className="relative aspect-[4/3] h-44 sm:h-52 w-full bg-[#EEEEEE] rounded-2xl md:rounded-3xl overflow-hidden shadow-2xs border border-[#EEEEEE]">
+        {/* 1. PRODUCT IMAGE CONTAINER (Boxy design) */}
+        <div className="relative aspect-[4/3] h-44 sm:h-52 w-full bg-[#EEEEEE] rounded-none overflow-hidden border border-[#EEEEEE]">
           <img
             src={imageSrc}
             alt={product.name}
@@ -88,7 +88,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
 
           {/* Low Stock Badge */}
           {isLowStock && !isOutOfStock && (
-            <span className="absolute top-2.5 left-2.5 z-10 bg-[#8B9A6E] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
+            <span className="absolute top-2 left-2 z-10 bg-[#8B9A6E] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-none shadow-xs">
               Only {product.available_stock} kg left
             </span>
           )}
@@ -96,7 +96,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
           {/* Out of stock Overlay */}
           {isOutOfStock && (
             <div className="absolute inset-0 bg-[#232B1E]/60 backdrop-blur-[1px] flex items-center justify-center z-10">
-              <span className="bg-[#232B1E] text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider border border-[#8B9A6E]">
+              <span className="bg-[#232B1E] text-white text-[10px] font-extrabold px-3 py-1 rounded-none uppercase tracking-wider border border-[#8B9A6E]">
                 Out of Stock
               </span>
             </div>
@@ -104,19 +104,19 @@ export default function ProductCard({ product }: { product: ProductProps }) {
 
           {/* FLOATING ADD / QTY BUTTON AT BOTTOM-RIGHT OF IMAGE */}
           {!isOutOfStock && (
-            <div className="absolute bottom-2.5 right-2.5 z-20">
+            <div className="absolute bottom-2 right-2 z-20">
               {currentPackQty > 0 ? (
                 <div
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
                   }}
-                  className="flex items-center gap-1.5 bg-[#F7F2EB] text-[#8B9A6E] border-2 border-[#8B9A6E] rounded-xl px-2 py-1 shadow-lg backdrop-blur-xs"
+                  className="flex items-center gap-1.5 bg-[#F7F2EB] text-[#8B9A6E] border-2 border-[#8B9A6E] rounded-none px-2 py-1 shadow-lg"
                 >
                   <button
                     type="button"
                     onClick={(e) => handleQtyChange(e, -1)}
-                    className="w-5 h-5 rounded-md bg-[#EEEEEE] hover:bg-[#8B9A6E]/20 flex items-center justify-center transition-colors cursor-pointer"
+                    className="w-5 h-5 rounded-none bg-[#EEEEEE] hover:bg-[#8B9A6E]/20 flex items-center justify-center transition-colors cursor-pointer"
                   >
                     <Minus className="w-3 h-3 text-[#232B1E] stroke-[3]" />
                   </button>
@@ -126,7 +126,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                   <button
                     type="button"
                     onClick={(e) => handleQtyChange(e, 1)}
-                    className="w-5 h-5 rounded-md bg-[#8B9A6E] hover:bg-[#7A895D] flex items-center justify-center transition-colors cursor-pointer"
+                    className="w-5 h-5 rounded-none bg-[#8B9A6E] hover:bg-[#7A895D] flex items-center justify-center transition-colors cursor-pointer"
                   >
                     <Plus className="w-3 h-3 text-white stroke-[3]" />
                   </button>
@@ -135,7 +135,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                 <button
                   type="button"
                   onClick={handleInitialAdd}
-                  className="bg-[#F7F2EB] hover:bg-[#EEEEEE] border-2 border-[#8B9A6E] text-[#8B9A6E] font-black text-xs md:text-sm px-3.5 sm:px-4 py-1.5 rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer uppercase tracking-wider"
+                  className="bg-[#F7F2EB] hover:bg-[#EEEEEE] border-2 border-[#8B9A6E] text-[#8B9A6E] font-black text-xs md:text-sm px-3.5 sm:px-4 py-1.5 rounded-none shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer uppercase tracking-wider"
                 >
                   ADD
                 </button>
@@ -148,7 +148,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
         <div className="mt-2.5 space-y-1">
           {/* PRICE ROW: Sage Solid Badge + Strikethrough Price */}
           <div className="flex items-center gap-2">
-            <span className="bg-[#8B9A6E] text-white text-base md:text-lg font-black px-2.5 py-0.5 rounded-lg shadow-2xs">
+            <span className="bg-[#8B9A6E] text-white text-base md:text-lg font-black px-2.5 py-0.5 rounded-none shadow-2xs">
               ₹{itemPrice}
             </span>
             {originalPrice > itemPrice && (
@@ -188,7 +188,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                     e.stopPropagation()
                     setSelectedWeight(w)
                   }}
-                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
+                  className={`px-1.5 py-0.5 rounded-none text-[10px] font-bold transition-all ${
                     selectedWeight === w
                       ? 'bg-[#8B9A6E] text-white'
                       : 'bg-[#EEEEEE] text-[#232B1E] hover:bg-[#8B9A6E]/20'

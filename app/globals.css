@@ -20,6 +20,22 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Boxy Storefront Theme Override - Force sharp square corners on all storefront elements */
+.storefront-boxy,
+.storefront-boxy button,
+.storefront-boxy input,
+.storefront-boxy select,
+.storefront-boxy textarea,
+.storefront-boxy img,
+.storefront-boxy div,
+.storefront-boxy span,
+.storefront-boxy a,
+.storefront-boxy nav,
+.storefront-boxy section,
+.storefront-boxy footer,
+.storefront-boxy header {
+  border-radius: 0px !important;
+}
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
@@ -31,7 +47,7 @@ body {
 }
 ::-webkit-scrollbar-thumb {
   background: #8B9A6E;
-  border-radius: 9999px;
+  border-radius: 0px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #7A895D;
