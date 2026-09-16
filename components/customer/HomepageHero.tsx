@@ -127,27 +127,38 @@ export default function HomepageHero() {
         )}
       </div>
 
-      {/* Shop by Category Section (Boxy Design) */}
-      <section id="categories" className="space-y-6 pt-2 scroll-mt-20">
-        <h2 className="text-xl sm:text-2xl font-black text-[#232B1E] text-center tracking-tight uppercase">
-          Shop by Category
-        </h2>
+      {/* Shop by Category Section (Single Line Horizontal Slider on Mobile & Desktop) */}
+      <section id="categories" className="space-y-4 pt-2 scroll-mt-20">
+        <div className="flex items-baseline justify-between px-1">
+          <div>
+            <h2 className="text-lg sm:text-2xl font-black text-[#232B1E] tracking-tight uppercase">
+              Shop by Category
+            </h2>
+            <p className="text-xs text-[#232B1E]/60 font-semibold hidden sm:block">
+              Explore fresh ocean catch, tender meats, and value combos
+            </p>
+          </div>
+          <span className="text-[10px] font-extrabold uppercase text-[#8B9A6E] tracking-wider sm:hidden">
+            Swipe →
+          </span>
+        </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 sm:gap-6 justify-items-center">
+        {/* Single-Line Horizontal Slider */}
+        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar snap-x snap-mandatory py-2 px-1 justify-start sm:justify-around">
           {CATEGORIES.map((cat) => (
             <Link
               key={cat.id}
               href={`/category/${cat.slug}`}
-              className="group text-center flex flex-col items-center cursor-pointer transition-all"
+              className="group flex flex-col items-center shrink-0 snap-start cursor-pointer transition-all active:scale-95 animate-fade-in-up"
             >
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-none overflow-hidden bg-white p-1.5 shadow-md border border-[#EEEEEE] group-hover:shadow-lg group-hover:border-[#8B9A6E] group-hover:scale-105 transition-all">
+              <div className="category-circle w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 overflow-hidden bg-white p-1 shadow-md border-2 border-[#EEEEEE] group-hover:border-[#8B9A6E] group-hover:shadow-xl group-hover:-translate-y-1 transition-all duration-300">
                 <img
                   src={cat.image}
                   alt={cat.name}
-                  className="w-full h-full object-cover rounded-none"
+                  className="w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-500 ease-out"
                 />
               </div>
-              <span className="text-xs sm:text-sm font-bold text-[#232B1E] group-hover:text-[#8B9A6E] transition-colors mt-2.5 line-clamp-2 max-w-[110px]">
+              <span className="text-xs sm:text-sm font-black text-[#232B1E] group-hover:text-[#8B9A6E] transition-colors mt-2.5 text-center line-clamp-1 max-w-[100px] sm:max-w-[120px]">
                 {cat.name}
               </span>
             </Link>
