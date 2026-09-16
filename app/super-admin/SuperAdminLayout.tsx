@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ShieldCheck,
   Image as ImageIcon,
+  Grid,
 } from 'lucide-react'
 import { format, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns'
 
@@ -190,6 +191,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
   const navItems = [
     { label: 'Dashboard', href: '/super-admin/dashboard', icon: LayoutDashboard },
+    { label: 'Categories', href: '/super-admin/categories', icon: Grid },
     { label: 'Posters', href: '/super-admin/posters', icon: ImageIcon },
     { label: 'Chatbot', href: '/super-admin/chatbot', icon: MessageSquare },
     { label: 'Orders', href: '/super-admin/orders', icon: ShoppingBag },
