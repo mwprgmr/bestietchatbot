@@ -1,0 +1,155 @@
+'use client'
+
+import React, { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { useCustomer } from '@/lib/context/CustomerContext'
+import StorefrontLayout from '@/components/customer/StorefrontLayout'
+import ProductCard, { ProductProps } from '@/components/customer/ProductCard'
+import { CATEGORIES, CategoryInfo } from '@/lib/data/ecommerce-data'
+import { Filter, ArrowLeft, AlertCircle } from 'lucide-react'
+import Link from 'next/link'
+
+export default function CategoryPage() {
+  const params = useParams()
+  const slug = (params?.slug as string) || 'fish'
+  const { selectedBranch } = useCustomer()
+
+  const [products, setProducts] = useState<ProductProps[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filterCut, setFilterCut] = useState<string>('ALL')
+
+  const categoryObj = CATEGORIES.find((c) => c.slug === slug) || {
+    name: slug.toUpperCase(),
+    description: `Fresh ${slug} products cleaned and delivered to your doorstep.`,
+    image: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?auto=format&fit=crop&w=800&q=80',
+  }
+
+  useEffect(() => {
+    async function loadCategoryProducts() {
+      setLoading(true)
+      try {
+        const supabase = createClient()
+
+        // Match category string
+        let queryCategory = 'Fish'
+        if (slug === 'chicken') queryCategory = 'Chicken'
+        else if (slug === 'mutton') queryCategory = 'Mutton'
+        else if (slug === 'seafood') queryCategory = 'Seafood'
+        else if (slug === 'ready-to-cook') queryCategory = 'Ready to Cook'
+        else if (slug === 'combos') queryCategory = 'Combos'
+
+        const { data: rawProducts } = await supabase
+          .from('products')
+          .select('*')
+          .ilike('category', `%${queryCategory}%`)
+          .eq('active', true)
+
+        const { data: rawInventory } = await supabase
+          .from('inventory')
+          .select('*')
+          .eq('branch_id', selectedBranch.id)
+
+        const mapped: ProductProps[] = (rawProducts || []).map((p) => {
+          const invMatch = (rawInventory || []).find((i) => i.product_id === p.id)
+          const price = invMatch?.price_per_kg ? Number(invMatch.price_per_kg) : 450
+          const stock = invMatch?.available_stock !== undefined ? Number(invMatch.available_stock) : 20
+
+          return {
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            category: p.category || 'Fish',
+            unit: p.unit || 'kg',
+            price_per_kg: price,
+            original_price_per_kg: Math.round(price * 1.25),
+            available_stock: stock,
+            image_url: p.image_url,
+          }
+        })
+
+        setProducts(mapped)
+      } catch (err) {
+        console.error('Category products load error:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadCategoryProducts()
+  }, [slug, selectedBranch.id])
+
+  return (
+    <StorefrontLayout>
+      <div className="space-y-6">
+        {/* Back Link & Header Banner */}
+        <div>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-emerald-700 transition-colors mb-3"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Storefront</span>
+          </Link>
+
+          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-emerald-950 via-[#101814] to-slate-900 text-white p-6 sm:p-8 border border-slate-800 shadow-md">
+            <div className="relative z-10 max-w-xl space-y-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-400">
+                Fresh Category
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white uppercase">
+                {categoryObj.name}
+              </h1>
+              <p className="text-xs text-slate-300">{categoryObj.description}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Bar */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+          <span className="text-xs font-bold text-slate-500 flex items-center gap-1 mr-2 shrink-0">
+            <Filter className="w-3.5 h-3.5 text-slate-400" /> Filter:
+          </span>
+          {['ALL', 'Cleaned', 'Curry Cut', 'Boneless', 'In Stock Only'].map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilterCut(f)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                filterCut === f
+                  ? 'bg-emerald-700 text-white shadow-xs'
+                  : 'bg-[#F7F8F5] text-slate-700 border border-slate-200 hover:border-emerald-300'
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+
+        {/* Product Grid */}
+        {loading ? (
+          <div className="py-16 text-center space-y-3">
+            <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-xs font-bold text-slate-500 uppercase">Loading {categoryObj.name}...</p>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="p-12 text-center bg-[#F7F8F5] rounded-3xl border border-slate-200 text-slate-500 space-y-2">
+            <AlertCircle className="w-8 h-8 mx-auto text-slate-400" />
+            <h3 className="text-sm font-extrabold text-slate-900">No products found in this category</h3>
+            <p className="text-xs">Try selecting another branch or category.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {products
+              .filter((p) => {
+                if (filterCut === 'In Stock Only') return p.available_stock > 0
+                return true
+              })
+              .map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+          </div>
+        )}
+      </div>
+    </StorefrontLayout>
+  )
+}
