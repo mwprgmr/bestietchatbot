@@ -739,24 +739,73 @@ async function handleMainMenuRouter(phone: string, userText: string, session: an
 async function getBranchInventory(supabase: any, branchId: string, targetDate?: string) {
   const today = targetDate || getTodayDateIST()
 
-  // Query public.inventory strictly for branch_id, inventory_date = today, available_stock > 0, status = 'available'
-  const { data: items, error } = await supabase
+  // 1. Query public.inventory for branch_id, inventory_date = today, available_stock > 0, status in ('available', 'AVAILABLE')
+  let { data: items, error } = await supabase
     .from('inventory')
     .select('*, product:products(*)')
     .eq('branch_id', branchId)
     .eq('inventory_date', today)
     .gt('available_stock', 0)
-    .eq('status', 'available')
+    .in('status', ['available', 'AVAILABLE'])
     .order('created_at', { ascending: false })
 
   if (error) {
     console.error(`[INVENTORY READ ERROR] branch_id=${branchId} business_date=${today}:`, error.message)
-    return []
+  }
+
+  // 2. Fallback: If no items exist for today, check latest available inventory date and auto carry-forward
+  if (!items || items.length === 0) {
+    console.log(`[INVENTORY READ FALLBACK] No today rows for branch_id=${branchId} date=${today}. Checking latest available stock...`)
+    const { data: latestItems, error: latestErr } = await supabase
+      .from('inventory')
+      .select('*, product:products(*)')
+      .eq('branch_id', branchId)
+      .lte('inventory_date', today)
+      .gt('available_stock', 0)
+      .in('status', ['available', 'AVAILABLE'])
+      .order('inventory_date', { ascending: false })
+
+    if (!latestErr && latestItems && latestItems.length > 0) {
+      const latestDate = latestItems[0].inventory_date
+      const fallbackList = latestItems.filter((i: any) => i.inventory_date === latestDate)
+
+      for (const item of fallbackList) {
+        try {
+          await supabase.from('inventory').upsert(
+            {
+              branch_id: branchId,
+              product_id: item.product_id,
+              inventory_date: today,
+              opening_stock: Number(item.available_stock || 0),
+              available_stock: Number(item.available_stock || 0),
+              sold_stock: 0,
+              price_per_kg: Number(item.price_per_kg || 200),
+              status: 'AVAILABLE',
+            },
+            { onConflict: 'branch_id,product_id,inventory_date' }
+          )
+        } catch (_) {}
+      }
+
+      const { data: refreshed } = await supabase
+        .from('inventory')
+        .select('*, product:products(*)')
+        .eq('branch_id', branchId)
+        .eq('inventory_date', today)
+        .gt('available_stock', 0)
+        .in('status', ['available', 'AVAILABLE'])
+
+      if (refreshed && refreshed.length > 0) {
+        items = refreshed
+      } else {
+        items = fallbackList
+      }
+    }
   }
 
   const activeItems = (items || []).filter((item: any) => item.product && item.product.active !== false)
 
-  console.log(`[INVENTORY READ] branch_id=${branchId} business_date=${today} product_count=${activeItems.length}`)
+  console.log(`[INVENTORY READ SUCCESS] branch_id=${branchId} business_date=${today} product_count=${activeItems.length}`)
   for (const item of activeItems) {
     console.log(`   product_id=${item.product_id} product_name=${item.product?.name} inventory_id=${item.id} available_stock=${item.available_stock} price_per_kg=${item.price_per_kg}`)
   }
