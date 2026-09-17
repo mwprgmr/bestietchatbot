@@ -36,7 +36,7 @@ export default function CartPage() {
 
   return (
     <StorefrontLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 pb-20 md:pb-6">
         {/* Back Link & Page Title */}
         <div>
           <Link
@@ -216,7 +216,7 @@ export default function CartPage() {
                     <span className="font-bold text-[#0F172A]">
                       {deliveryFee === 0 ? (
                         <span className="text-[#39B54A] font-extrabold uppercase text-[10px]">
-                          FREE
+                          FREE (Orders ≥ ₹500)
                         </span>
                       ) : (
                         `₹${deliveryFee}`
@@ -231,9 +231,9 @@ export default function CartPage() {
 
                 <button
                   onClick={() => router.push('/checkout')}
-                  className="w-full py-3.5 px-4 bg-[#39B54A] hover:bg-[#2EA03E] text-white font-extrabold rounded-none text-sm shadow-md shadow-[#39B54A]/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 group cursor-pointer"
+                  className="w-full py-4 px-4 bg-[#39B54A] hover:bg-[#2EA03E] text-white font-black rounded-none text-sm shadow-md shadow-[#39B54A]/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 group cursor-pointer"
                 >
-                  <span>PROCEED TO CHECKOUT</span>
+                  <span>PROCEED TO CHECKOUT (₹{grandTotal})</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>

@@ -167,7 +167,7 @@ export default function MyOrdersPage() {
                                     — {qtyKg}kg <span className="font-normal text-[#0F172A]/60">({cutType})</span>
                                   </span>
                                 </span>
-                                <span className="font-extrabold text-[#0F172A]">₹{item.subtotal}</span>
+                                <span className="font-extrabold text-[#0F172A]">₹{item.total || item.subtotal}</span>
                               </div>
                             )
                           })}
@@ -261,12 +261,12 @@ export default function MyOrdersPage() {
                           {o.items?.map((item: any) => (
                             <div key={item.id} className="flex justify-between items-center">
                               <span>
-                                {item.product_name}{' '}
+                                {item.product_name || item.product?.name || 'Fresh Catch'}{' '}
                                 <span className="text-[11px] text-[#0F172A]/60">
-                                  ({item.cutting_type || 'Cleaned'} • {item.quantity_kg}kg)
+                                  ({item.cutting_type || item.cut_type || 'Cleaned'} • {item.quantity ?? item.quantity_kg}kg)
                                 </span>
                               </span>
-                              <span className="font-bold text-[#0F172A]">₹{item.subtotal}</span>
+                              <span className="font-bold text-[#0F172A]">₹{item.total || item.subtotal}</span>
                             </div>
                           ))}
                         </div>

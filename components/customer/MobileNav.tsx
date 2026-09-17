@@ -8,7 +8,7 @@ import { Home, Grid, Search, ShoppingBag, User, ArrowRight } from 'lucide-react'
 
 export default function MobileNav() {
   const pathname = usePathname()
-  const { cart, grandTotal, setIsCartOpen } = useCustomer()
+  const { cart, grandTotal, cartSubtotal, deliveryFee, setIsCartOpen } = useCustomer()
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
 
@@ -44,20 +44,26 @@ export default function MobileNav() {
               {totalItems}
             </div>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[#FFFFFF]/90">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[#FFFFFF]">
                 {totalItems} ITEM{totalItems > 1 ? 'S' : ''} ADDED
               </div>
-              <div className="text-xs font-extrabold text-white">₹{grandTotal}</div>
+              <div className="text-xs font-black text-white">
+                ₹{grandTotal}{' '}
+                <span className="text-[10px] font-normal opacity-90">
+                  ({deliveryFee === 0 ? 'Free Delivery' : `+ ₹${deliveryFee} Delivery`})
+                </span>
+              </div>
             </div>
           </div>
 
-          <button
-            onClick={() => setIsCartOpen(true)}
-            className="py-1.5 px-3 bg-[#FFFFFF] text-[#0F172A] font-extrabold rounded-none text-xs flex items-center gap-1.5 shadow-xs hover:bg-white active:scale-95 transition-all cursor-pointer"
+          <Link
+            href="/checkout"
+            onClick={() => setIsCartOpen(false)}
+            className="py-2 px-3 bg-[#FFFFFF] text-[#0F172A] font-extrabold rounded-none text-xs flex items-center gap-1.5 shadow-md hover:bg-white active:scale-95 transition-all cursor-pointer"
           >
-            <span>VIEW CART</span>
+            <span>PROCEED TO CHECKOUT</span>
             <ArrowRight className="w-3.5 h-3.5 text-[#39B54A]" />
-          </button>
+          </Link>
         </div>
       )}
 

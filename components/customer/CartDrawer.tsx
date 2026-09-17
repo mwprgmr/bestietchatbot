@@ -229,7 +229,7 @@ export default function CartDrawer() {
 
           {/* Footer Bill Summary & Checkout */}
           {cart.length > 0 && (
-            <div className="p-4 bg-[#E2E8F0] border-t border-[#E2E8F0] space-y-3">
+            <div className="p-4 pb-[max(4.5rem,env(safe-area-inset-bottom))] md:pb-4 bg-[#E2E8F0] border-t border-[#E2E8F0] space-y-3">
               <div className="space-y-1.5 text-xs text-[#0F172A]/80">
                 <div className="flex justify-between">
                   <span>Item Subtotal</span>
@@ -246,7 +246,7 @@ export default function CartDrawer() {
                   <span className="font-bold text-[#0F172A]">
                     {deliveryFee === 0 ? (
                       <span className="text-[#39B54A] font-extrabold uppercase text-[10px]">
-                        FREE
+                        FREE (Orders ≥ ₹500)
                       </span>
                     ) : (
                       `₹${deliveryFee}`
@@ -254,16 +254,16 @@ export default function CartDrawer() {
                   </span>
                 </div>
                 <div className="pt-2 border-t border-[#39B54A]/20 flex justify-between text-sm font-extrabold text-[#0F172A]">
-                  <span>To Pay</span>
-                  <span className="text-[#39B54A] text-base">₹{grandTotal}</span>
+                  <span>Grand Total</span>
+                  <span className="text-[#39B54A] text-base font-black">₹{grandTotal}</span>
                 </div>
               </div>
 
               <button
                 onClick={handleProceedCheckout}
-                className="w-full py-3 px-4 bg-[#39B54A] hover:bg-[#2EA03E] text-white font-bold rounded-none text-sm shadow-md shadow-[#39B54A]/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 group cursor-pointer"
+                className="w-full py-3.5 px-4 bg-[#39B54A] hover:bg-[#2EA03E] text-white font-extrabold rounded-none text-sm shadow-md shadow-[#39B54A]/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 group cursor-pointer"
               >
-                <span>PROCEED TO CHECKOUT</span>
+                <span>PROCEED TO CHECKOUT (₹{grandTotal})</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
