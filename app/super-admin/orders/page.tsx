@@ -127,13 +127,59 @@ function OrdersContent() {
     }
   }
 
+  const parseOrderLocation = (ord: any) => {
+    let address = ord.delivery_address || ord.address?.address_line || ''
+    let lat = ord.latitude ?? ord.address?.latitude
+    let lng = ord.longitude ?? ord.address?.longitude
+    let mapsUrl = ord.maps_url ?? ord.address?.maps_url
+    const remarks = ord.customer_remarks || ''
+
+    if (!address && remarks) {
+      const match = remarks.match(/Delivery:\s*([^,|]+(?:\s*,\s*[^,|]+)*)/i)
+      if (match) address = match[1].trim()
+    }
+
+    if (!mapsUrl && remarks) {
+      const mapsMatch = remarks.match(/https:\/\/www\.google\.com\/maps\?q=(-?\d+\.?\d*),(-?\d+\.?\d*)/)
+      if (mapsMatch) {
+        mapsUrl = mapsMatch[0]
+        lat = parseFloat(mapsMatch[1])
+        lng = parseFloat(mapsMatch[2])
+      }
+    }
+
+    if (!mapsUrl && address) {
+      const mapsMatch = address.match(/https:\/\/www\.google\.com\/maps\?q=(-?\d+\.?\d*),(-?\d+\.?\d*)/)
+      if (mapsMatch) {
+        mapsUrl = mapsMatch[0]
+        lat = parseFloat(mapsMatch[1])
+        lng = parseFloat(mapsMatch[2])
+      }
+    }
+
+    if (!mapsUrl && lat !== null && lat !== undefined && lng !== null && lng !== undefined) {
+      mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`
+    }
+
+    const cleanAddr = address.replace(/\|?\s*GPS:\s*https:\/\/[^\s]+/g, '').replace(/\|?\s*GPS Shared:\s*https:\/\/[^\s]+/g, '').trim() || 'Address not specified'
+
+    return {
+      address: cleanAddr,
+      hasGps: !!mapsUrl,
+      mapsUrl,
+      lat,
+      lng,
+    }
+  }
+
   const filteredOrders = orders.filter((ord) => {
     if (!search) return true
     const q = search.toLowerCase()
     const num = (ord.order_number || '').toLowerCase()
     const custId = (ord.customer_id || '').toLowerCase()
     const cust = getOrderCustomerDetails(ord)
-    return num.includes(q) || custId.includes(q) || cust.phone.includes(q) || cust.displayPhone.toLowerCase().includes(q) || cust.name.toLowerCase().includes(q)
+    const loc = parseOrderLocation(ord)
+    return num.includes(q) || custId.includes(q) || cust.phone.includes(q) || cust.displayPhone.toLowerCase().includes(q) || cust.name.toLowerCase().includes(q) || loc.address.toLowerCase().includes(q)
   })
 
   if (loading) {
@@ -198,7 +244,7 @@ function OrdersContent() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search order #, phone, customer..."
+              placeholder="Search order #, phone, customer, address..."
               className="bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
             />
           </div>
@@ -212,6 +258,7 @@ function OrdersContent() {
                 <th className="p-3.5">Source</th>
                 <th className="p-3.5">Branch</th>
                 <th className="p-3.5">Customer & Contact</th>
+                <th className="p-3.5">Delivery Address & GPS</th>
                 <th className="p-3.5">Ordered Fish & Quantity (kg)</th>
                 <th className="p-3.5">Total Amount</th>
                 <th className="p-3.5">Status</th>
@@ -221,13 +268,14 @@ function OrdersContent() {
             <tbody className="divide-y divide-slate-800/60 text-xs text-slate-300">
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-500 font-medium">
+                  <td colSpan={9} className="p-8 text-center text-slate-500 font-medium">
                     No orders match your filter criteria.
                   </td>
                 </tr>
               ) : (
                 filteredOrders.map((ord) => {
                   const custDetails = getOrderCustomerDetails(ord)
+                  const locDetails = parseOrderLocation(ord)
                   const channel = custDetails.channel
                   const isWa = channel === 'whatsapp'
                   const itemsList = Array.isArray(ord.items) && ord.items.length > 0
@@ -271,6 +319,28 @@ function OrdersContent() {
                             >
                               <ExternalLink className="w-3 h-3" />
                             </a>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="p-3.5 max-w-xs">
+                        <div className="flex flex-col gap-1.5 items-start">
+                          <p className="font-medium text-slate-300 text-[11px] leading-snug line-clamp-2" title={locDetails.address}>
+                            📍 {locDetails.address}
+                          </p>
+                          {locDetails.hasGps ? (
+                            <a
+                              href={locDetails.mapsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 transition-colors whitespace-nowrap"
+                              title="Open GPS Location in Google Maps"
+                            >
+                              <ExternalLink className="w-3 h-3 text-emerald-400" />
+                              <span>GPS Maps</span>
+                            </a>
+                          ) : (
+                            <span className="text-[10px] text-slate-500 italic">No GPS</span>
                           )}
                         </div>
                       </td>

@@ -157,6 +157,51 @@ export default function OrdersPage() {
     }
   }
 
+  const parseOrderLocation = (ord: any) => {
+    let address = ord.delivery_address || ord.address?.address_line || ''
+    let lat = ord.latitude ?? ord.address?.latitude
+    let lng = ord.longitude ?? ord.address?.longitude
+    let mapsUrl = ord.maps_url ?? ord.address?.maps_url
+    const remarks = ord.customer_remarks || ''
+
+    if (!address && remarks) {
+      const match = remarks.match(/Delivery:\s*([^,|]+(?:\s*,\s*[^,|]+)*)/i)
+      if (match) address = match[1].trim()
+    }
+
+    if (!mapsUrl && remarks) {
+      const mapsMatch = remarks.match(/https:\/\/www\.google\.com\/maps\?q=(-?\d+\.?\d*),(-?\d+\.?\d*)/)
+      if (mapsMatch) {
+        mapsUrl = mapsMatch[0]
+        lat = parseFloat(mapsMatch[1])
+        lng = parseFloat(mapsMatch[2])
+      }
+    }
+
+    if (!mapsUrl && address) {
+      const mapsMatch = address.match(/https:\/\/www\.google\.com\/maps\?q=(-?\d+\.?\d*),(-?\d+\.?\d*)/)
+      if (mapsMatch) {
+        mapsUrl = mapsMatch[0]
+        lat = parseFloat(mapsMatch[1])
+        lng = parseFloat(mapsMatch[2])
+      }
+    }
+
+    if (!mapsUrl && lat !== null && lat !== undefined && lng !== null && lng !== undefined) {
+      mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`
+    }
+
+    const cleanAddr = address.replace(/\|?\s*GPS:\s*https:\/\/[^\s]+/g, '').replace(/\|?\s*GPS Shared:\s*https:\/\/[^\s]+/g, '').trim() || 'Address not specified'
+
+    return {
+      address: cleanAddr,
+      hasGps: !!mapsUrl,
+      mapsUrl,
+      lat,
+      lng,
+    }
+  }
+
   // Modals state
   const [orderToMarkPaid, setOrderToMarkPaid] = useState<Order | null>(null)
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null)
@@ -795,7 +840,8 @@ export default function OrdersPage() {
                   <th className="py-3.5 px-4">Customer</th>
                   <th className="py-3.5 px-4">WhatsApp Number</th>
                   <th className="py-3.5 px-4">Items & Remarks</th>
-                  <th className="py-3.5 px-4">Location</th>
+                  <th className="py-3.5 px-4">Delivery Address & GPS Location</th>
+                  <th className="py-3.5 px-4">Items & Remarks</th>
                   <th className="py-3.5 px-4">Total</th>
                   <th className="py-3.5 px-4">Payment</th>
                   <th className="py-3.5 px-4">Status</th>
@@ -812,7 +858,7 @@ export default function OrdersPage() {
                       : 'Manvila Kazhakkoottam Branch')
 
                   const totalAmt = ord.total_amount ?? ord.total ?? 0
-                  const locInfo = getLocationInfo(ord)
+                  const locInfo = parseOrderLocation(ord)
                   const isPaid = (ord.payment_status || '').toUpperCase() === 'PAID'
                   const isCancelled = (ord.status || '').toUpperCase() === 'CANCELLED'
                   const ordChannel = ((ord as any).order_channel || ((ord as any).whatsapp_message_id ? 'whatsapp' : 'storefront')).toLowerCase()
@@ -894,6 +940,29 @@ export default function OrdersPage() {
                         })()}
                       </td>
 
+                      <td className="py-3.5 px-4 max-w-xs">
+                        <div className="flex flex-col gap-1.5 items-start">
+                          <p className="font-semibold text-slate-800 text-[11px] leading-snug line-clamp-2" title={locInfo.address}>
+                            📍 {locInfo.address}
+                          </p>
+                          {locInfo.hasGps ? (
+                            <a
+                              href={locInfo.mapsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors whitespace-nowrap"
+                              title="Open exact GPS location in Google Maps"
+                            >
+                              <MapPin className="w-3 h-3 text-white" />
+                              <span>Open GPS Maps</span>
+                              <ExternalLink className="w-3 h-3 text-emerald-200" />
+                            </a>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 italic">No GPS Shared</span>
+                          )}
+                        </div>
+                      </td>
+
                       <td className="py-3.5 px-4">
                         {(() => {
                           const itemsList = Array.isArray(ord.items) && ord.items.length > 0
@@ -930,23 +999,6 @@ export default function OrdersPage() {
                           <p className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md mt-1.5 inline-flex items-center gap-1">
                             <MessageSquare className="w-2.5 h-2.5" /> {ord.customer_remarks}
                           </p>
-                        )}
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        {locInfo ? (
-                          <a
-                            href={locInfo.mapsUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-2xs whitespace-nowrap"
-                          >
-                            <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>📍 GPS Available</span>
-                            <ExternalLink className="w-2.5 h-2.5 text-emerald-500" />
-                          </a>
-                        ) : (
-                          <span className="text-[10px] text-slate-400 italic">○ No GPS</span>
                         )}
                       </td>
 
@@ -1253,52 +1305,50 @@ export default function OrdersPage() {
                     )
                   })()}
 
-                  {/* Text Address */}
-                  <div className="pt-2 border-t border-slate-200/60 text-slate-600 flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-slate-800">{selectedOrder.address?.label || selectedOrder.address?.title || 'Delivery Address'}</p>
-                      <p>
-                        {selectedOrder.delivery_address ||
-                          selectedOrder.address?.address_line ||
-                          selectedOrder.address?.address_line1 ||
-                          'Address not specified'}
-                      </p>
-                      {selectedOrder.address?.pincode && <p className="text-slate-500 text-[11px]">Pincode: {selectedOrder.address.pincode}</p>}
-                    </div>
-                  </div>
-
-                  {/* Prominent Customer Location Section for Delivery Staff */}
-                  <div className="pt-3 border-t border-slate-200/60 space-y-2">
-                    <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">📌 Customer Location</p>
-                    {(() => {
-                      const drawerLoc = getLocationInfo(selectedOrder);
-                      return drawerLoc ? (
-                        <div className="bg-emerald-50/90 p-3.5 rounded-xl border border-emerald-200 space-y-2.5">
-                          <div className="flex items-center gap-2 text-xs font-bold text-emerald-900 mb-1">
-                            <MapPin className="w-4 h-4 text-emerald-600" />
-                            <span>📍 Location shared by customer</span>
-                          </div>
-                          <a
-                            href={drawerLoc.mapsUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors"
-                          >
-                            <span>🗺️ Open in Google Maps</span>
-                            <ExternalLink className="w-3.5 h-3.5 opacity-80" />
-                          </a>
-                          <div className="pt-2 border-t border-emerald-200/60 text-[11px] font-mono text-emerald-800 flex items-center justify-between">
-                            <span>Latitude: <strong>{drawerLoc.lat.toFixed(4)}</strong></span>
-                            <span>Longitude: <strong>{drawerLoc.lng.toFixed(4)}</strong></span>
+                  {/* Text Address & GPS Card */}
+                  {(() => {
+                    const drawerLoc = parseOrderLocation(selectedOrder)
+                    return (
+                      <div className="pt-2 border-t border-slate-200/60 text-slate-600 space-y-3">
+                        <div className="flex items-start gap-2">
+                          <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-bold text-slate-800 text-xs">Delivery Address:</p>
+                            <p className="text-xs text-slate-700 font-medium leading-relaxed">
+                              {drawerLoc.address}
+                            </p>
                           </div>
                         </div>
-                      ) : (
-                        <p className="text-xs text-slate-400 italic bg-slate-100 p-2.5 rounded-xl">Location not shared by customer</p>
-                      )
-                    })()}
-                  </div>
 
+                        {drawerLoc.hasGps ? (
+                          <div className="bg-emerald-50/90 p-3 rounded-xl border border-emerald-200 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-extrabold text-emerald-900 flex items-center gap-1.5">
+                                <MapPin className="w-4 h-4 text-emerald-600" />
+                                📍 Live Satellite GPS Attached
+                              </span>
+                              {drawerLoc.lat && drawerLoc.lng && (
+                                <span className="text-[10px] font-mono text-emerald-700">
+                                  {drawerLoc.lat.toFixed(4)}°, {drawerLoc.lng.toFixed(4)}°
+                                </span>
+                              )}
+                            </div>
+                            <a
+                              href={drawerLoc.mapsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors"
+                            >
+                              <span>🗺️ Open in Google Maps</span>
+                              <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+                            </a>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-slate-400 italic bg-slate-100 p-2.5 rounded-xl">GPS Satellite Location not shared for this order</p>
+                        )}
+                      </div>
+                    )
+                  })()}
                   {selectedOrder.customer_remarks && (
                     <div className="pt-2 border-t border-slate-200/60 text-slate-700 flex items-start gap-2 bg-amber-50/80 p-2.5 rounded-xl border border-amber-200/80 mt-2">
                       <MessageSquare className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />

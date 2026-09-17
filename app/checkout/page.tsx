@@ -1,27 +1,29 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { useCustomer } from '@/lib/context/CustomerContext'
+import Link from 'next/link'
 import StorefrontLayout from '@/components/customer/StorefrontLayout'
+import { useCustomer } from '@/lib/context/CustomerContext'
+import { createClient } from '@/lib/supabase/client'
 import { getDeliverySlots, DeliverySlot } from '@/lib/data/ecommerce-data'
 import {
+  Building2,
   MapPin,
   Clock,
   CreditCard,
-  ShieldCheck,
   CheckCircle2,
-  ArrowRight,
   ArrowLeft,
+  ArrowRight,
+  ShieldCheck,
   AlertCircle,
-  Building2,
   ShoppingBag,
   Loader2,
   User,
   Phone,
   RefreshCw,
+  Navigation,
+  ExternalLink,
 } from 'lucide-react'
 
 export default function CheckoutPage() {
@@ -47,6 +49,36 @@ export default function CheckoutPage() {
   const [houseAddress, setHouseAddress] = useState('')
   const [landmark, setLandmark] = useState('')
   const [pincode, setPincode] = useState('695016')
+
+  // GPS Location State
+  const [gpsLoading, setGpsLoading] = useState(false)
+  const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number; mapsUrl: string } | null>(null)
+  const [gpsError, setGpsError] = useState<string | null>(null)
+
+  const handleShareGps = () => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setGpsError('GPS geolocation is not supported by your browser.')
+      return
+    }
+    setGpsLoading(true)
+    setGpsError(null)
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude
+        const lng = pos.coords.longitude
+        const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`
+        setGpsCoords({ lat, lng, mapsUrl })
+        setGpsLoading(false)
+      },
+      (err) => {
+        console.warn('Geolocation error:', err)
+        setGpsError('Could not retrieve GPS location. Please check location permissions.')
+        setGpsLoading(false)
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    )
+  }
 
   // Delivery Slot & Payment Method
   const [slots, setSlots] = useState<DeliverySlot[]>([])
@@ -172,10 +204,14 @@ export default function CheckoutPage() {
         console.warn('Customer query/create non-fatal exception:', cEx)
       }
 
-      const fullAddressString = `${houseAddress.trim()}${landmark.trim() ? `, Landmark: ${landmark.trim()}` : ''}${pincode ? `, Pincode: ${pincode}` : ''}`
+      let fullAddressString = `${houseAddress.trim()}${landmark.trim() ? `, Landmark: ${landmark.trim()}` : ''}${pincode ? `, Pincode: ${pincode}` : ''}`
+      if (gpsCoords) {
+        fullAddressString += ` | GPS: ${gpsCoords.mapsUrl}`
+      }
+
       const orderNum = `BF-${todayDate.replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`
       const slotText = selectedSlot ? `${selectedSlot.dateLabel} ${selectedSlot.timeSlot}` : 'Express Slot'
-      const customerRemarkDetails = `Customer: ${customerName.trim()} (${cleanPhone}), Delivery: ${fullAddressString}, Slot: ${slotText}`
+      const customerRemarkDetails = `Customer: ${customerName.trim()} (${cleanPhone}), Delivery: ${fullAddressString}, Slot: ${slotText}${gpsCoords ? ` | GPS Shared: ${gpsCoords.mapsUrl}` : ''}`
 
       // 2. Normalize Cart Items Payload
       const normalizedCart = cart.map((item) => ({
@@ -204,9 +240,9 @@ export default function CheckoutPage() {
           p_idempotency_key: idempotencyKey,
           p_inventory_date: todayDate,
           p_items: normalizedCart,
-          p_latitude: null,
-          p_longitude: null,
-          p_maps_url: null,
+          p_latitude: gpsCoords?.lat || null,
+          p_longitude: gpsCoords?.lng || null,
+          p_maps_url: gpsCoords?.mapsUrl || null,
         })
 
         if (!rpcErr && rpcRes && rpcRes.success) {
@@ -223,28 +259,34 @@ export default function CheckoutPage() {
       // 4. FALLBACK CLIENT-SIDE ATOMIC PLACEMENT WITH VERIFIED SCHEMA
       if (!rpcSuccess) {
         console.warn('Executing client-side verified schema fallback for order placement...')
+        const directInsertObj: any = {
+          order_number: orderNum,
+          customer_id: customerId || null,
+          branch_id: targetBranchId,
+          status: 'pending',
+          subtotal: cartSubtotal || 0,
+          delivery_charge: deliveryFee || 35,
+          total: grandTotal || 0,
+          total_amount: grandTotal || 0,
+          payment_status: paymentMethod === 'COD' ? 'pending' : 'paid',
+          payment_method: paymentMethod,
+          delivery_address: fullAddressString,
+          customer_phone: cleanPhone,
+          business_date: todayDate,
+          customer_remarks: customerRemarkDetails,
+          idempotency_key: idempotencyKey,
+          order_channel: 'storefront',
+        }
+
+        if (gpsCoords) {
+          directInsertObj.latitude = gpsCoords.lat
+          directInsertObj.longitude = gpsCoords.lng
+          directInsertObj.maps_url = gpsCoords.mapsUrl
+        }
+
         const { data: directOrder, error: oErr } = await supabase
           .from('orders')
-          .insert([
-            {
-              order_number: orderNum,
-              customer_id: customerId || null,
-              branch_id: targetBranchId,
-              status: 'pending',
-              subtotal: cartSubtotal || 0,
-              delivery_charge: deliveryFee || 35,
-              total: grandTotal || 0,
-              total_amount: grandTotal || 0,
-              payment_status: paymentMethod === 'COD' ? 'pending' : 'paid',
-              payment_method: paymentMethod,
-              delivery_address: fullAddressString,
-              customer_phone: cleanPhone,
-              business_date: todayDate,
-              customer_remarks: `Slot: ${slotText}`,
-              idempotency_key: idempotencyKey,
-              order_channel: 'storefront',
-            },
-          ])
+          .insert([directInsertObj])
           .select('id')
           .single()
 
@@ -486,6 +528,61 @@ export default function CheckoutPage() {
                     onChange={(e) => setPincode(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-[#E2E8F0] border border-[#E2E8F0] rounded-none text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A] text-[#0F172A]"
                   />
+                </div>
+
+                {/* GPS Live Location Sharing Feature */}
+                <div className="sm:col-span-2 pt-2 border-t border-[#E2E8F0] space-y-2">
+                  <label className="block text-xs font-extrabold text-[#0F172A] uppercase flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-[#39B54A]" /> Live Satellite GPS Location Sharing
+                  </label>
+                  
+                  {gpsCoords ? (
+                    <div className="p-3 bg-[#39B54A]/10 border border-[#39B54A] rounded-none flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-[#39B54A] shrink-0" />
+                        <div>
+                          <p className="text-xs font-extrabold text-[#0F172A]">GPS Location Attached!</p>
+                          <p className="text-[11px] font-mono text-[#0F172A]/80">
+                            {gpsCoords.lat.toFixed(4)}° N, {gpsCoords.lng.toFixed(4)}° E
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={gpsCoords.mapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2.5 py-1 bg-[#39B54A] text-white text-[11px] font-bold rounded-none hover:bg-[#2EA03E] inline-flex items-center gap-1"
+                        >
+                          <ExternalLink className="w-3 h-3" /> Preview Map
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setGpsCoords(null)}
+                          className="text-[11px] font-bold text-red-600 underline"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <button
+                        type="button"
+                        onClick={handleShareGps}
+                        disabled={gpsLoading}
+                        className="w-full py-2.5 px-4 bg-[#0F172A] hover:bg-[#1E293B] text-white font-extrabold text-xs rounded-none transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                      >
+                        <Navigation className={`w-4 h-4 text-[#39B54A] ${gpsLoading ? 'animate-spin' : ''}`} />
+                        <span>{gpsLoading ? 'Fetching Satellite GPS...' : '📍 SHARE MY CURRENT GPS LOCATION FOR FAST DELIVERY'}</span>
+                      </button>
+                      {gpsError && (
+                        <p className="text-[11px] font-semibold text-red-600 flex items-center gap-1">
+                          <AlertCircle className="w-3.5 h-3.5" /> {gpsError}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
