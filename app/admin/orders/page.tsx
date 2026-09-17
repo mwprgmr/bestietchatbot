@@ -715,8 +715,18 @@ export default function OrdersPage() {
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             {search
               ? 'No orders match your search parameters.'
+              : dateFilterPreset !== 'ALL'
+              ? `No production orders found for the selected date filter. Click "All Dates" or "This Month" above to view past orders.`
               : 'Orders for this branch will automatically appear here when customers complete checkout.'}
           </p>
+          {dateFilterPreset !== 'ALL' && (
+            <button
+              onClick={() => setDateFilterPreset('ALL')}
+              className="mt-2 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+            >
+              View All Dates
+            </button>
+          )}
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
