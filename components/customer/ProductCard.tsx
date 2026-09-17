@@ -25,7 +25,8 @@ export default function ProductCard({ product }: { product: ProductProps }) {
   const { cart, addToCart, updateCartQuantity } = useCustomer()
   const [selectedWeight, setSelectedWeight] = useState<number>(0.5) // 500g default pack
 
-  const imageSrc = product.image_url || getProductImagePlaceholder(product.category, product.name)
+  const rawImage = product.image_url || getProductImagePlaceholder(product.category, product.name)
+  const imageSrc = rawImage ? rawImage.replace(/^http:\/\//i, 'https://') : '/logo.png'
   const defaultCut = product.default_cut || (product.category === 'Chicken' ? 'Curry Cut' : product.category === 'Mutton' ? 'Curry Cut' : 'Cleaned & Cut')
 
   const cartKey = `${product.id}_${defaultCut.replace(/\s+/g, '_')}_${selectedWeight}`
@@ -80,6 +81,9 @@ export default function ProductCard({ product }: { product: ProductProps }) {
           <img
             src={imageSrc}
             alt={product.name}
+            onError={(e) => {
+              ;(e.currentTarget as HTMLImageElement).src = '/logo.png'
+            }}
             className={`w-full h-full object-cover object-center ${
               isOutOfStock ? 'grayscale opacity-60' : ''
             }`}

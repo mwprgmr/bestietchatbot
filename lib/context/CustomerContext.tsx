@@ -32,7 +32,19 @@ export interface AppliedCoupon {
   min_order?: number
 }
 
+export interface CustomerProfile {
+  id: string
+  name: string
+  phone: string
+  address?: string | null
+  email?: string | null
+}
+
 interface CustomerContextType {
+  customer: CustomerProfile | null
+  user: any | null
+  authLoading: boolean
+  refreshCustomer: () => Promise<void>
   branches: Branch[]
   selectedBranch: Branch
   setSelectedBranch: (branch: Branch) => void
@@ -75,6 +87,9 @@ const PEROORKADA_BRANCH: Branch = {
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined)
 
 export function CustomerProvider({ children }: { children: React.ReactNode }) {
+  const [customer, setCustomer] = useState<CustomerProfile | null>(null)
+  const [user, setUser] = useState<any | null>(null)
+  const [authLoading, setAuthLoading] = useState<boolean>(true)
   const [branches, setBranches] = useState<Branch[]>([DEFAULT_BRANCH, PEROORKADA_BRANCH])
   const [selectedBranch, setSelectedBranchState] = useState<Branch>(DEFAULT_BRANCH)
   const [deliveryAddress, setDeliveryAddressState] = useState<string>('Manvila, Kazhakkoottam, Trivandrum')
@@ -84,9 +99,65 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
   const [isLocationOpen, setIsLocationOpen] = useState(false)
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null)
 
+  const fetchCustomerProfile = async (phoneOrId?: string) => {
+    try {
+      const supabase = createClient()
+      const { data: sessionData } = await supabase.auth.getSession()
+      const activeUser = sessionData?.session?.user || null
+      setUser(activeUser)
+
+      const targetPhone = phoneOrId || (typeof window !== 'undefined' ? localStorage.getItem('bestiet_customer_phone') : '') || ''
+      const cleanPhone = targetPhone.replace(/\D/g, '')
+
+      if (cleanPhone) {
+        const { data: custData, error: custErr } = await supabase
+          .from('customers')
+          .select('id, name, phone, address')
+          .eq('phone', cleanPhone)
+          .maybeSingle()
+
+        if (custData && !custErr) {
+          setCustomer({
+            id: custData.id,
+            name: custData.name || 'Valued Customer',
+            phone: custData.phone || cleanPhone,
+            address: custData.address || null,
+          })
+        } else {
+          const savedName = typeof window !== 'undefined' ? localStorage.getItem('bestiet_customer_name') : null
+          const savedAddress = typeof window !== 'undefined' ? localStorage.getItem('bestiet_delivery_address') : null
+          setCustomer({
+            id: 'local_cust_' + cleanPhone,
+            name: savedName || 'Valued Customer',
+            phone: cleanPhone,
+            address: savedAddress || null,
+          })
+        }
+      } else {
+        const savedName = typeof window !== 'undefined' ? localStorage.getItem('bestiet_customer_name') : null
+        const savedAddress = typeof window !== 'undefined' ? localStorage.getItem('bestiet_delivery_address') : null
+        if (savedName) {
+          setCustomer({
+            id: 'guest_cust',
+            name: savedName,
+            phone: '',
+            address: savedAddress || null,
+          })
+        } else {
+          setCustomer(null)
+        }
+      }
+    } catch (err) {
+      console.warn('Non-fatal error loading customer profile:', err)
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
   // Load saved state from localStorage on mount
   useEffect(() => {
     try {
+      fetchCustomerProfile()
       const savedBranch = localStorage.getItem('bestiet_selected_branch')
       if (savedBranch) {
         const parsed = JSON.parse(savedBranch)
@@ -107,8 +178,14 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {
       console.warn('Failed to load local storage state:', e)
+      setAuthLoading(false)
     }
   }, [])
+
+  const refreshCustomer = async () => {
+    setAuthLoading(true)
+    await fetchCustomerProfile()
+  }
 
   // Persist cart to localStorage
   useEffect(() => {
@@ -236,6 +313,10 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
   return (
     <CustomerContext.Provider
       value={{
+        customer,
+        user,
+        authLoading,
+        refreshCustomer,
         branches,
         selectedBranch,
         setSelectedBranch,
