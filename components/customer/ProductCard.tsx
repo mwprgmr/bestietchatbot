@@ -73,30 +73,34 @@ export default function ProductCard({ product }: { product: ProductProps }) {
   }
 
   return (
-    <div className="group flex flex-col justify-between transition-all duration-300 hover-lift animate-fade-in-up">
-      <Link href={`/product/${product.id}`} className="block relative group">
+    <div className="group flex flex-col justify-between animate-fade-in-up">
+      <Link href={`/product/${product.id}`} className="block relative">
         {/* 1. PRODUCT IMAGE CONTAINER (Boxy design) */}
-        <div className="relative aspect-[4/3] h-44 sm:h-52 w-full bg-[#F1F5F9] rounded-none overflow-hidden border border-[#E2E8F0] shadow-xs group-hover:shadow-md transition-shadow">
+        <div className="relative aspect-[4/3] h-44 sm:h-52 w-full bg-[#F1F5F9] rounded-none overflow-hidden border border-[#E2E8F0] shadow-xs">
           <img
             src={imageSrc}
             alt={product.name}
-            className={`w-full h-full object-cover object-center group-hover:scale-108 transition-transform duration-500 ease-out ${
+            className={`w-full h-full object-cover object-center ${
               isOutOfStock ? 'grayscale opacity-60' : ''
             }`}
             loading="lazy"
           />
 
-          {/* Low Stock Badge */}
-          {isLowStock && !isOutOfStock && (
+          {/* Inventory Stock Badge (Kg Left) */}
+          {!isOutOfStock ? (
             <span className="absolute top-2 left-2 z-10 bg-[#39B54A] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-none shadow-xs">
-              Only {product.available_stock} kg left
+              {product.available_stock} kg left
+            </span>
+          ) : (
+            <span className="absolute top-2 left-2 z-10 bg-red-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-none shadow-xs">
+              0 kg left
             </span>
           )}
 
           {/* Out of stock Overlay */}
           {isOutOfStock && (
             <div className="absolute inset-0 bg-[#0F172A]/60 backdrop-blur-[1px] flex items-center justify-center z-10">
-              <span className="bg-[#0F172A] text-white text-[10px] font-extrabold px-3 py-1 rounded-none uppercase tracking-wider border border-[#39B54A]">
+              <span className="bg-red-600 text-white text-[10px] font-extrabold px-3 py-1 rounded-none uppercase tracking-wider">
                 Out of Stock
               </span>
             </div>
@@ -135,7 +139,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                 <button
                   type="button"
                   onClick={handleInitialAdd}
-                  className="bg-white hover:bg-[#F8FAF8] border-2 border-[#39B54A] text-[#39B54A] font-black text-xs md:text-sm px-3.5 sm:px-4 py-1.5 rounded-none shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer uppercase tracking-wider"
+                  className="bg-white hover:bg-[#F8FAF8] border-2 border-[#39B54A] text-[#39B54A] font-black text-xs md:text-sm px-3.5 sm:px-4 py-1.5 rounded-none shadow-md transition-colors cursor-pointer uppercase tracking-wider"
                 >
                   ADD
                 </button>

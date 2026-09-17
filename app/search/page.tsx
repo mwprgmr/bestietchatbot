@@ -88,7 +88,7 @@ function SearchContent() {
           const invMatch = safeInventory.find((i) => i && i.product_id === p.id)
           const rawPrice = invMatch?.price_per_kg ?? p.price_per_kg ?? 450
           const price = typeof rawPrice === 'number' && !isNaN(rawPrice) && rawPrice > 0 ? Number(rawPrice) : 450
-          const rawStock = invMatch?.available_stock ?? p.available_stock ?? 20
+          const rawStock = invMatch?.available_stock ?? (invMatch ? 0 : 0)
           const stock = typeof rawStock === 'number' && !isNaN(rawStock) ? Math.max(0, Number(rawStock)) : 0
 
           return {

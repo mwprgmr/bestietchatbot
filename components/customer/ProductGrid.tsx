@@ -44,8 +44,8 @@ export default function ProductGrid() {
         const mapped: ProductProps[] = (rawProducts || []).map((p) => {
           // Find matching branch inventory record
           const invMatch = (rawInventory || []).find((i) => i.product_id === p.id)
-          const price = invMatch?.price_per_kg ? Number(invMatch.price_per_kg) : 450
-          const stock = invMatch?.available_stock !== undefined ? Number(invMatch.available_stock) : 20
+          const price = invMatch?.price_per_kg ? Number(invMatch.price_per_kg) : (p.price_per_kg || 450)
+          const stock = invMatch?.available_stock !== undefined ? Math.max(0, Number(invMatch.available_stock)) : 0
 
           return {
             id: p.id,
