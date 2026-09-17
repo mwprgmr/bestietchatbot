@@ -135,8 +135,8 @@ export default function CheckoutPage() {
       const todayDate = new Date().toISOString().split('T')[0]
       const idempotencyKey = `web_chk_${cleanPhone}_${Date.now()}`
 
-      // 1. Customer Upsert / Query
-      let customerId = ''
+      // 1. Customer Query & Fallback ID
+      let customerId = '77499c2e-e534-48f7-995c-25ab77d5bd34'
       try {
         const { data: existingCust } = await supabase
           .from('customers')
@@ -146,30 +146,15 @@ export default function CheckoutPage() {
 
         if (existingCust?.id) {
           customerId = existingCust.id
-        } else {
-          const { data: newCust, error: cErr } = await supabase
-            .from('customers')
-            .insert([
-              {
-                name: customerName.trim(),
-                phone: cleanPhone,
-                address: houseAddress.trim(),
-              },
-            ])
-            .select('id')
-            .single()
-
-          if (!cErr && newCust?.id) {
-            customerId = newCust.id
-          }
         }
       } catch (cEx) {
-        console.warn('Customer upsert non-fatal exception:', cEx)
+        console.warn('Customer query non-fatal exception:', cEx)
       }
 
       const fullAddressString = `${houseAddress.trim()}${landmark.trim() ? `, Landmark: ${landmark.trim()}` : ''}${pincode ? `, Pincode: ${pincode}` : ''}`
       const orderNum = `BF-${todayDate.replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`
       const slotText = selectedSlot ? `${selectedSlot.dateLabel} ${selectedSlot.timeSlot}` : 'Express Slot'
+      const customerRemarkDetails = `Customer: ${customerName.trim()} (${cleanPhone}), Delivery: ${fullAddressString}, Slot: ${slotText}`
 
       // 2. Normalize Cart Items Payload
       const normalizedCart = cart.map((item) => ({
@@ -190,11 +175,11 @@ export default function CheckoutPage() {
       let rpcSuccess = false
       try {
         const { data: rpcRes, error: rpcErr } = await supabase.rpc('create_order_atomic', {
-          p_customer_id: customerId || null,
+          p_customer_id: customerId,
           p_branch_id: targetBranchId,
           p_address_id: null,
           p_delivery_fee: deliveryFee || 35,
-          p_customer_remarks: `Slot: ${slotText}`,
+          p_customer_remarks: customerRemarkDetails,
           p_idempotency_key: idempotencyKey,
           p_inventory_date: todayDate,
           p_items: normalizedCart,
@@ -207,6 +192,8 @@ export default function CheckoutPage() {
           rpcSuccess = true
           placedOrderId = rpcRes.order_id
           finalOrderNumber = rpcRes.order_number || orderNum
+        } else {
+          console.warn('RPC create_order_atomic returned error:', rpcErr || rpcRes)
         }
       } catch (rpcEx) {
         console.warn('RPC create_order_atomic call exception:', rpcEx)
