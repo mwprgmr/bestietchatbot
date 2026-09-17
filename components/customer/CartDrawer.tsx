@@ -43,7 +43,7 @@ export default function CartDrawer() {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] overflow-hidden animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[70] overflow-hidden animate-in fade-in duration-200">
       {/* Backdrop */}
       <div
         onClick={() => setIsCartOpen(false)}
@@ -51,9 +51,9 @@ export default function CartDrawer() {
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10 w-full sm:w-auto animate-slide-in-right">
-        <div className="w-full sm:w-screen max-w-md bg-[#FFFFFF] shadow-2xl border-l border-[#E2E8F0] flex flex-col justify-between">
+        <div className="w-full sm:w-screen max-w-md bg-[#FFFFFF] shadow-2xl border-l border-[#E2E8F0] flex flex-col h-full max-h-dvh justify-between">
           {/* Header */}
-          <div className="p-4 bg-[#FFFFFF] border-b border-[#E2E8F0] flex items-center justify-between">
+          <div className="p-4 bg-[#FFFFFF] border-b border-[#E2E8F0] flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-none bg-[#39B54A]/20 text-[#39B54A] border border-[#39B54A]/30">
                 <ShoppingBag className="w-5 h-5" />
@@ -72,7 +72,7 @@ export default function CartDrawer() {
           </div>
 
           {/* Location Delivery Bar */}
-          <div className="bg-[#E2E8F0] px-4 py-2 border-b border-[#E2E8F0] flex items-center justify-between text-xs">
+          <div className="bg-[#E2E8F0] px-4 py-2 border-b border-[#E2E8F0] flex items-center justify-between text-xs shrink-0">
             <div className="truncate pr-2">
               <span className="font-bold text-[#0F172A]/80">Delivering to: </span>
               <span className="text-[#39B54A] font-semibold">{deliveryAddress}</span>
@@ -229,7 +229,7 @@ export default function CartDrawer() {
 
           {/* Footer Bill Summary & Checkout */}
           {cart.length > 0 && (
-            <div className="p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] bg-[#E2E8F0] border-t border-[#E2E8F0] space-y-3">
+            <div className="p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] bg-[#E2E8F0] border-t border-[#E2E8F0] space-y-3 shrink-0 z-10 shadow-[0_-4px_12px_rgba(0,0,0,0.15)]">
               <div className="space-y-1.5 text-xs text-[#0F172A]/80">
                 <div className="flex justify-between">
                   <span>Item Subtotal</span>
@@ -261,7 +261,7 @@ export default function CartDrawer() {
 
               <button
                 onClick={handleProceedCheckout}
-                className="w-full py-3.5 px-4 bg-[#39B54A] hover:bg-[#2EA03E] text-white font-extrabold rounded-none text-sm shadow-md shadow-[#39B54A]/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 group cursor-pointer"
+                className="w-full py-4 px-4 bg-[#39B54A] hover:bg-[#2EA03E] active:scale-[0.99] text-white font-extrabold rounded-none text-sm shadow-lg shadow-[#39B54A]/30 transition-all flex items-center justify-center gap-2 group cursor-pointer"
               >
                 <span>PROCEED TO CHECKOUT (₹{grandTotal})</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
