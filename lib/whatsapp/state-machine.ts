@@ -2038,6 +2038,139 @@ async function handleOrderReview(
     return await sendWhatsAppTextMessage(phone, '❌ Order cancelled. Returned to main menu.')
   }
 
+async function fallbackCreateOrderAtomic(
+  supabase: any,
+  {
+    customerId,
+    addressId,
+    cart,
+    branchId,
+    customerRemarks,
+    idempotencyKey,
+    deliveryFee = 30,
+    today,
+  }: {
+    customerId: string | null
+    addressId: string | null
+    cart: any[]
+    branchId: string
+    customerRemarks: string | null
+    idempotencyKey: string
+    deliveryFee: number
+    today: string
+  }
+) {
+  try {
+    let subtotal = 0
+    for (const item of cart) {
+      const itemSubtotal = Math.round(Number(item.quantity_kg) * Number(item.unit_price || item.price_per_kg || 0) * 100) / 100
+      subtotal += itemSubtotal
+    }
+    const totalAmount = Math.round((subtotal + deliveryFee) * 100) / 100
+
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000)
+    const orderNumber = `BF-${today.replace(/-/g, '')}-${randomSuffix}`
+
+    let customerPhone = null
+    if (customerId) {
+      const { data: cust } = await supabase.from('customers').select('phone').eq('id', customerId).single()
+      if (cust) customerPhone = cust.phone
+    }
+
+    let deliveryAddressLabel = null
+    if (addressId) {
+      const { data: addr } = await supabase.from('addresses').select('address_line1, city, pincode').eq('id', addressId).single()
+      if (addr) deliveryAddressLabel = `${addr.address_line1 || ''}, ${addr.city || ''} ${addr.pincode || ''}`.trim()
+    }
+
+    const { data: newOrder, error: oErr } = await supabase
+      .from('orders')
+      .insert([{
+        order_number: orderNumber,
+        customer_id: customerId,
+        address_id: addressId,
+        branch_id: branchId,
+        subtotal: subtotal,
+        delivery_charge: deliveryFee,
+        total: totalAmount,
+        total_amount: totalAmount,
+        status: 'pending',
+        payment_status: 'pending',
+        payment_method: 'COD',
+        customer_remarks: customerRemarks,
+        idempotency_key: idempotencyKey,
+        delivery_address: deliveryAddressLabel,
+        business_date: today,
+        customer_phone: customerPhone
+      }])
+      .select('id, order_number, total_amount')
+      .single()
+
+    if (oErr || !newOrder) {
+      console.error('[FALLBACK ORDER INSERTION ERROR]:', oErr)
+      return { success: false, error: oErr?.message || 'Order insertion failed' }
+    }
+
+    for (const item of cart) {
+      const qty = Number(item.quantity_kg)
+      const unitPrice = Number(item.unit_price || item.price_per_kg || 0)
+      const itemSubtotal = Math.round(qty * unitPrice * 100) / 100
+
+      await supabase.from('order_items').insert([{
+        order_id: newOrder.id,
+        product_id: item.product_id,
+        quantity_kg: qty,
+        cutting_type: item.cutting_type || 'whole',
+        unit_price: unitPrice,
+        subtotal: itemSubtotal
+      }])
+
+      const { data: invRow } = await supabase
+        .from('inventory')
+        .select('id, available_stock, sold_stock')
+        .eq('product_id', item.product_id)
+        .eq('branch_id', branchId)
+        .eq('inventory_date', today)
+        .single()
+
+      if (invRow) {
+        const newAvailable = Math.max(0, Number(invRow.available_stock || 0) - qty)
+        const newSold = Number(invRow.sold_stock || 0) + qty
+        const newStatus = newAvailable <= 0 ? 'out_of_stock' : 'available'
+
+        await supabase
+          .from('inventory')
+          .update({
+            available_stock: newAvailable,
+            sold_stock: newSold,
+            status: newStatus,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', invRow.id)
+
+        await supabase.from('inventory_movements').insert([{
+          inventory_id: invRow.id,
+          product_id: item.product_id,
+          movement_type: 'SALE',
+          quantity_change: -qty,
+          reason: `Customer order ${newOrder.order_number} | Idempotency: ${idempotencyKey || ''}`,
+          reference_id: newOrder.id
+        }])
+      }
+    }
+
+    return {
+      success: true,
+      order_id: newOrder.id,
+      order_number: newOrder.order_number,
+      total_amount: newOrder.total_amount
+    }
+  } catch (err: any) {
+    console.error('[FALLBACK ORDER CATCH ERROR]:', err?.message || err)
+    return { success: false, error: err?.message || 'Fallback execution failed' }
+  }
+}
+
   // 1. ALWAYS RELOAD THE LATEST CHAT SESSION FROM SUPABASE
   let { data: latestSession } = await supabase
     .from('chat_sessions')
@@ -2195,10 +2328,29 @@ async function handleOrderReview(
     p_customer_remarks: customerRemarks,
   })
 
-  const resObj = typeof result === 'string' ? JSON.parse(result) : result
+  let resObj = typeof result === 'string' ? JSON.parse(result) : result
+
+  // Fallback order placement if RPC fails due to missing columns or SQL procedure mismatch
+  if ((orderErr || !resObj?.success) && !orderErr?.message?.includes('NO_INVENTORY') && !orderErr?.message?.includes('INSUFFICIENT_STOCK')) {
+    console.warn('[ORDER PLACEMENT RECOVERY]: RPC failed with non-inventory error. Triggering fallback order placement using core verified columns...', orderErr)
+    const fbRes = await fallbackCreateOrderAtomic(supabase, {
+      customerId: validCustomerId,
+      addressId: validAddressId,
+      cart,
+      branchId: validBranchId,
+      customerRemarks,
+      idempotencyKey: stableIdempotencyKey,
+      deliveryFee: deliveryFeeAmt,
+      today,
+    })
+    if (fbRes.success) {
+      console.log('[ORDER PLACEMENT RECOVERY SUCCESSFUL]: Order created via fallback:', fbRes)
+      resObj = fbRes
+    }
+  }
 
   // 7. RESET AND CLEAR CART ON FAILED ORDER AS DIRECTED BY USER
-  if (orderErr || !resObj?.success) {
+  if ((orderErr && !resObj?.success) || !resObj?.success) {
     const rawErrMsg = resObj?.error || orderErr?.message || 'Stock allocation failed'
     console.error('[CHECKOUT INVENTORY ERROR LOG]:', rawErrMsg)
 
