@@ -45,6 +45,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true)
   const [queryError, setQueryError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'ALL' | OrderStatus>('ALL')
+  const [sourceFilter, setSourceFilter] = useState<'ALL' | 'WEBSITE' | 'WHATSAPP'>('ALL')
   const [search, setSearch] = useState('')
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -405,7 +406,16 @@ export default function OrdersPage() {
           (!ord.branch_id && assignedBranchId === 'b1111111-1111-1111-1111-111111111111')
 
         const ordStatusUpper = (ord.status || '').toUpperCase()
-        const matchesTab = activeTab === 'ALL' || ordStatusUpper === activeTab
+        const matchesTab =
+          activeTab === 'ALL' ||
+          ordStatusUpper === activeTab ||
+          (activeTab === 'PENDING' && ordStatusUpper === 'PLACED')
+
+        const ordSource = ((ord as any).source || 'WHATSAPP').toUpperCase()
+        const matchesSource =
+          sourceFilter === 'ALL' ||
+          (sourceFilter === 'WEBSITE' && (ordSource === 'WEBSITE' || ordSource === 'STOREFRONT')) ||
+          (sourceFilter === 'WHATSAPP' && (ordSource === 'WHATSAPP' || ordSource === 'CHATBOT'))
 
         // Date-wise filtering
         const ordDateStr = (ord as any).business_date || (ord.created_at ? ord.created_at.split('T')[0] : '')
@@ -440,7 +450,7 @@ export default function OrdersPage() {
           (ord.customer?.name && ord.customer.name.toLowerCase().includes(q)) ||
           (ord.delivery_address && ord.delivery_address.toLowerCase().includes(q))
 
-        return matchesBranch && matchesTab && matchesDate && matchesSearch
+        return matchesBranch && matchesTab && matchesSource && matchesDate && matchesSearch
       })
     : []
 
@@ -618,21 +628,61 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* Tabs Bar */}
-      <div className="bg-white rounded-2xl p-2 border border-slate-200/80 shadow-xs overflow-x-auto flex items-center gap-1">
-        {statusTabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-              activeTab === tab.value
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Tabs Bar: Channel Source & Status Filters */}
+      <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-3">
+        {/* Source Channel Filter */}
+        <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Order Channel:</span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setSourceFilter('ALL')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                sourceFilter === 'ALL'
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              All Channels
+            </button>
+            <button
+              onClick={() => setSourceFilter('WEBSITE')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                sourceFilter === 'WEBSITE'
+                  ? 'bg-cyan-600 text-white'
+                  : 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100'
+              }`}
+            >
+              🌐 Storefront Website
+            </button>
+            <button
+              onClick={() => setSourceFilter('WHATSAPP')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                sourceFilter === 'WHATSAPP'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+              }`}
+            >
+              💬 WhatsApp Chatbot
+            </button>
+          </div>
+        </div>
+
+        {/* Status Tabs */}
+        <div className="overflow-x-auto flex items-center gap-1 pt-1">
+          {statusTabs.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                activeTab === tab.value
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Search Input Bar */}
@@ -664,7 +714,7 @@ export default function OrdersPage() {
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             {search
               ? 'No orders match your search parameters.'
-              : 'WhatsApp orders for this branch will automatically appear here when customers complete checkout.'}
+              : 'Orders for this branch will automatically appear here when customers complete checkout.'}
           </p>
         </div>
       ) : (
@@ -674,6 +724,7 @@ export default function OrdersPage() {
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                   <th className="py-3.5 px-4">Order #</th>
+                  <th className="py-3.5 px-4">Channel</th>
                   <th className="py-3.5 px-4">Branch</th>
                   <th className="py-3.5 px-4">Customer</th>
                   <th className="py-3.5 px-4">WhatsApp Number</th>
@@ -698,6 +749,7 @@ export default function OrdersPage() {
                   const locInfo = getLocationInfo(ord)
                   const isPaid = (ord.payment_status || '').toUpperCase() === 'PAID'
                   const isCancelled = (ord.status || '').toUpperCase() === 'CANCELLED'
+                  const isWebsite = ((ord as any).source || '').toUpperCase() === 'WEBSITE' || ((ord as any).source || '').toUpperCase() === 'STOREFRONT'
 
                   return (
                     <tr key={ord.id} className="hover:bg-slate-50/50 transition-colors">
@@ -705,6 +757,18 @@ export default function OrdersPage() {
                         <span className="font-mono text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md text-[11px]">
                           {ord.order_number || 'N/A'}
                         </span>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        {isWebsite ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-extrabold bg-cyan-100 text-cyan-800 border border-cyan-200 whitespace-nowrap">
+                            🌐 Website
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200 whitespace-nowrap">
+                            💬 WhatsApp
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-3.5 px-4">

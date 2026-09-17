@@ -106,7 +106,7 @@ export default function CheckoutPage() {
             order_number: orderNum,
             customer_id: customerId,
             branch_id: targetBranchId,
-            status: 'PLACED',
+            status: 'PENDING',
             total_amount: grandTotal,
             subtotal_amount: cartSubtotal,
             discount_amount: discountAmount,
@@ -160,6 +160,26 @@ export default function CheckoutPage() {
             })
             .eq('id', inv.id)
         }
+      }
+
+      // Persist customer details and placed order history locally
+      try {
+        localStorage.setItem('bestiet_customer_phone', cleanPhone)
+        localStorage.setItem('bestiet_customer_name', customerName.trim())
+
+        const prevOrdersRaw = localStorage.getItem('bestiet_placed_orders')
+        let prevOrders: string[] = []
+        if (prevOrdersRaw) {
+          try {
+            prevOrders = JSON.parse(prevOrdersRaw)
+          } catch (_) {}
+        }
+        if (!prevOrders.includes(newOrder.id)) {
+          prevOrders.unshift(newOrder.id)
+        }
+        localStorage.setItem('bestiet_placed_orders', JSON.stringify(prevOrders.slice(0, 50)))
+      } catch (lErr) {
+        console.warn('LocalStorage save error:', lErr)
       }
 
       setDeliveryAddress(fullAddressString)

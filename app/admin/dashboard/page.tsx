@@ -372,28 +372,40 @@ export default function DashboardPage() {
               <p className="text-xs text-slate-400 py-6 text-center">No orders received yet.</p>
             ) : (
               <div className="divide-y divide-slate-100">
-                {recentOrders.map((ord) => (
-                  <div key={ord.id} className="py-3 flex items-center justify-between text-xs">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-slate-900">{ord.order_number}</span>
-                        <span className="text-[10px] bg-slate-100 text-slate-600 font-semibold px-2 py-0.5 rounded-md">
-                          {ord.status}
+                {recentOrders.map((ord) => {
+                  const isWebsite = (ord.source || '').toUpperCase() === 'WEBSITE' || (ord.source || '').toUpperCase() === 'STOREFRONT'
+                  return (
+                    <div key={ord.id} className="py-3 flex items-center justify-between text-xs">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-slate-900">{ord.order_number}</span>
+                          {isWebsite ? (
+                            <span className="text-[10px] bg-cyan-100 text-cyan-800 font-extrabold px-1.5 py-0.5 rounded-md">
+                              🌐 Website
+                            </span>
+                          ) : (
+                            <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.5 rounded-md">
+                              💬 WhatsApp
+                            </span>
+                          )}
+                          <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded-md">
+                            {ord.status}
+                          </span>
+                        </div>
+                        <p className="text-slate-500 text-[11px] mt-0.5">
+                          {ord.customer?.name || ord.customer?.phone || 'Customer'}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="font-extrabold text-slate-900 text-sm">₹{ord.total_amount}</span>
+                        <span className="text-[10px] text-slate-400 block">
+                          {format(new Date(ord.created_at), 'hh:mm a')}
                         </span>
                       </div>
-                      <p className="text-slate-500 text-[11px] mt-0.5">
-                        {ord.customer?.name || ord.customer?.phone}
-                      </p>
                     </div>
-
-                    <div className="text-right">
-                      <span className="font-extrabold text-slate-900 text-sm">₹{ord.total_amount}</span>
-                      <span className="text-[10px] text-slate-400 block">
-                        {format(new Date(ord.created_at), 'hh:mm a')}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
