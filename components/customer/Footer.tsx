@@ -15,7 +15,7 @@ export default function Footer() {
           {/* Col 1: Brand Info */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
-              <img src="/logo-white.png" alt="Bestiet Fresh" className="h-10 w-auto object-contain" />
+              <img src="/logo-white.png" alt="Bestiet Fresh" className="h-11 sm:h-12 w-auto object-contain" />
             </div>
 
             <p className="text-xs text-[#EEEEEE]/80 leading-relaxed">

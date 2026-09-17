@@ -32,9 +32,9 @@ export default function Header() {
         {/* Main Nav Row */}
         <div className="flex items-center justify-between gap-3 sm:gap-6 lg:gap-10">
           
-          {/* 1. BRAND LOGO ONLY */}
+          {/* 1. BRAND LOGO */}
           <Link href="/" className="flex items-center shrink-0 hover:scale-105 transition-transform duration-300">
-            <img src="/logo.png" alt="Bestiet Fresh Logo" className="h-10 sm:h-12 md:h-14 w-auto object-contain" />
+            <img src="/logo-brand.png" alt="Bestiet Fresh Logo" className="h-10 sm:h-12 md:h-14 w-auto object-contain" />
           </Link>
 
           {/* 2. LOCATION SELECTOR (Desktop & Mobile) */}

@@ -115,11 +115,8 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       {/* Mobile Top Navbar */}
       <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="Bestiet Fresh" className="w-10 h-10 object-contain shrink-0" />
-          <div>
-            <h1 className="font-extrabold text-slate-900 text-base leading-none">{storeSettings.brandName}</h1>
-            <p className="text-[10px] font-medium text-emerald-600">{activeBranch.name}</p>
-          </div>
+          <img src="/logo-brand.png" alt="Bestiet Fresh" className="h-9 w-auto object-contain shrink-0" />
+          <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">{activeBranch.name}</span>
         </div>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -145,16 +142,11 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       >
         <div>
           {/* Header Brand */}
-          <div className="p-6 border-b border-slate-100 hidden md:flex items-center gap-3">
-            <img src="/logo.png" alt="Bestiet Fresh" className="w-11 h-11 object-contain shrink-0" />
-            <div>
-              <h1 className="font-extrabold text-slate-900 text-lg tracking-tight leading-none">
-                {storeSettings.brandName}
-              </h1>
-              <p className="text-[11px] font-semibold text-emerald-600 mt-1">
-                {storeSettings.tagline}
-              </p>
-            </div>
+          <div className="p-5 border-b border-slate-100 hidden md:flex flex-col gap-1.5">
+            <img src="/logo-brand.png" alt="Bestiet Fresh" className="h-10 w-auto object-contain self-start" />
+            <p className="text-[11px] font-bold text-emerald-600">
+              {activeBranch.name || 'Branch Workspace'}
+            </p>
           </div>
 
           {/* Navigation Items */}
