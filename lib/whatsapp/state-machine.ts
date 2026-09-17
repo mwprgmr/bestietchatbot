@@ -2107,7 +2107,8 @@ async function fallbackCreateOrderAtomic(
         idempotency_key: idempotencyKey,
         delivery_address: deliveryAddressLabel,
         business_date: today,
-        customer_phone: customerPhone
+        customer_phone: customerPhone,
+        order_channel: 'whatsapp'
       }])
       .select('id, order_number, total_amount')
       .single()
@@ -2360,6 +2361,14 @@ async function fallbackCreateOrderAtomic(
   })
 
   let resObj = typeof result === 'string' ? JSON.parse(result) : result
+
+  if (resObj?.success && resObj?.order_id) {
+    try {
+      await supabase.from('orders').update({ order_channel: 'whatsapp' }).eq('id', resObj.order_id)
+    } catch (uErr) {
+      console.warn('Failed to tag order_channel as whatsapp:', uErr)
+    }
+  }
 
   // Fallback order placement if RPC fails due to missing columns or SQL procedure mismatch
   if ((orderErr || !resObj?.success) && !orderErr?.message?.includes('NO_INVENTORY') && !orderErr?.message?.includes('INSUFFICIENT_STOCK')) {

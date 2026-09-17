@@ -13,10 +13,11 @@ function OrdersContent() {
   const [orders, setOrders] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
+  const [channelFilter, setChannelFilter] = useState<'ALL' | 'STOREFRONT' | 'WHATSAPP'>('ALL')
 
   useEffect(() => {
     fetchOrders()
-  }, [filter, statusFilter])
+  }, [filter, statusFilter, channelFilter])
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -40,6 +41,12 @@ function OrdersContent() {
 
       if (statusFilter !== 'ALL') {
         query = query.eq('status', statusFilter.toLowerCase())
+      }
+
+      if (channelFilter === 'STOREFRONT') {
+        query = query.or('order_channel.eq.storefront,order_channel.is.null')
+      } else if (channelFilter === 'WHATSAPP') {
+        query = query.eq('order_channel', 'whatsapp')
       }
 
       const { data, error } = await query
@@ -118,6 +125,15 @@ function OrdersContent() {
         <div className="p-5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <select
+              value={channelFilter}
+              onChange={(e) => setChannelFilter(e.target.value as any)}
+              className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-200"
+            >
+              <option value="ALL">All Channels</option>
+              <option value="STOREFRONT">🌐 Storefront Website</option>
+              <option value="WHATSAPP">💬 WhatsApp Chatbot</option>
+            </select>
+            <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-200"
@@ -168,7 +184,8 @@ function OrdersContent() {
               ) : (
                 filteredOrders.map((ord) => {
                   const phoneInfo = formatWhatsAppPhone(ord.customer_phone || ord.customer?.phone)
-                  const isWa = (ord.source || 'whatsapp').toLowerCase() === 'whatsapp'
+                  const channel = (ord.order_channel || (ord.whatsapp_message_id ? 'whatsapp' : 'storefront')).toLowerCase()
+                  const isWa = channel === 'whatsapp'
                   const itemsList = Array.isArray(ord.items) && ord.items.length > 0
                     ? ord.items
                     : Array.isArray(ord.order_items) && ord.order_items.length > 0

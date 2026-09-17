@@ -412,11 +412,11 @@ export default function OrdersPage() {
           ordStatusUpper === activeTab ||
           (activeTab === 'PENDING' && ordStatusUpper === 'PLACED')
 
-        const ordSource = ((ord as any).source || 'WHATSAPP').toUpperCase()
+        const ordChannel = ((ord as any).order_channel || ((ord as any).whatsapp_message_id ? 'whatsapp' : 'storefront')).toLowerCase()
         const matchesSource =
           sourceFilter === 'ALL' ||
-          (sourceFilter === 'WEBSITE' && (ordSource === 'WEBSITE' || ordSource === 'STOREFRONT')) ||
-          (sourceFilter === 'WHATSAPP' && (ordSource === 'WHATSAPP' || ordSource === 'CHATBOT'))
+          (sourceFilter === 'WEBSITE' && ordChannel === 'storefront') ||
+          (sourceFilter === 'WHATSAPP' && ordChannel === 'whatsapp')
 
         // Date-wise filtering
         const ordDateStr = (ord as any).business_date || (ord.created_at ? ord.created_at.split('T')[0] : '')
@@ -750,7 +750,8 @@ export default function OrdersPage() {
                   const locInfo = getLocationInfo(ord)
                   const isPaid = (ord.payment_status || '').toUpperCase() === 'PAID'
                   const isCancelled = (ord.status || '').toUpperCase() === 'CANCELLED'
-                  const isWebsite = ((ord as any).source || '').toUpperCase() === 'WEBSITE' || ((ord as any).source || '').toUpperCase() === 'STOREFRONT'
+                  const ordChannel = ((ord as any).order_channel || ((ord as any).whatsapp_message_id ? 'whatsapp' : 'storefront')).toLowerCase()
+                  const isWebsite = ordChannel === 'storefront'
 
                   return (
                     <tr key={ord.id} className="hover:bg-slate-50/50 transition-colors">

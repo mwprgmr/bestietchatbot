@@ -221,6 +221,7 @@ export default function CheckoutPage() {
               business_date: todayDate,
               customer_remarks: `Slot: ${slotText}`,
               idempotency_key: idempotencyKey,
+              order_channel: 'storefront',
             },
           ])
           .select('id')
