@@ -19,6 +19,9 @@ import {
   Building2,
   ShoppingBag,
   Loader2,
+  User,
+  Phone,
+  RefreshCw,
 } from 'lucide-react'
 
 export default function CheckoutPage() {
@@ -35,46 +38,78 @@ export default function CheckoutPage() {
     clearCart,
   } = useCustomer()
 
+  // Hydration state check
+  const [mounted, setMounted] = useState(false)
+
   // Form States
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
-  const [houseAddress, setHouseAddress] = useState(deliveryAddress)
+  const [houseAddress, setHouseAddress] = useState('')
   const [landmark, setLandmark] = useState('')
   const [pincode, setPincode] = useState('695016')
 
-  // Slot & Payment States
-  const slots = getDeliverySlots()
-  const [selectedSlot, setSelectedSlot] = useState<DeliverySlot>(slots[0])
+  // Delivery Slot & Payment Method
+  const [slots, setSlots] = useState<DeliverySlot[]>([])
+  const [selectedSlot, setSelectedSlot] = useState<DeliverySlot | null>(null)
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'ONLINE_UPI'>('COD')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  // Prefill saved customer credentials on mount
+  // Hydration & localStorage initialization
   useEffect(() => {
+    setMounted(true)
     try {
+      const generatedSlots = getDeliverySlots()
+      setSlots(generatedSlots)
+      if (generatedSlots.length > 0) {
+        setSelectedSlot(generatedSlots[0])
+      }
+
       const savedPhone = localStorage.getItem('bestiet_customer_phone')
       if (savedPhone) setCustomerPhone(savedPhone)
+      
       const savedName = localStorage.getItem('bestiet_customer_name')
       if (savedName) setCustomerName(savedName)
-      const savedAddress = localStorage.getItem('bestiet_delivery_address')
-      if (savedAddress) setHouseAddress(savedAddress)
-    } catch (_) {}
-  }, [])
 
-  if (cart.length === 0) {
+      const savedAddress = localStorage.getItem('bestiet_delivery_address')
+      setHouseAddress(savedAddress || deliveryAddress || '')
+    } catch (err) {
+      console.warn('Error initializing checkout state:', err)
+      setHouseAddress(deliveryAddress || '')
+    }
+  }, [deliveryAddress])
+
+  // Hydration Loading Skeleton
+  if (!mounted) {
     return (
       <StorefrontLayout>
-        <div className="py-16 text-center space-y-4 max-w-md mx-auto">
+        <div className="py-20 text-center space-y-4 max-w-md mx-auto">
+          <Loader2 className="w-8 h-8 text-[#39B54A] animate-spin mx-auto" />
+          <p className="text-xs font-extrabold text-[#0F172A] uppercase tracking-wider">
+            Loading Fresh Checkout...
+          </p>
+        </div>
+      </StorefrontLayout>
+    )
+  }
+
+  // Safe empty cart guard after hydration
+  if (!cart || !Array.isArray(cart) || cart.length === 0) {
+    return (
+      <StorefrontLayout>
+        <div className="py-16 px-4 text-center space-y-4 max-w-md mx-auto">
           <div className="w-16 h-16 bg-[#E2E8F0] rounded-none flex items-center justify-center mx-auto text-[#39B54A]">
             <ShoppingBag className="w-8 h-8" />
           </div>
-          <h2 className="text-lg font-extrabold text-[#0F172A]">Your Cart is Empty</h2>
-          <p className="text-xs text-[#0F172A]/70">Please add items to your cart before proceeding to checkout.</p>
+          <h2 className="text-lg font-extrabold text-[#0F172A]">Your Cart is Currently Empty</h2>
+          <p className="text-xs text-[#0F172A]/70 leading-relaxed">
+            Please add fresh fish, chicken, or mutton to your cart before proceeding to checkout.
+          </p>
           <Link
             href="/"
-            className="inline-block px-5 py-2.5 bg-[#39B54A] text-white font-bold text-xs rounded-none hover:bg-[#2EA03E]"
+            className="inline-block px-6 py-3 bg-[#39B54A] text-white font-extrabold text-xs rounded-none hover:bg-[#2EA03E] shadow-md"
           >
-            Browse Fresh Catch
+            BROWSE FRESH PRODUCTS
           </Link>
         </div>
       </StorefrontLayout>
@@ -83,10 +118,10 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (loading) return // Prevent duplicate submit
+    if (loading) return
 
     if (!customerName.trim() || !customerPhone.trim() || !houseAddress.trim()) {
-      setErrorMsg('Please complete your name, phone number, and delivery address.')
+      setErrorMsg('Please complete your full name, phone number, and delivery address.')
       return
     }
 
@@ -100,123 +135,135 @@ export default function CheckoutPage() {
       const todayDate = new Date().toISOString().split('T')[0]
       const idempotencyKey = `web_chk_${cleanPhone}_${Date.now()}`
 
-      // 1. Get or Create Customer
+      // 1. Customer Upsert / Query
       let customerId = ''
-      const { data: existingCust } = await supabase
-        .from('customers')
-        .select('id')
-        .eq('phone', cleanPhone)
-        .maybeSingle()
-
-      if (existingCust?.id) {
-        customerId = existingCust.id
-      } else {
-        const { data: newCust, error: cErr } = await supabase
+      try {
+        const { data: existingCust } = await supabase
           .from('customers')
-          .insert([
-            {
-              name: customerName.trim(),
-              phone: cleanPhone,
-              address: houseAddress.trim(),
-            },
-          ])
           .select('id')
-          .single()
+          .eq('phone', cleanPhone)
+          .maybeSingle()
 
-        if (cErr) throw cErr
-        customerId = newCust.id
+        if (existingCust?.id) {
+          customerId = existingCust.id
+        } else {
+          const { data: newCust, error: cErr } = await supabase
+            .from('customers')
+            .insert([
+              {
+                name: customerName.trim(),
+                phone: cleanPhone,
+                address: houseAddress.trim(),
+              },
+            ])
+            .select('id')
+            .single()
+
+          if (!cErr && newCust?.id) {
+            customerId = newCust.id
+          }
+        }
+      } catch (cEx) {
+        console.warn('Customer upsert non-fatal exception:', cEx)
       }
 
       const fullAddressString = `${houseAddress.trim()}${landmark.trim() ? `, Landmark: ${landmark.trim()}` : ''}${pincode ? `, Pincode: ${pincode}` : ''}`
       const orderNum = `BF-${todayDate.replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`
+      const slotText = selectedSlot ? `${selectedSlot.dateLabel} ${selectedSlot.timeSlot}` : 'Express Slot'
 
-      // 2. Prepare Items Payload for RPC & Fallback
-      const rpcItems = cart.map((item) => ({
+      // 2. Normalize Cart Items Payload
+      const normalizedCart = cart.map((item) => ({
         product_id: item.product_id,
-        quantity_kg: item.weight_kg * item.quantity,
-        weight_kg: item.weight_kg,
-        quantity: item.quantity,
-        unit_price: item.price_per_kg,
-        price_per_kg: item.price_per_kg,
-        cutting_type: item.cleaning_option,
+        quantity_kg: Number(item.weight_kg || 0.5) * Number(item.quantity || 1),
+        weight_kg: Number(item.weight_kg || 0.5),
+        quantity: Number(item.quantity || 1),
+        unit_price: Number(item.price_per_kg || 200),
+        price_per_kg: Number(item.price_per_kg || 200),
+        cutting_type: item.cleaning_option || 'Whole',
+        product_name: item.product_name || 'Fresh Catch',
       }))
 
       let placedOrderId = ''
       let finalOrderNumber = orderNum
 
-      // 3. ATTEMPT RPC CREATION FIRST
-      const { data: rpcRes, error: rpcErr } = await supabase.rpc('create_order_atomic', {
-        p_customer_id: customerId,
-        p_branch_id: targetBranchId,
-        p_address_id: null,
-        p_delivery_fee: deliveryFee,
-        p_customer_remarks: `Slot: ${selectedSlot.dateLabel} ${selectedSlot.timeSlot}`,
-        p_idempotency_key: idempotencyKey,
-        p_inventory_date: todayDate,
-        p_items: rpcItems,
-        p_latitude: null,
-        p_longitude: null,
-        p_maps_url: null,
-      })
+      // 3. ATTEMPT RPC PLACEMENT
+      let rpcSuccess = false
+      try {
+        const { data: rpcRes, error: rpcErr } = await supabase.rpc('create_order_atomic', {
+          p_customer_id: customerId || null,
+          p_branch_id: targetBranchId,
+          p_address_id: null,
+          p_delivery_fee: deliveryFee || 35,
+          p_customer_remarks: `Slot: ${slotText}`,
+          p_idempotency_key: idempotencyKey,
+          p_inventory_date: todayDate,
+          p_items: normalizedCart,
+          p_latitude: null,
+          p_longitude: null,
+          p_maps_url: null,
+        })
 
-      if (!rpcErr && rpcRes && rpcRes.success) {
-        placedOrderId = rpcRes.order_id
-        finalOrderNumber = rpcRes.order_number || orderNum
-      } else {
-        // 4. FALLBACK DIRECT ATOMIC CREATION USING REAL COLUMNS
-        console.warn('RPC create_order_atomic fallback engaged:', rpcErr?.message || rpcRes?.error)
+        if (!rpcErr && rpcRes && rpcRes.success) {
+          rpcSuccess = true
+          placedOrderId = rpcRes.order_id
+          finalOrderNumber = rpcRes.order_number || orderNum
+        }
+      } catch (rpcEx) {
+        console.warn('RPC create_order_atomic call exception:', rpcEx)
+      }
 
-        // Insert into orders using actual columns (order_number, customer_id, branch_id, status, subtotal, delivery_charge, total, total_amount, payment_status, payment_method, delivery_address, customer_phone, business_date, idempotency_key)
+      // 4. FALLBACK CLIENT-SIDE ATOMIC PLACEMENT WITH VERIFIED SCHEMA
+      if (!rpcSuccess) {
+        console.warn('Executing client-side verified schema fallback for order placement...')
         const { data: directOrder, error: oErr } = await supabase
           .from('orders')
           .insert([
             {
               order_number: orderNum,
-              customer_id: customerId,
+              customer_id: customerId || null,
               branch_id: targetBranchId,
               status: 'pending',
-              subtotal: cartSubtotal,
-              delivery_charge: deliveryFee,
-              total: grandTotal,
-              total_amount: grandTotal,
+              subtotal: cartSubtotal || 0,
+              delivery_charge: deliveryFee || 35,
+              total: grandTotal || 0,
+              total_amount: grandTotal || 0,
               payment_status: paymentMethod === 'COD' ? 'pending' : 'paid',
               payment_method: paymentMethod,
               delivery_address: fullAddressString,
               customer_phone: cleanPhone,
               business_date: todayDate,
-              customer_remarks: `Slot: ${selectedSlot.dateLabel} ${selectedSlot.timeSlot}`,
+              customer_remarks: `Slot: ${slotText}`,
               idempotency_key: idempotencyKey,
             },
           ])
           .select('id')
           .single()
 
-        if (oErr) throw oErr
+        if (oErr) {
+          throw new Error(oErr.message || 'Failed to record order details. Please try again.')
+        }
+
         placedOrderId = directOrder.id
 
-        // Insert Order Items & Deduct Stock
-        for (const item of cart) {
-          const totalWeightKg = item.weight_kg * item.quantity
-          const itemSubtotal = Math.round(item.price_per_kg * totalWeightKg)
+        // Insert Order Items & Deduct Inventory Stock
+        for (const item of normalizedCart) {
+          const totalWeightKg = item.quantity_kg
+          const itemSubtotal = Math.round(item.unit_price * totalWeightKg)
 
-          const { data: itemData, error: iErr } = await supabase
-            .from('order_items')
-            .insert([
-              {
-                order_id: placedOrderId,
-                product_id: item.product_id,
-                quantity: totalWeightKg,
-                price_per_kg: item.price_per_kg,
-                cutting_type: item.cleaning_option,
-                total: itemSubtotal,
-              },
-            ])
-            .select('id')
-            .single()
+          const { error: iErr } = await supabase.from('order_items').insert([
+            {
+              order_id: placedOrderId,
+              product_id: item.product_id,
+              quantity: totalWeightKg,
+              price_per_kg: item.unit_price,
+              cutting_type: item.cutting_type,
+              total: itemSubtotal,
+            },
+          ])
 
           if (iErr) console.warn('Order Item Insert Warning:', iErr.message)
 
-          // Deduct Stock in Inventory
+          // Deduct Stock
           const { data: inv } = await supabase
             .from('inventory')
             .select('id, available_stock, sold_stock')
@@ -238,7 +285,6 @@ export default function CheckoutPage() {
               })
               .eq('id', inv.id)
 
-            // Log Inventory Movement
             await supabase.from('inventory_movements').insert([
               {
                 inventory_id: inv.id,
@@ -252,7 +298,7 @@ export default function CheckoutPage() {
         }
       }
 
-      // 5. Save Credentials & Order History Locally
+      // 5. Save Credentials & History Locally
       try {
         localStorage.setItem('bestiet_customer_phone', cleanPhone)
         localStorage.setItem('bestiet_customer_name', customerName.trim())
@@ -273,13 +319,13 @@ export default function CheckoutPage() {
         console.warn('LocalStorage save error:', lErr)
       }
 
-      // 6. CLEAR CART ONLY AFTER SUCCESSFUL ORDER PLACEMENT
+      // 6. Clear Cart & Navigate to Order Success Page
       setDeliveryAddress(fullAddressString)
       clearCart()
       router.push(`/order-success/${placedOrderId}?num=${finalOrderNumber}`)
     } catch (err: any) {
-      console.error('Checkout Order Error:', err)
-      setErrorMsg(err.message || 'Failed to place order. Please check inventory stock and try again.')
+      console.error('Checkout Error:', err)
+      setErrorMsg(err.message || 'An error occurred while placing your order. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -288,7 +334,7 @@ export default function CheckoutPage() {
   return (
     <StorefrontLayout>
       <div className="space-y-6 pb-20 md:pb-6">
-        {/* Back Link & Header */}
+        {/* Navigation Back Link & Header */}
         <div>
           <Link
             href="/cart"
@@ -297,23 +343,32 @@ export default function CheckoutPage() {
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Shopping Cart</span>
           </Link>
-          <h1 className="text-2xl font-black text-[#0F172A] tracking-tight">EXPRESS CHECKOUT</h1>
+          <h1 className="text-2xl font-black text-[#0F172A] tracking-tight uppercase">EXPRESS CHECKOUT</h1>
           <p className="text-xs text-[#0F172A]/70">
             Fulfilling order from <span className="font-bold text-[#0F172A]">{selectedBranch?.name || 'Manvila Branch'}</span>
           </p>
         </div>
 
+        {/* Inline Safe Error Notification */}
         {errorMsg && (
-          <div className="p-4 rounded-none bg-[#FFFFFF] border border-[#E2E8F0] text-[#0F172A] text-xs font-bold flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-[#39B54A]" />
-            <span>{errorMsg}</span>
+          <div className="p-4 rounded-none bg-white border-2 border-red-500/50 text-[#0F172A] text-xs font-bold flex items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+            <button
+              onClick={() => setErrorMsg(null)}
+              className="text-xs underline font-extrabold text-[#0F172A] hover:text-red-600 cursor-pointer"
+            >
+              Dismiss
+            </button>
           </div>
         )}
 
         <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-          {/* Left Column: Multi-Step Checkout Forms */}
+          {/* Left Column: Checkout Multi-step Forms */}
           <div className="lg:col-span-2 space-y-6">
-            {/* STEP 1: BRANCH CONFIRMATION */}
+            {/* STEP 1: BRANCH STOCK CONFIRMATION */}
             <div className="p-4 sm:p-5 bg-white rounded-none border border-[#E2E8F0] shadow-xs space-y-3">
               <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
                 <div className="flex items-center gap-2">
@@ -324,7 +379,7 @@ export default function CheckoutPage() {
                     <Building2 className="w-4 h-4 text-[#39B54A]" /> Branch Stock Confirmation
                   </h2>
                 </div>
-                <span className="text-[10px] font-extrabold bg-[#39B54A]/20 text-[#39B54A] px-2.5 py-1 border border-[#39B54A]/30">
+                <span className="text-[10px] font-extrabold bg-[#39B54A]/20 text-[#39B54A] px-2.5 py-1 border border-[#39B54A]/30 uppercase">
                   ACTIVE BRANCH
                 </span>
               </div>
@@ -355,28 +410,34 @@ export default function CheckoutPage() {
                   <label className="block text-xs font-extrabold text-[#0F172A] uppercase mb-1">
                     Full Name *
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="e.g. Anjali Nair"
-                    className="w-full px-3.5 py-2.5 bg-[#E2E8F0] border border-[#E2E8F0] rounded-none text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A] text-[#0F172A]"
-                  />
+                  <div className="relative">
+                    <User className="w-4 h-4 text-[#0F172A]/40 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      required
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="e.g. Anjali Nair"
+                      className="w-full pl-9 pr-3.5 py-2.5 bg-[#E2E8F0] border border-[#E2E8F0] rounded-none text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A] text-[#0F172A]"
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-extrabold text-[#0F172A] uppercase mb-1">
-                    Mobile Number (WhatsApp) *
+                    WhatsApp Mobile Number *
                   </label>
-                  <input
-                    type="tel"
-                    required
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    placeholder="e.g. 9656055969"
-                    className="w-full px-3.5 py-2.5 bg-[#E2E8F0] border border-[#E2E8F0] rounded-none text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A] text-[#0F172A]"
-                  />
+                  <div className="relative">
+                    <Phone className="w-4 h-4 text-[#0F172A]/40 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="tel"
+                      required
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="e.g. 9656055969"
+                      className="w-full pl-9 pr-3.5 py-2.5 bg-[#E2E8F0] border border-[#E2E8F0] rounded-none text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A] text-[#0F172A]"
+                    />
+                  </div>
                 </div>
 
                 <div className="sm:col-span-2">
@@ -433,7 +494,7 @@ export default function CheckoutPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {slots.map((slot) => {
-                  const isSelected = selectedSlot.id === slot.id
+                  const isSelected = selectedSlot?.id === slot.id
                   return (
                     <div
                       key={slot.id}
@@ -534,7 +595,7 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Right Column: Order Summary & Place Order CTA */}
+          {/* Right Column: Order Summary & Place Order Action */}
           <div className="space-y-4">
             <div className="p-4 sm:p-6 bg-[#E2E8F0] rounded-none border border-[#E2E8F0] shadow-xs space-y-4">
               <h2 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#0F172A]">
@@ -543,16 +604,16 @@ export default function CheckoutPage() {
 
               <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
                 {cart.map((item) => {
-                  const itemWeightTotal = item.weight_kg * item.quantity
-                  const itemSubtotal = Math.round(item.price_per_kg * itemWeightTotal)
+                  const itemWeightTotal = (item.weight_kg || 0.5) * (item.quantity || 1)
+                  const itemSubtotal = Math.round((item.price_per_kg || 200) * itemWeightTotal)
                   return (
-                    <div key={item.cart_key} className="flex justify-between items-center text-xs bg-white p-2.5 border border-[#E2E8F0]">
+                    <div key={item.cart_key || item.product_id} className="flex justify-between items-center text-xs bg-white p-2.5 border border-[#E2E8F0]">
                       <div>
                         <div className="font-extrabold text-[#0F172A] line-clamp-1">
-                          {item.product_name}
+                          {item.product_name || 'Fresh Item'}
                         </div>
                         <div className="text-[10px] text-[#39B54A] font-bold">
-                          Cut: {item.cleaning_option} • {item.weight_kg === 0.5 ? '500g' : `${item.weight_kg}kg`} ({item.quantity}x)
+                          Cut: {item.cleaning_option || 'Whole'} • {item.weight_kg === 0.5 ? '500g' : `${item.weight_kg}kg`} ({item.quantity}x)
                         </div>
                         <div className="text-[10px] text-[#0F172A]/60">
                           Rate: ₹{item.price_per_kg}/kg
