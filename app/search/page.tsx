@@ -6,79 +6,125 @@ import { createClient } from '@/lib/supabase/client'
 import { useCustomer } from '@/lib/context/CustomerContext'
 import StorefrontLayout from '@/components/customer/StorefrontLayout'
 import ProductCard, { ProductProps } from '@/components/customer/ProductCard'
-import { Search, ArrowLeft, AlertCircle } from 'lucide-react'
+import { Search, ArrowLeft, AlertCircle, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
 
 function SearchContent() {
   const searchParams = useSearchParams()
-  const qParam = searchParams?.get('q') || ''
+  const qParam = searchParams ? searchParams.get('q') || '' : ''
   const { selectedBranch } = useCustomer()
 
-  const [query, setQuery] = useState(qParam)
+  const [query, setQuery] = useState<string>(qParam)
   const [products, setProducts] = useState<ProductProps[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState<boolean>(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
 
-  // Sync query state when URL param changes
+  // Sync state when URL q param changes
   useEffect(() => {
-    setQuery(qParam)
+    setQuery(qParam || '')
   }, [qParam])
 
   useEffect(() => {
+    let isMounted = true
+
     async function executeSearch() {
-      if (!query.trim()) {
-        setProducts([])
+      const trimmedQuery = (query || '').trim()
+      if (!trimmedQuery) {
+        if (isMounted) {
+          setProducts([])
+          setSearchError(null)
+          setLoading(false)
+        }
         return
       }
+
       setLoading(true)
+      setSearchError(null)
+
       try {
         const supabase = createClient()
-        const searchTerm = query.trim().toLowerCase()
+        const searchTerm = trimmedQuery.toLowerCase()
 
-        const { data: rawProducts } = await supabase
+        // Fetch active products
+        const { data: rawProducts, error: pErr } = await supabase
           .from('products')
           .select('*')
           .eq('active', true)
 
-        const branchId = selectedBranch?.id || ''
-        const { data: rawInventory } = await supabase
+        if (pErr) {
+          console.error('[SEARCH_ERROR] Products fetch error:', pErr.message)
+          if (isMounted) {
+            setSearchError('Something went wrong while searching. Please try again.')
+            setProducts([])
+          }
+          return
+        }
+
+        // Fetch branch inventory
+        const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
+        const { data: rawInventory, error: iErr } = await supabase
           .from('inventory')
           .select('*')
-          .eq('branch_id', branchId)
+          .eq('branch_id', targetBranchId)
 
-        const filtered = (rawProducts || []).filter((p) => {
+        if (iErr) {
+          console.warn('[SEARCH_WARNING] Inventory fetch warning:', iErr.message)
+        }
+
+        const safeProducts = Array.isArray(rawProducts) ? rawProducts : []
+        const safeInventory = Array.isArray(rawInventory) ? rawInventory : []
+
+        // Filter by name, category, or description safely
+        const filtered = safeProducts.filter((p) => {
+          if (!p) return false
           const nameMatch = (p.name || '').toLowerCase().includes(searchTerm)
           const catMatch = (p.category || '').toLowerCase().includes(searchTerm)
           const descMatch = (p.description || '').toLowerCase().includes(searchTerm)
           return nameMatch || catMatch || descMatch
         })
 
+        // Map safely with fallbacks
         const mapped: ProductProps[] = filtered.map((p) => {
-          const invMatch = (rawInventory || []).find((i) => i.product_id === p.id)
-          const price = invMatch?.price_per_kg ? Number(invMatch.price_per_kg) : 450
-          const stock = invMatch?.available_stock !== undefined ? Number(invMatch.available_stock) : 20
+          const invMatch = safeInventory.find((i) => i && i.product_id === p.id)
+          const rawPrice = invMatch?.price_per_kg ?? p.price_per_kg ?? 450
+          const price = typeof rawPrice === 'number' && !isNaN(rawPrice) && rawPrice > 0 ? Number(rawPrice) : 450
+          const rawStock = invMatch?.available_stock ?? p.available_stock ?? 20
+          const stock = typeof rawStock === 'number' && !isNaN(rawStock) ? Math.max(0, Number(rawStock)) : 0
 
           return {
-            id: p.id,
-            name: p.name,
-            description: p.description,
+            id: p.id || `prod-${Math.random()}`,
+            name: p.name || 'Fresh Product',
+            description: p.description || '',
             category: p.category || 'Fish',
             unit: p.unit || 'kg',
             price_per_kg: price,
             original_price_per_kg: Math.round(price * 1.25),
             available_stock: stock,
-            image_url: p.image_url,
+            image_url: p.image_url || null,
           }
         })
 
-        setProducts(mapped)
-      } catch (err) {
-        console.error('Search error:', err)
+        if (isMounted) {
+          setProducts(mapped)
+        }
+      } catch (err: any) {
+        console.error('[SEARCH_ERROR] Exception in search execution:', err)
+        if (isMounted) {
+          setSearchError('Something went wrong while searching. Please try again.')
+          setProducts([])
+        }
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
     executeSearch()
+
+    return () => {
+      isMounted = false
+    }
   }, [query, selectedBranch?.id])
 
   const branchDisplayName = selectedBranch?.name ? selectedBranch.name.replace(' Branch', '') : ''
@@ -96,7 +142,7 @@ function SearchContent() {
 
       {/* Search Input Box */}
       <div className="bg-white p-6 rounded-3xl border border-[#EEEEEE] shadow-xs space-y-4">
-        <h1 className="text-xl font-black text-[#232B1E]">SEARCH FRESH PRODUCTS</h1>
+        <h1 className="text-xl font-black text-[#232B1E] uppercase">SEARCH FRESH PRODUCTS</h1>
 
         <div className="relative">
           <input
@@ -127,13 +173,32 @@ function SearchContent() {
         </div>
       </div>
 
-      {/* Search Results */}
+      {/* Search Results / States */}
       {loading ? (
         <div className="py-12 text-center space-y-2">
           <div className="w-8 h-8 border-4 border-[#8B9A6E] border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs font-bold text-[#232B1E]/70">Searching fresh inventory...</p>
+          <p className="text-xs font-bold text-[#232B1E]/70 uppercase tracking-wider">
+            Searching fresh inventory...
+          </p>
         </div>
-      ) : query && products.length === 0 ? (
+      ) : searchError ? (
+        <div className="p-8 text-center bg-white rounded-3xl border border-red-200 text-red-700 space-y-3">
+          <AlertCircle className="w-8 h-8 mx-auto text-red-500" />
+          <h3 className="text-base font-extrabold text-slate-900">{searchError}</h3>
+          <button
+            onClick={() => setQuery(query)}
+            className="px-4 py-2 bg-[#8B9A6E] text-white font-bold text-xs rounded-xl hover:bg-[#7A895D] transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      ) : !query.trim() ? (
+        <div className="p-12 text-center bg-white rounded-3xl border border-[#EEEEEE] text-[#232B1E]/70 space-y-2">
+          <ShoppingBag className="w-8 h-8 mx-auto text-[#8B9A6E]" />
+          <h3 className="text-base font-extrabold text-[#232B1E]">Search for fresh fish, meat & seafood</h3>
+          <p className="text-xs">Type a keyword above or select one of the popular search tags.</p>
+        </div>
+      ) : products.length === 0 ? (
         <div className="p-12 text-center bg-white rounded-3xl border border-[#EEEEEE] text-[#232B1E]/70 space-y-2">
           <AlertCircle className="w-8 h-8 mx-auto text-[#8B9A6E]" />
           <h3 className="text-base font-extrabold text-[#232B1E]">No products found for "{query}"</h3>
@@ -141,11 +206,9 @@ function SearchContent() {
         </div>
       ) : (
         <div className="space-y-3">
-          {query && (
-            <p className="text-xs font-bold text-[#232B1E]/70">
-              Found {products.length} product(s) for "{query}" {branchDisplayName ? `in ${branchDisplayName}` : ''}
-            </p>
-          )}
+          <p className="text-xs font-bold text-[#232B1E]/70">
+            Found {products.length} product(s) for "{query}" {branchDisplayName ? `in ${branchDisplayName}` : ''}
+          </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {products.map((p) => (
@@ -161,7 +224,7 @@ function SearchContent() {
 export default function SearchPage() {
   return (
     <StorefrontLayout>
-      <Suspense fallback={<div className="py-10 text-center text-xs text-[#232B1E]/70">Loading search...</div>}>
+      <Suspense fallback={<div className="py-12 text-center text-xs font-bold text-[#232B1E]/70 uppercase">Loading search page...</div>}>
         <SearchContent />
       </Suspense>
     </StorefrontLayout>
