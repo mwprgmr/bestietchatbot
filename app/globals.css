@@ -9,6 +9,10 @@
   --text-dark: #0F172A;
 }
 
+html {
+  scroll-behavior: smooth !important;
+}
+
 html,
 body {
   overflow-x: hidden;
@@ -18,6 +22,7 @@ body {
   background-color: #FFFFFF;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth !important;
 }
 
 /* Boxy Storefront Theme Override - Force sharp square corners on all storefront elements */
