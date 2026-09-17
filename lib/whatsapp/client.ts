@@ -123,6 +123,32 @@ export async function sendWhatsAppListMessage(
 
   console.log(`[WHATSAPP API] sending interactive list to phoneId=${phoneId}, recipient=${to}`)
 
+  // Meta Cloud API restriction: Total number of rows across all sections MUST be between 1 and 10.
+  let totalRows = 0
+  const safeSections: typeof sections = []
+
+  for (const section of sections) {
+    if (totalRows >= 10) break
+    const remainingSlots = 10 - totalRows
+    const slicedRows = section.rows.slice(0, remainingSlots)
+    if (slicedRows.length > 0) {
+      safeSections.push({
+        title: section.title.slice(0, 24),
+        rows: slicedRows.map((r) => ({
+          id: r.id,
+          title: r.title.slice(0, 24),
+          description: r.description ? r.description.slice(0, 72) : undefined,
+        })),
+      })
+      totalRows += slicedRows.length
+    }
+  }
+
+  if (totalRows === 0) {
+    console.warn('[WHATSAPP API] List sections contain 0 rows, falling back to text message.')
+    return await sendWhatsAppTextMessage(to, bodyText)
+  }
+
   try {
     const res = await fetch(`${graphUrl}/${phoneId}/messages`, {
       method: 'POST',
@@ -140,14 +166,7 @@ export async function sendWhatsAppListMessage(
           body: { text: bodyText },
           action: {
             button: buttonTitle.slice(0, 20),
-            sections: sections.map((s) => ({
-              title: s.title.slice(0, 24),
-              rows: s.rows.map((r) => ({
-                id: r.id,
-                title: r.title.slice(0, 24),
-                description: r.description ? r.description.slice(0, 72) : undefined,
-              })),
-            })),
+            sections: safeSections,
           },
         },
       }),

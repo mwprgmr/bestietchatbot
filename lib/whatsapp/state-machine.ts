@@ -932,9 +932,14 @@ async function showDailyFishMenu(phone: string, session: any, supabase: any, bra
     selected_branch_id: branchId,
   })
 
+  const totalCount = activeStockItems.length
+  const menuHeader = totalCount > 10
+    ? `🐟 *Fresh Fish Catalogue — ${branchName}*\n(${totalCount} varieties available today. Select below or reply with any fish name!)\nSelect a fish to choose quantity & cut:`
+    : `🐟 *Fresh Fish Catalogue — ${branchName}*\nSelect a fish to choose quantity & cut:`
+
   return await sendWhatsAppListMessage(
     phone,
-    `🐟 *Fresh Fish Catalogue — ${branchName}*\nSelect a fish to choose quantity & cut:`,
+    menuHeader,
     'Select Fish',
     [
       {
