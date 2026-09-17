@@ -47,7 +47,7 @@ export default function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder='Search fresh fish, chicken, mutton, prawns...'
-                className="w-full pl-11 pr-10 py-2.5 bg-[#F8FAF8] border border-[#E2E8F0] rounded-xl text-xs sm:text-sm font-semibold text-[#0F172A] placeholder-[#0F172A]/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/30 focus:border-[#39B54A] transition-all shadow-2xs"
+                className="w-full pl-11 pr-10 py-3 sm:py-3.5 bg-[#F8FAF8] border border-[#E2E8F0] rounded-xl text-xs sm:text-sm font-semibold text-[#0F172A] placeholder-[#0F172A]/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/30 focus:border-[#39B54A] transition-all shadow-2xs"
               />
               <Search className="w-4.5 h-4.5 text-[#39B54A] absolute left-3.5 top-1/2 -translate-y-1/2" />
               {searchQuery && (
@@ -110,14 +110,14 @@ export default function Header() {
         </div>
 
         {/* Upgraded Mobile Search Bar */}
-        <form onSubmit={handleSearchSubmit} className="mt-2 md:hidden">
+        <form onSubmit={handleSearchSubmit} className="mt-2.5 md:hidden">
           <div className="relative">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder='Search fresh fish, chicken, mutton...'
-              className="w-full pl-10 pr-9 py-2 bg-[#F8FAF8] border border-[#E2E8F0] rounded-xl text-xs font-semibold text-[#0F172A] placeholder-[#0F172A]/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/30 focus:border-[#39B54A] transition-all shadow-2xs"
+              className="w-full pl-10 pr-9 py-2.5 sm:py-3 bg-[#F8FAF8] border border-[#E2E8F0] rounded-xl text-xs font-semibold text-[#0F172A] placeholder-[#0F172A]/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/30 focus:border-[#39B54A] transition-all shadow-2xs"
             />
             <Search className="w-4 h-4 text-[#39B54A] absolute left-3 top-1/2 -translate-y-1/2" />
             {searchQuery && (
