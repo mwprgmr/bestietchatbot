@@ -2119,10 +2119,10 @@ async function fallbackCreateOrderAtomic(
       await supabase.from('order_items').insert([{
         order_id: newOrder.id,
         product_id: item.product_id,
-        quantity_kg: qty,
+        quantity: qty,
+        price_per_kg: unitPrice,
         cutting_type: item.cutting_type || 'whole',
-        unit_price: unitPrice,
-        subtotal: itemSubtotal
+        total: itemSubtotal
       }])
 
       const { data: invRow } = await supabase
