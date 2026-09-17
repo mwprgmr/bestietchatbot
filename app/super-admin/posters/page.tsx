@@ -117,6 +117,38 @@ function PostersManager() {
     }
   }
 
+  const handleSeedDefaults = async () => {
+    if (!confirm('This will seed the database with initial default posters. Continue?')) return
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('homepage_posters')
+        .upsert(
+          DEFAULT_POSTERS.map((p) => ({
+            id: p.id,
+            title: p.title,
+            image_url: p.image_url,
+            media_type: p.media_type,
+            cta_link: p.cta_link,
+            sort_order: p.sort_order,
+            active: p.active,
+          })),
+          { onConflict: 'id' }
+        )
+        .select('*')
+
+      if (!error && data) {
+        setPosters(data)
+      } else {
+        await loadPosters()
+      }
+    } catch (err) {
+      console.error('Seed error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleOpenAddModal = () => {
     setEditingPoster(null)
     setFormData({
@@ -241,6 +273,14 @@ function PostersManager() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleSeedDefaults}
+            className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+            title="Seed Initial Default Posters"
+          >
+            <RefreshCw className="w-4 h-4 text-emerald-600" />
+            <span>SEED DEFAULTS</span>
+          </button>
           <button
             onClick={loadPosters}
             className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer"

@@ -187,11 +187,11 @@ export default function HomepageHero() {
               href={`/category/${cat.slug}`}
               className="category-circle category-item group flex flex-col items-center shrink-0 snap-start cursor-pointer transition-all active:scale-95 animate-fade-in-up"
             >
-              <div className="category-circle category-item w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shadow-md group-hover:shadow-2xl group-hover:-translate-y-1 transition-all duration-300 border-2 border-[#39B54A]/30 bg-[#F1F5F9] relative flex items-center justify-center">
+              <div className="category-circle category-item w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shadow-md border-2 border-[#39B54A]/30 bg-[#F1F5F9] relative flex items-center justify-center">
                 <img
                   src={cat.image}
                   alt={cat.name}
-                  className="category-circle category-item w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-500 ease-out"
+                  className="category-circle category-item w-full h-full object-cover rounded-full"
                 />
               </div>
               <span className="text-xs sm:text-sm font-black text-[#0F172A] group-hover:text-[#39B54A] transition-colors mt-2.5 text-center line-clamp-1 max-w-[100px] sm:max-w-[120px]">
