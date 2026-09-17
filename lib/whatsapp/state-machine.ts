@@ -2061,9 +2061,15 @@ async function fallbackCreateOrderAtomic(
   }
 ) {
   try {
+    // STRICT MANDATORY VALIDATION: Cart cannot be empty
+    if (!Array.isArray(cart) || cart.length === 0) {
+      console.error('[STRICT ORDER VALIDATION ERROR]: Cart is empty! Order placement blocked.')
+      return { success: false, error: 'EMPTY_CART: Cannot place order without items' }
+    }
+
     let subtotal = 0
     for (const item of cart) {
-      const itemSubtotal = Math.round(Number(item.quantity_kg) * Number(item.unit_price || item.price_per_kg || 0) * 100) / 100
+      const itemSubtotal = Math.round(Number(item.quantity_kg ?? item.quantity ?? 0) * Number(item.unit_price || item.price_per_kg || 0) * 100) / 100
       subtotal += itemSubtotal
     }
     const totalAmount = Math.round((subtotal + deliveryFee) * 100) / 100
@@ -2111,19 +2117,38 @@ async function fallbackCreateOrderAtomic(
       return { success: false, error: oErr?.message || 'Order insertion failed' }
     }
 
+    // MANDATORY ITEM INSERTION WITH AUTOMATIC ROLLBACK
+    let itemsInsertedCount = 0
     for (const item of cart) {
-      const qty = Number(item.quantity_kg)
+      const qty = Number(item.quantity_kg ?? item.quantity ?? 0)
       const unitPrice = Number(item.unit_price || item.price_per_kg || 0)
       const itemSubtotal = Math.round(qty * unitPrice * 100) / 100
 
-      await supabase.from('order_items').insert([{
-        order_id: newOrder.id,
-        product_id: item.product_id,
-        quantity: qty,
-        price_per_kg: unitPrice,
-        cutting_type: item.cutting_type || 'whole',
-        total: itemSubtotal
-      }])
+      if (!item.product_id || qty <= 0) {
+        console.warn('[STRICT ITEM VALIDATION WARNING]: Skipping invalid item in cart:', item)
+        continue
+      }
+
+      const { data: itemData, error: itemErr } = await supabase
+        .from('order_items')
+        .insert([{
+          order_id: newOrder.id,
+          product_id: item.product_id,
+          quantity: qty,
+          price_per_kg: unitPrice,
+          cutting_type: item.cutting_type || 'whole',
+          total: itemSubtotal
+        }])
+        .select('id')
+
+      if (itemErr || !itemData || itemData.length === 0) {
+        console.error('[MANDATORY ITEM INSERTION FAILED]: Blocked order placement to prevent missing item details:', itemErr)
+        // Automatic rollback: Delete order header so no order without items can ever be saved in DB
+        await supabase.from('orders').delete().eq('id', newOrder.id)
+        return { success: false, error: 'ITEM_INSERTION_FAILED: Order blocked due to missing item details' }
+      }
+
+      itemsInsertedCount++
 
       const { data: invRow } = await supabase
         .from('inventory')
@@ -2157,6 +2182,12 @@ async function fallbackCreateOrderAtomic(
           reference_id: newOrder.id
         }])
       }
+    }
+
+    if (itemsInsertedCount === 0) {
+      console.error('[ZERO ITEMS INSERTED]: Rollback order header', newOrder.id)
+      await supabase.from('orders').delete().eq('id', newOrder.id)
+      return { success: false, error: 'ZERO_ITEMS_INSERTED: Order blocked' }
     }
 
     return {
