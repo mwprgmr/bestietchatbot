@@ -71,14 +71,60 @@ function OrdersContent() {
     }
   }
 
-  const formatWhatsAppPhone = (phoneRaw: string | undefined | null) => {
-    if (!phoneRaw) return { display: 'N/A', raw: '' }
-    let digits = String(phoneRaw).replace(/\D/g, '')
-    if (digits.length === 10) digits = `91${digits}`
-    if (digits.startsWith('91') && digits.length === 12) {
-      return { display: `+91 ${digits.slice(2)}`, raw: digits }
+  const getOrderCustomerDetails = (ord: any) => {
+    let name = ord.customer?.name || ''
+    let phone = ord.customer_phone || ord.customer?.phone || ''
+    const remarks = ord.customer_remarks || ''
+    const deliveryAddr = ord.delivery_address || ''
+    const ordChannel = ((ord as any).order_channel || ((ord as any).whatsapp_message_id ? 'whatsapp' : 'storefront')).toLowerCase()
+
+    if (!name || name === 'Customer 4153' || name === 'WhatsApp Customer' || name.startsWith('Customer ')) {
+      name = ''
     }
-    return { display: phoneRaw.startsWith('+') ? phoneRaw : `+${phoneRaw}`, raw: digits }
+
+    if (phone === '15551964153') {
+      phone = ''
+    }
+
+    if (remarks) {
+      const match = remarks.match(/Customer:\s*([^()]+)\s*\(([^()]+)\)/i)
+      if (match) {
+        if (!name) name = match[1].trim()
+        if (!phone) phone = match[2].trim().replace(/\D/g, '')
+      }
+    }
+
+    if (!phone && deliveryAddr) {
+      const phoneMatch = deliveryAddr.match(/\b(91\d{10}|\d{10})\b/)
+      if (phoneMatch) {
+        phone = phoneMatch[1]
+      }
+    }
+
+    if (!name) {
+      name = ordChannel === 'whatsapp' ? 'WhatsApp Customer' : 'Storefront Website Customer'
+    }
+
+    let rawPhone = phone.replace(/\D/g, '')
+    let displayPhone = 'N/A'
+
+    if (rawPhone.length === 10) {
+      rawPhone = `91${rawPhone}`
+    }
+
+    if (rawPhone.startsWith('91') && rawPhone.length === 12) {
+      displayPhone = `+91 ${rawPhone.slice(2)}`
+    } else if (rawPhone.length > 0) {
+      displayPhone = rawPhone.startsWith('+') ? rawPhone : `+${rawPhone}`
+    }
+
+    return {
+      name,
+      phone: rawPhone,
+      displayPhone,
+      channel: ordChannel,
+      isWebsite: ordChannel === 'storefront',
+    }
   }
 
   const filteredOrders = orders.filter((ord) => {
@@ -86,10 +132,8 @@ function OrdersContent() {
     const q = search.toLowerCase()
     const num = (ord.order_number || '').toLowerCase()
     const custId = (ord.customer_id || '').toLowerCase()
-    const phone = ord.customer_phone || ord.customer?.phone || ''
-    const phoneInfo = formatWhatsAppPhone(phone)
-    const name = (ord.customer?.name || '').toLowerCase()
-    return num.includes(q) || custId.includes(q) || phoneInfo.raw.includes(q) || phoneInfo.display.includes(q) || name.includes(q)
+    const cust = getOrderCustomerDetails(ord)
+    return num.includes(q) || custId.includes(q) || cust.phone.includes(q) || cust.displayPhone.toLowerCase().includes(q) || cust.name.toLowerCase().includes(q)
   })
 
   if (loading) {
@@ -167,7 +211,7 @@ function OrdersContent() {
                 <th className="p-3.5">Order Number</th>
                 <th className="p-3.5">Source</th>
                 <th className="p-3.5">Branch</th>
-                <th className="p-3.5">Customer & WhatsApp</th>
+                <th className="p-3.5">Customer & Contact</th>
                 <th className="p-3.5">Ordered Fish & Quantity (kg)</th>
                 <th className="p-3.5">Total Amount</th>
                 <th className="p-3.5">Status</th>
@@ -183,8 +227,8 @@ function OrdersContent() {
                 </tr>
               ) : (
                 filteredOrders.map((ord) => {
-                  const phoneInfo = formatWhatsAppPhone(ord.customer_phone || ord.customer?.phone)
-                  const channel = (ord.order_channel || (ord.whatsapp_message_id ? 'whatsapp' : 'storefront')).toLowerCase()
+                  const custDetails = getOrderCustomerDetails(ord)
+                  const channel = custDetails.channel
                   const isWa = channel === 'whatsapp'
                   const itemsList = Array.isArray(ord.items) && ord.items.length > 0
                     ? ord.items
@@ -214,12 +258,12 @@ function OrdersContent() {
                         </span>
                       </td>
                       <td className="p-3.5">
-                        <div className="font-semibold text-white">{ord.customer?.name || 'Customer'}</div>
+                        <div className="font-semibold text-white">{custDetails.name}</div>
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
-                          <span>{phoneInfo.display}</span>
-                          {phoneInfo.raw && (
+                          <span>{custDetails.displayPhone}</span>
+                          {custDetails.phone && (
                             <a
-                              href={`https://wa.me/${phoneInfo.raw}`}
+                              href={`https://wa.me/${custDetails.phone}`}
                               target="_blank"
                               rel="noreferrer"
                               className="text-emerald-400 hover:text-emerald-300"

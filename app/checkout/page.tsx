@@ -135,20 +135,41 @@ export default function CheckoutPage() {
       const todayDate = new Date().toISOString().split('T')[0]
       const idempotencyKey = `web_chk_${cleanPhone}_${Date.now()}`
 
-      // 1. Customer Query & Fallback ID
-      let customerId = '77499c2e-e534-48f7-995c-25ab77d5bd34'
+      let formattedPhone = cleanPhone
+      if (formattedPhone.length === 10) {
+        formattedPhone = `91${formattedPhone}`
+      }
+
+      // 1. Customer Query & Upsert/Create
+      let customerId: string | null = null
       try {
         const { data: existingCust } = await supabase
           .from('customers')
-          .select('id')
-          .eq('phone', cleanPhone)
+          .select('id, name')
+          .or(`phone.eq.${cleanPhone},phone.eq.${formattedPhone}`)
           .maybeSingle()
 
         if (existingCust?.id) {
           customerId = existingCust.id
+          if (customerName.trim() && (!existingCust.name || existingCust.name.startsWith('Customer '))) {
+            await supabase.from('customers').update({ name: customerName.trim() }).eq('id', customerId)
+          }
+        } else {
+          const { data: newCust } = await supabase
+            .from('customers')
+            .insert({
+              name: customerName.trim(),
+              phone: formattedPhone || cleanPhone,
+            })
+            .select('id')
+            .single()
+
+          if (newCust?.id) {
+            customerId = newCust.id
+          }
         }
       } catch (cEx) {
-        console.warn('Customer query non-fatal exception:', cEx)
+        console.warn('Customer query/create non-fatal exception:', cEx)
       }
 
       const fullAddressString = `${houseAddress.trim()}${landmark.trim() ? `, Landmark: ${landmark.trim()}` : ''}${pincode ? `, Pincode: ${pincode}` : ''}`

@@ -101,6 +101,62 @@ export default function OrdersPage() {
     }
   }
 
+  const getOrderCustomerDetails = (ord: any) => {
+    let name = ord.customer?.name || ''
+    let phone = ord.customer_phone || ord.customer?.phone || ''
+    const remarks = ord.customer_remarks || ''
+    const deliveryAddr = ord.delivery_address || ''
+    const ordChannel = ((ord as any).order_channel || ((ord as any).whatsapp_message_id ? 'whatsapp' : 'storefront')).toLowerCase()
+
+    if (!name || name === 'Customer 4153' || name === 'WhatsApp Customer' || name.startsWith('Customer ')) {
+      name = ''
+    }
+
+    if (phone === '15551964153') {
+      phone = ''
+    }
+
+    if (remarks) {
+      const match = remarks.match(/Customer:\s*([^()]+)\s*\(([^()]+)\)/i)
+      if (match) {
+        if (!name) name = match[1].trim()
+        if (!phone) phone = match[2].trim().replace(/\D/g, '')
+      }
+    }
+
+    if (!phone && deliveryAddr) {
+      const phoneMatch = deliveryAddr.match(/\b(91\d{10}|\d{10})\b/)
+      if (phoneMatch) {
+        phone = phoneMatch[1]
+      }
+    }
+
+    if (!name) {
+      name = ordChannel === 'whatsapp' ? 'WhatsApp Customer' : 'Storefront Website Customer'
+    }
+
+    let rawPhone = phone.replace(/\D/g, '')
+    let displayPhone = 'N/A'
+
+    if (rawPhone.length === 10) {
+      rawPhone = `91${rawPhone}`
+    }
+
+    if (rawPhone.startsWith('91') && rawPhone.length === 12) {
+      displayPhone = `+91 ${rawPhone.slice(2)}`
+    } else if (rawPhone.length > 0) {
+      displayPhone = rawPhone.startsWith('+') ? rawPhone : `+${rawPhone}`
+    }
+
+    return {
+      name,
+      phone: rawPhone,
+      displayPhone,
+      channel: ordChannel,
+      isWebsite: ordChannel === 'storefront',
+    }
+  }
+
   // Modals state
   const [orderToMarkPaid, setOrderToMarkPaid] = useState<Order | null>(null)
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null)
@@ -439,17 +495,16 @@ export default function OrdersPage() {
         }
 
         const q = (search || '').toLowerCase()
-        const rawPhone = ord.customer_phone || ord.customer?.phone || ''
-        const phoneInfo = formatWhatsAppPhone(rawPhone)
+        const custDetails = getOrderCustomerDetails(ord)
 
         const matchesSearch =
           (ord.order_number || '').toLowerCase().includes(q) ||
           (ord.customer_id || '').toLowerCase().includes(q) ||
-          (rawPhone && rawPhone.includes(q)) ||
-          (phoneInfo.raw && phoneInfo.raw.includes(q)) ||
-          (phoneInfo.display && phoneInfo.display.toLowerCase().includes(q)) ||
-          (ord.customer?.name && ord.customer.name.toLowerCase().includes(q)) ||
-          (ord.delivery_address && ord.delivery_address.toLowerCase().includes(q))
+          custDetails.name.toLowerCase().includes(q) ||
+          custDetails.phone.includes(q) ||
+          custDetails.displayPhone.toLowerCase().includes(q) ||
+          (ord.delivery_address && ord.delivery_address.toLowerCase().includes(q)) ||
+          (ord.customer_remarks && ord.customer_remarks.toLowerCase().includes(q))
 
         return matchesBranch && matchesTab && matchesSource && matchesDate && matchesSearch
       })
@@ -791,27 +846,50 @@ export default function OrdersPage() {
                       </td>
 
                       <td className="py-3.5 px-4">
-                        <p className="font-bold text-slate-900">{ord.customer?.name || 'WhatsApp Customer'}</p>
+                        {(() => {
+                          const custDetails = getOrderCustomerDetails(ord)
+                          return (
+                            <div>
+                              <p className="font-extrabold text-slate-900 text-xs">
+                                {custDetails.name}
+                              </p>
+                              <span className="text-[10px] text-slate-500 font-semibold">
+                                {custDetails.isWebsite ? '🌐 Storefront Guest' : '💬 WhatsApp Customer'}
+                              </span>
+                            </div>
+                          )
+                        })()}
                       </td>
 
                       <td className="py-3.5 px-4">
                         {(() => {
-                          const rawPhone = ord.customer_phone || ord.customer?.phone
-                          const phoneInfo = formatWhatsAppPhone(rawPhone)
-                          if (!phoneInfo.raw) return <span className="text-[11px] text-slate-400 italic">No Phone</span>
+                          const custDetails = getOrderCustomerDetails(ord)
+                          if (!custDetails.phone) return <span className="text-[11px] text-slate-400 italic">No Phone Captured</span>
 
                           return (
-                            <a
-                              href={`https://wa.me/${phoneInfo.raw}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 transition-colors shadow-2xs whitespace-nowrap"
-                              title="Chat on WhatsApp Web"
-                            >
-                              <MessageSquare className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                              <span className="font-mono">{phoneInfo.display}</span>
-                              <ExternalLink className="w-2.5 h-2.5 text-emerald-500 shrink-0" />
-                            </a>
+                            <div className="flex flex-col gap-1 items-start">
+                              <span className="font-mono font-bold text-slate-800 text-[11px]">
+                                {custDetails.displayPhone}
+                              </span>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <a
+                                  href={`tel:+${custDetails.phone}`}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors"
+                                  title={`Call ${custDetails.name}`}
+                                >
+                                  <Phone className="w-2.5 h-2.5" /> Call
+                                </a>
+                                <a
+                                  href={`https://wa.me/${custDetails.phone}?text=${encodeURIComponent(`Hello ${custDetails.name}! Regarding your Bestiet Fresh order ${ord.order_number}...`)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-colors"
+                                  title="Chat on WhatsApp"
+                                >
+                                  <MessageSquare className="w-2.5 h-2.5 text-emerald-600" /> WhatsApp
+                                </a>
+                              </div>
+                            </div>
                           )
                         })()}
                       </td>
@@ -1136,27 +1214,44 @@ export default function OrdersPage() {
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="font-bold text-slate-800">{selectedOrder.customer?.name || 'WhatsApp Customer'}</span>
-                    {(() => {
-                      const rawPhone = selectedOrder.customer_phone || selectedOrder.customer?.phone
-                      const phoneInfo = formatWhatsAppPhone(rawPhone)
-                      if (!phoneInfo.raw) return <span className="text-slate-500 font-mono">N/A</span>
-                      return (
-                        <a
-                          href={`https://wa.me/${phoneInfo.raw}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-300 hover:bg-emerald-100 transition-colors"
-                          title="Chat on WhatsApp Web"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
-                          <span className="font-mono">{phoneInfo.display}</span>
-                          <ExternalLink className="w-2.5 h-2.5 text-emerald-500" />
-                        </a>
-                      )
-                    })()}
-                  </div>
+                  {(() => {
+                    const drawerCust = getOrderCustomerDetails(selectedOrder)
+                    return (
+                      <div className="flex items-center justify-between pt-1">
+                        <div>
+                          <p className="font-extrabold text-slate-900 text-xs">{drawerCust.name}</p>
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            {drawerCust.isWebsite ? '🌐 Storefront Order' : '💬 WhatsApp Chatbot Order'}
+                          </span>
+                        </div>
+                        {drawerCust.phone ? (
+                          <div className="flex items-center gap-1.5">
+                            <a
+                              href={`tel:+${drawerCust.phone}`}
+                              className="inline-flex items-center gap-1 font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 hover:bg-slate-200 transition-colors text-[11px]"
+                              title={`Call ${drawerCust.name}`}
+                            >
+                              <Phone className="w-3 h-3 text-slate-600" />
+                              <span>Call</span>
+                            </a>
+                            <a
+                              href={`https://wa.me/${drawerCust.phone}?text=${encodeURIComponent(`Hello ${drawerCust.name}! Regarding your Bestiet Fresh order ${selectedOrder.order_number}...`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-300 hover:bg-emerald-100 transition-colors text-[11px]"
+                              title="Chat on WhatsApp"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                              <span className="font-mono">{drawerCust.displayPhone}</span>
+                              <ExternalLink className="w-2.5 h-2.5 text-emerald-500" />
+                            </a>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic text-xs">No phone captured</span>
+                        )}
+                      </div>
+                    )
+                  })()}
 
                   {/* Text Address */}
                   <div className="pt-2 border-t border-slate-200/60 text-slate-600 flex items-start gap-2">
