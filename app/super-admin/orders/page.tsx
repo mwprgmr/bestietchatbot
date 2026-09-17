@@ -27,7 +27,8 @@ function OrdersContent() {
           *,
           customer:customers(*),
           branch:branches(*),
-          items:order_items(*, product:products(*))
+          items:order_items(*, product:products(*)),
+          order_items(*, product:products(*))
         `)
         .gte('business_date', filter.startDate)
         .lte('business_date', filter.endDate)
@@ -151,6 +152,7 @@ function OrdersContent() {
                 <th className="p-3.5">Source</th>
                 <th className="p-3.5">Branch</th>
                 <th className="p-3.5">Customer & WhatsApp</th>
+                <th className="p-3.5">Ordered Fish & Quantity (kg)</th>
                 <th className="p-3.5">Total Amount</th>
                 <th className="p-3.5">Status</th>
                 <th className="p-3.5">Date</th>
@@ -159,7 +161,7 @@ function OrdersContent() {
             <tbody className="divide-y divide-slate-800/60 text-xs text-slate-300">
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-500 font-medium">
+                  <td colSpan={8} className="p-8 text-center text-slate-500 font-medium">
                     No orders match your filter criteria.
                   </td>
                 </tr>
@@ -167,6 +169,12 @@ function OrdersContent() {
                 filteredOrders.map((ord) => {
                   const phoneInfo = formatWhatsAppPhone(ord.customer_phone || ord.customer?.phone)
                   const isWa = (ord.source || 'whatsapp').toLowerCase() === 'whatsapp'
+                  const itemsList = Array.isArray(ord.items) && ord.items.length > 0
+                    ? ord.items
+                    : Array.isArray(ord.order_items) && ord.order_items.length > 0
+                    ? ord.order_items
+                    : []
+
                   return (
                     <tr key={ord.id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="p-3.5 font-bold text-white font-mono">
@@ -205,8 +213,32 @@ function OrdersContent() {
                           )}
                         </div>
                       </td>
+
+                      {/* Ordered Fish, Weight in KG & Cut Type Column */}
+                      <td className="p-3.5">
+                        {itemsList.length === 0 ? (
+                          <span className="text-slate-500 italic text-[11px]">No item details</span>
+                        ) : (
+                          <div className="flex flex-col gap-1">
+                            {itemsList.map((i: any, idx: number) => {
+                              const fishName = i.product?.name || i.product_name || 'Fresh Fish'
+                              const qtyKg = i.quantity_kg ?? i.quantity ?? 0
+                              const cutType = (i.cutting_type || i.cut_type || 'whole').replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+                              return (
+                                <span
+                                  key={idx}
+                                  className="inline-flex items-center gap-1 bg-emerald-950/60 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap"
+                                >
+                                  🐟 <strong>{fishName}</strong> — {qtyKg} kg <span className="text-slate-400 font-normal">({cutType})</span>
+                                </span>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </td>
+
                       <td className="p-3.5 font-bold text-emerald-400 text-sm">
-                        ₹{Number(ord.total || 0).toLocaleString('en-IN')}
+                        ₹{Number(ord.total_amount ?? ord.total ?? 0).toLocaleString('en-IN')}
                       </td>
                       <td className="p-3.5">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${

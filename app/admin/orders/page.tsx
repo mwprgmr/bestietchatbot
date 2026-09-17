@@ -143,7 +143,8 @@ export default function OrdersPage() {
           customer:customers(*),
           address:addresses(*),
           branch:branches(*),
-          items:order_items(*, product:products(*))
+          items:order_items(*, product:products(*)),
+          order_items(*, product:products(*))
         `)
 
       if (assignedBranchId && assignedBranchId !== 'ALL') {
@@ -805,17 +806,39 @@ export default function OrdersPage() {
                       </td>
 
                       <td className="py-3.5 px-4">
-                        <p className="font-semibold text-slate-800">
-                          {Array.isArray(ord.items) && ord.items.length > 0
-                            ? ord.items.map((i) => {
-                                const qtyStr = formatQuantity(i)
-                                const cutStr = i.cutting_type ? ` (${i.cutting_type.replace('_', ' ')})` : ''
-                                return `${i.product?.name || 'Fish'} — ${qtyStr}${cutStr}`
-                              }).join(', ')
-                            : '1 item'}
-                        </p>
+                        {(() => {
+                          const itemsList = Array.isArray(ord.items) && ord.items.length > 0
+                            ? ord.items
+                            : Array.isArray((ord as any).order_items) && (ord as any).order_items.length > 0
+                            ? (ord as any).order_items
+                            : []
+
+                          if (itemsList.length === 0) {
+                            return <span className="text-xs text-slate-400 italic">No item details</span>
+                          }
+
+                          return (
+                            <div className="flex flex-col gap-1">
+                              {itemsList.map((i: any, idx: number) => {
+                                const fishName = i.product?.name || i.product_name || 'Fresh Fish'
+                                const qtyKg = i.quantity_kg ?? i.quantity ?? 0
+                                const cutType = (i.cutting_type || i.cut_type || 'whole').replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+                                return (
+                                  <span
+                                    key={idx}
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-950 border border-emerald-200/90 shadow-2xs whitespace-nowrap"
+                                  >
+                                    <span>🐟 <strong>{fishName}</strong></span>
+                                    <span className="text-emerald-700 font-extrabold">• {qtyKg} kg</span>
+                                    <span className="text-slate-600 font-medium text-[11px]">({cutType})</span>
+                                  </span>
+                                )
+                              })}
+                            </div>
+                          )
+                        })()}
                         {ord.customer_remarks && (
-                          <p className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md mt-1 inline-flex items-center gap-1">
+                          <p className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md mt-1.5 inline-flex items-center gap-1">
                             <MessageSquare className="w-2.5 h-2.5" /> {ord.customer_remarks}
                           </p>
                         )}

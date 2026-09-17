@@ -120,7 +120,7 @@ export default function DashboardPage() {
       // 2. Fetch Recent Orders list (branch filtered, excluding test orders)
       const recentQuery = supabase
         .from('orders')
-        .select('*, customer:customers(*)')
+        .select('*, customer:customers(*), items:order_items(*, product:products(*)), order_items(*, product:products(*))')
         .eq('branch_id', targetBranchId)
         .order('created_at', { ascending: false })
         .limit(20)
@@ -374,10 +374,11 @@ export default function DashboardPage() {
               <div className="divide-y divide-slate-100">
                 {recentOrders.map((ord) => {
                   const isWebsite = (ord.source || '').toUpperCase() === 'WEBSITE' || (ord.source || '').toUpperCase() === 'STOREFRONT'
+                  const itemsList = Array.isArray(ord.items) && ord.items.length > 0 ? ord.items : Array.isArray(ord.order_items) ? ord.order_items : []
                   return (
-                    <div key={ord.id} className="py-3 flex items-center justify-between text-xs">
-                      <div>
-                        <div className="flex items-center gap-2">
+                    <div key={ord.id} className="py-3 flex items-start justify-between text-xs border-b border-slate-100 last:border-0 gap-3">
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-mono font-bold text-slate-900">{ord.order_number}</span>
                           {isWebsite ? (
                             <span className="text-[10px] bg-cyan-100 text-cyan-800 font-extrabold px-1.5 py-0.5 rounded-md">
@@ -392,14 +393,35 @@ export default function DashboardPage() {
                             {ord.status}
                           </span>
                         </div>
-                        <p className="text-slate-500 text-[11px] mt-0.5">
-                          {ord.customer?.name || ord.customer?.phone || 'Customer'}
+                        <p className="text-slate-500 text-[11px]">
+                          👤 {ord.customer?.name || ord.customer?.phone || 'Customer'}
                         </p>
+
+                        {/* Ordered Fish, Quantity (kg) & Cutting Type Badges */}
+                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                          {itemsList.length === 0 ? (
+                            <span className="text-[11px] text-slate-400 italic">No item details</span>
+                          ) : (
+                            itemsList.map((item: any, idx: number) => {
+                              const fishName = item.product?.name || item.product_name || 'Fresh Fish'
+                              const qtyKg = item.quantity_kg ?? item.quantity ?? 0
+                              const cutType = (item.cutting_type || item.cut_type || 'whole').replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+                              return (
+                                <span
+                                  key={idx}
+                                  className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-900 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-bold"
+                                >
+                                  🐟 <strong>{fishName}</strong> — {qtyKg}kg <span className="text-emerald-700 font-normal">({cutType})</span>
+                                </span>
+                              )
+                            })
+                          )}
+                        </div>
                       </div>
 
-                      <div className="text-right">
-                        <span className="font-extrabold text-slate-900 text-sm">₹{ord.total_amount}</span>
-                        <span className="text-[10px] text-slate-400 block">
+                      <div className="text-right shrink-0">
+                        <span className="font-extrabold text-slate-900 text-sm">₹{ord.total_amount ?? ord.total}</span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
                           {format(new Date(ord.created_at), 'hh:mm a')}
                         </span>
                       </div>
