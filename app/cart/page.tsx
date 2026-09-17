@@ -240,6 +240,31 @@ export default function CartPage() {
             </div>
           </div>
         )}
+
+        {/* Mobile Sticky Floating Proceed to Checkout Bar */}
+        {cart.length > 0 && (
+          <div className="fixed bottom-[3.5rem] inset-x-0 z-40 md:hidden p-3 px-4 bg-[#39B54A] text-white shadow-2xl flex items-center justify-between border-t border-white/20 animate-in slide-in-from-bottom duration-200">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-white">
+                {cart.length} ITEM{cart.length > 1 ? 'S' : ''} IN CART
+              </div>
+              <div className="text-xs font-black text-white">
+                Total ₹{grandTotal}{' '}
+                <span className="text-[10px] font-normal opacity-90">
+                  ({deliveryFee === 0 ? 'Free Delivery' : `+ ₹${deliveryFee} Delivery`})
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => router.push('/checkout')}
+              className="py-2.5 px-4 bg-white text-[#0F172A] font-black rounded-none text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+            >
+              <span>PROCEED TO CHECKOUT</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#39B54A]" />
+            </button>
+          </div>
+        )}
       </div>
     </StorefrontLayout>
   )

@@ -43,7 +43,7 @@ export default function CartDrawer() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[60] overflow-hidden animate-in fade-in duration-200">
       {/* Backdrop */}
       <div
         onClick={() => setIsCartOpen(false)}
@@ -229,7 +229,7 @@ export default function CartDrawer() {
 
           {/* Footer Bill Summary & Checkout */}
           {cart.length > 0 && (
-            <div className="p-4 pb-[max(4.5rem,env(safe-area-inset-bottom))] md:pb-4 bg-[#E2E8F0] border-t border-[#E2E8F0] space-y-3">
+            <div className="p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] bg-[#E2E8F0] border-t border-[#E2E8F0] space-y-3">
               <div className="space-y-1.5 text-xs text-[#0F172A]/80">
                 <div className="flex justify-between">
                   <span>Item Subtotal</span>
