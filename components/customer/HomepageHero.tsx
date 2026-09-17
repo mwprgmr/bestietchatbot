@@ -42,25 +42,39 @@ const DEFAULT_POSTERS: PosterProps[] = [
 
 export default function HomepageHero() {
   const [posters, setPosters] = useState<PosterProps[]>(DEFAULT_POSTERS)
+  const [categories, setCategories] = useState<any[]>(CATEGORIES)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
 
   useEffect(() => {
-    async function loadPosters() {
+    async function loadData() {
       try {
         const supabase = createClient()
-        const { data, error } = await supabase
+        
+        // 1. Fetch posters
+        const { data: posterData } = await supabase
           .from('homepage_posters')
           .select('*')
           .eq('active', true)
           .order('sort_order', { ascending: true })
 
-        if (!error && data && data.length > 0) {
-          setPosters(data)
+        if (posterData && posterData.length > 0) {
+          setPosters(posterData)
+        }
+
+        // 2. Fetch categories dynamically from Super Admin homepage_categories table
+        const { data: catData } = await supabase
+          .from('homepage_categories')
+          .select('*')
+          .eq('active', true)
+          .order('sort_order', { ascending: true })
+
+        if (catData && catData.length > 0) {
+          setCategories(catData)
         }
       } catch (_) {}
     }
-    loadPosters()
+    loadData()
   }, [])
 
   // Auto-play slider rotation
@@ -167,7 +181,7 @@ export default function HomepageHero() {
 
         {/* Single-Line Horizontal Slider */}
         <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar snap-x snap-mandatory py-2 px-1 justify-start sm:justify-around">
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <Link
               key={cat.id}
               href={`/category/${cat.slug}`}

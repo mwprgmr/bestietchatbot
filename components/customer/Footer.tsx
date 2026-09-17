@@ -1,10 +1,40 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Phone, Mail, MapPin, ShieldCheck, Heart, Clock, Truck } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+
+const DEFAULT_FOOTER_CATS = [
+  { name: 'Fish & Seafood', slug: 'fish' },
+  { name: 'Fresh Tender Chicken', slug: 'chicken' },
+  { name: 'Tender Kerala Mutton', slug: 'mutton' },
+  { name: 'Prawns & Crabs', slug: 'seafood' },
+  { name: 'Ready to Cook Marinated Packs', slug: 'ready-to-cook' },
+  { name: 'Fresh Family Combos', slug: 'combos' },
+]
 
 export default function Footer() {
+  const [categories, setCategories] = useState<{ name: string; slug: string }[]>(DEFAULT_FOOTER_CATS)
+
+  useEffect(() => {
+    async function loadFooterCategories() {
+      try {
+        const supabase = createClient()
+        const { data, error } = await supabase
+          .from('homepage_categories')
+          .select('name, slug')
+          .eq('active', true)
+          .order('sort_order', { ascending: true })
+
+        if (!error && data && data.length > 0) {
+          setCategories(data)
+        }
+      } catch (_) {}
+    }
+    loadFooterCategories()
+  }, [])
+
   return (
     <footer className="bg-[#0B130B] text-[#F8FAF8] pt-16 pb-24 md:pb-12 border-t border-[#39B54A]/30">
       <div className="max-w-7xl mx-auto px-4">
@@ -39,36 +69,13 @@ export default function Footer() {
               Shop Categories
             </h4>
             <ul className="space-y-2.5 text-xs text-[#F8FAF8]/80 font-medium">
-              <li>
-                <Link href="/category/fish" className="hover:text-[#39B54A] transition-colors">
-                  Fish & Seafood
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/chicken" className="hover:text-[#39B54A] transition-colors">
-                  Fresh Tender Chicken
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/mutton" className="hover:text-[#39B54A] transition-colors">
-                  Tender Kerala Mutton
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/seafood" className="hover:text-[#39B54A] transition-colors">
-                  Prawns & Crabs
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/ready-to-cook" className="hover:text-[#39B54A] transition-colors">
-                  Ready to Cook Marinated Packs
-                </Link>
-              </li>
-              <li>
-                <Link href="/category/combos" className="hover:text-[#39B54A] transition-colors">
-                  Fresh Family Combos
-                </Link>
-              </li>
+              {categories.map((cat) => (
+                <li key={cat.slug}>
+                  <Link href={`/category/${cat.slug}`} className="hover:text-[#39B54A] transition-colors">
+                    {cat.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

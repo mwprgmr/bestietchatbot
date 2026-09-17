@@ -98,6 +98,32 @@ export default function SuperAdminCategoriesPage() {
     }
   }
 
+  const handleSeedDefaults = async () => {
+    if (!confirm('This will seed/restore standard default categories into Supabase. Proceed?')) return
+    setSaving(true)
+    try {
+      const payload = DEFAULT_CATEGORIES.map((c, idx) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        description: c.description,
+        image: c.image,
+        item_count: c.itemCount,
+        sort_order: idx + 1,
+        active: true,
+        updated_at: new Date().toISOString(),
+      }))
+
+      await supabase.from('homepage_categories').upsert(payload, { onConflict: 'id' })
+      setFeedback({ type: 'success', message: 'Default categories seeded successfully!' })
+      await loadCategories()
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Failed to seed categories' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const openAddModal = () => {
     const nextOrder = categories.length + 1
     setFormData({
@@ -261,7 +287,14 @@ export default function SuperAdminCategoriesPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <button
+              onClick={handleSeedDefaults}
+              className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold rounded-xl text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Seed Defaults</span>
+            </button>
             <button
               onClick={loadCategories}
               className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors flex items-center gap-1.5 cursor-pointer"

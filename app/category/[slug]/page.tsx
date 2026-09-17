@@ -19,11 +19,19 @@ export default function CategoryPage() {
   const [loading, setLoading] = useState(true)
   const [filterCut, setFilterCut] = useState<string>('ALL')
 
-  const categoryObj = CATEGORIES.find((c) => c.slug === slug) || {
+  const initialCat = CATEGORIES.find((c) => c.slug === slug) || {
     name: slug.toUpperCase(),
     description: `Fresh ${slug} products cleaned and delivered to your doorstep.`,
     image: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?auto=format&fit=crop&w=800&q=80',
+    slug,
   }
+
+  const [categoryObj, setCategoryObj] = useState<{
+    name: string
+    description: string
+    image: string
+    slug: string
+  }>(initialCat)
 
   useEffect(() => {
     async function loadCategoryProducts() {
@@ -31,8 +39,34 @@ export default function CategoryPage() {
       try {
         const supabase = createClient()
 
-        let queryCategory = 'Fish'
-        if (slug === 'chicken') queryCategory = 'Chicken'
+        // 1. Fetch category details from homepage_categories
+        let catName = ''
+        const { data: dbCat } = await supabase
+          .from('homepage_categories')
+          .select('*')
+          .eq('slug', slug)
+          .single()
+
+        if (dbCat) {
+          catName = dbCat.name
+          setCategoryObj({
+            name: dbCat.name,
+            description: dbCat.description || '',
+            image: dbCat.image,
+            slug: dbCat.slug,
+          })
+        } else {
+          const defaultCat = CATEGORIES.find((c) => c.slug === slug)
+          if (defaultCat) {
+            catName = defaultCat.name
+            setCategoryObj(defaultCat)
+          }
+        }
+
+        // Determine query string for products
+        let queryCategory = catName || slug
+        if (slug === 'fish') queryCategory = 'Fish'
+        else if (slug === 'chicken') queryCategory = 'Chicken'
         else if (slug === 'mutton') queryCategory = 'Mutton'
         else if (slug === 'seafood') queryCategory = 'Seafood'
         else if (slug === 'ready-to-cook') queryCategory = 'Ready to Cook'
@@ -41,7 +75,7 @@ export default function CategoryPage() {
         const { data: rawProducts } = await supabase
           .from('products')
           .select('*')
-          .ilike('category', `%${queryCategory}%`)
+          .or(`category.ilike.%${queryCategory}%,category.ilike.%${slug}%`)
           .eq('active', true)
 
         const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
