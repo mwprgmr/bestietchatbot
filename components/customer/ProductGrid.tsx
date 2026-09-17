@@ -72,8 +72,8 @@ export default function ProductGrid() {
   if (loading) {
     return (
       <div className="py-16 text-center space-y-4">
-        <div className="w-10 h-10 border-4 border-[#8B9A6E] border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-xs font-bold text-[#232B1E]/70 uppercase tracking-wider">
+        <div className="w-10 h-10 border-4 border-[#39B54A] border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-xs font-bold text-[#0F172A]/70 uppercase tracking-wider">
           Fetching Today's Fresh Catch for {selectedBranch?.name || 'Branch'}...
 
         </p>
@@ -83,8 +83,8 @@ export default function ProductGrid() {
 
   if (error) {
     return (
-      <div className="p-6 rounded-2xl bg-[#F7F2EB] border border-[#EEEEEE] text-center text-xs text-[#232B1E] space-y-2">
-        <AlertCircle className="w-6 h-6 mx-auto text-[#8B9A6E]" />
+      <div className="p-6 rounded-2xl bg-[#FFFFFF] border border-[#E2E8F0] text-center text-xs text-[#0F172A] space-y-2">
+        <AlertCircle className="w-6 h-6 mx-auto text-[#39B54A]" />
         <p className="font-bold">{error}</p>
       </div>
     )
@@ -104,16 +104,16 @@ export default function ProductGrid() {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B9A6E]">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#39B54A]">
               Selected for You Today
             </span>
-            <h2 className="text-xl sm:text-2xl font-black text-[#232B1E] tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight">
               TODAY'S FRESH PICKS
             </h2>
           </div>
           <Link
             href="/category/fish"
-            className="text-xs font-bold text-[#8B9A6E] hover:text-[#7A895D] flex items-center gap-1 group"
+            className="text-xs font-bold text-[#39B54A] hover:text-[#2EA03E] flex items-center gap-1 group"
           >
             <span>VIEW ALL</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -133,18 +133,18 @@ export default function ProductGrid() {
       {/* 3. FISH & SEAFOOD SECTION */}
       {fishProducts.length > 0 && (
         <section className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#EEEEEE]">
+          <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
             <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B9A6E]">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#39B54A]">
                 Ocean & Backwater Catch
               </span>
-              <h2 className="text-lg sm:text-xl font-black text-[#232B1E]">
+              <h2 className="text-lg sm:text-xl font-black text-[#0F172A]">
                 FRESH FISH & SEAFOOD
               </h2>
             </div>
             <Link
               href="/category/fish"
-              className="text-xs font-bold text-[#8B9A6E] hover:text-[#7A895D] flex items-center gap-1"
+              className="text-xs font-bold text-[#39B54A] hover:text-[#2EA03E] flex items-center gap-1"
             >
               <span>Explore Fish ({fishProducts.length})</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -162,18 +162,18 @@ export default function ProductGrid() {
       {/* 4. FRESH CHICKEN SECTION */}
       {chickenProducts.length > 0 && (
         <section className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#EEEEEE]">
+          <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
             <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B9A6E]">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#39B54A]">
                 Antibiotic-Free Farm Fresh
               </span>
-              <h2 className="text-lg sm:text-xl font-black text-[#232B1E]">
+              <h2 className="text-lg sm:text-xl font-black text-[#0F172A]">
                 FRESH TENDER CHICKEN
               </h2>
             </div>
             <Link
               href="/category/chicken"
-              className="text-xs font-bold text-[#8B9A6E] hover:text-[#7A895D] flex items-center gap-1"
+              className="text-xs font-bold text-[#39B54A] hover:text-[#2EA03E] flex items-center gap-1"
             >
               <span>Explore Chicken ({chickenProducts.length})</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -191,18 +191,18 @@ export default function ProductGrid() {
       {/* 5. TENDER MUTTON SECTION */}
       {muttonProducts.length > 0 && (
         <section className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#EEEEEE]">
+          <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
             <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B9A6E]">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#39B54A]">
                 Pasture Raised Goat Meat
               </span>
-              <h2 className="text-lg sm:text-xl font-black text-[#232B1E]">
+              <h2 className="text-lg sm:text-xl font-black text-[#0F172A]">
                 TENDER KERALA MUTTON
               </h2>
             </div>
             <Link
               href="/category/mutton"
-              className="text-xs font-bold text-[#8B9A6E] hover:text-[#7A895D] flex items-center gap-1"
+              className="text-xs font-bold text-[#39B54A] hover:text-[#2EA03E] flex items-center gap-1"
             >
               <span>Explore Mutton ({muttonProducts.length})</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -220,18 +220,18 @@ export default function ProductGrid() {
       {/* 6. COMBOS & READY TO COOK */}
       {comboProducts.length > 0 && (
         <section className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#EEEEEE]">
+          <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
             <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B9A6E]">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#39B54A]">
                 Marinated & Special Value
               </span>
-              <h2 className="text-lg sm:text-xl font-black text-[#232B1E]">
+              <h2 className="text-lg sm:text-xl font-black text-[#0F172A]">
                 COMBOS & READY TO COOK
               </h2>
             </div>
             <Link
               href="/category/combos"
-              className="text-xs font-bold text-[#8B9A6E] hover:text-[#7A895D] flex items-center gap-1"
+              className="text-xs font-bold text-[#39B54A] hover:text-[#2EA03E] flex items-center gap-1"
             >
               <span>Explore Combos ({comboProducts.length})</span>
               <ArrowRight className="w-3.5 h-3.5" />

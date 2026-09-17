@@ -3,10 +3,10 @@
 @tailwind utilities;
 
 :root {
-  --bg-sage: #8B9A6E;
-  --bg-cream: #F7F2EB;
-  --bg-gray: #EEEEEE;
-  --text-dark: #232B1E;
+  --bg-sage: #39B54A;
+  --bg-cream: #FFFFFF;
+  --bg-gray: #F1F5F9;
+  --text-dark: #0F172A;
 }
 
 html,
@@ -14,8 +14,8 @@ body {
   overflow-x: hidden;
   max-width: 100vw;
   width: 100%;
-  color: #232B1E;
-  background-color: #F7F2EB;
+  color: #0F172A;
+  background-color: #FFFFFF;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -43,14 +43,14 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #EEEEEE;
+  background: #F1F5F9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #8B9A6E;
+  background: #39B54A;
   border-radius: 0px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #7A895D;
+  background: #2EA03E;
 }
 
 /* Category Circle Exception for round plate design */

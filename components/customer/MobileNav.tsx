@@ -38,13 +38,13 @@ export default function MobileNav() {
     <div className="fixed bottom-0 inset-x-0 z-50 md:hidden flex flex-col pointer-events-auto">
       {/* Sticky Cart Bar */}
       {totalItems > 0 && (
-        <div className="p-3 px-4 bg-[#8B9A6E] text-white shadow-xl flex items-center justify-between border-t border-[#8B9A6E]/50 animate-in slide-in-from-bottom duration-300">
+        <div className="p-3 px-4 bg-[#39B54A] text-white shadow-xl flex items-center justify-between border-t border-[#39B54A]/50 animate-in slide-in-from-bottom duration-300">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-none bg-[#232B1E] flex items-center justify-center font-extrabold text-xs text-white">
+            <div className="w-7 h-7 rounded-none bg-[#0F172A] flex items-center justify-center font-extrabold text-xs text-white">
               {totalItems}
             </div>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[#F7F2EB]/90">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[#FFFFFF]/90">
                 {totalItems} ITEM{totalItems > 1 ? 'S' : ''} ADDED
               </div>
               <div className="text-xs font-extrabold text-white">₹{grandTotal}</div>
@@ -53,21 +53,21 @@ export default function MobileNav() {
 
           <button
             onClick={() => setIsCartOpen(true)}
-            className="py-1.5 px-3 bg-[#F7F2EB] text-[#232B1E] font-extrabold rounded-none text-xs flex items-center gap-1.5 shadow-xs hover:bg-white active:scale-95 transition-all cursor-pointer"
+            className="py-1.5 px-3 bg-[#FFFFFF] text-[#0F172A] font-extrabold rounded-none text-xs flex items-center gap-1.5 shadow-xs hover:bg-white active:scale-95 transition-all cursor-pointer"
           >
             <span>VIEW CART</span>
-            <ArrowRight className="w-3.5 h-3.5 text-[#8B9A6E]" />
+            <ArrowRight className="w-3.5 h-3.5 text-[#39B54A]" />
           </button>
         </div>
       )}
 
       {/* Bottom Navigation Bar */}
-      <nav className="bg-[#F7F2EB] border-t border-[#EEEEEE] pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] px-2 flex items-center justify-around text-[#232B1E]/70 shadow-2xl">
+      <nav className="bg-[#FFFFFF] border-t border-[#E2E8F0] pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] px-2 flex items-center justify-around text-[#0F172A]/70 shadow-2xl">
         {/* HOME */}
         <Link
           href="/"
           className={`flex flex-col items-center gap-1 text-[10px] font-bold py-1 px-2.5 rounded-none transition-all active:scale-95 cursor-pointer ${
-            pathname === '/' ? 'text-[#8B9A6E]' : 'hover:text-[#232B1E]'
+            pathname === '/' ? 'text-[#39B54A]' : 'hover:text-[#0F172A]'
           }`}
         >
           <Home className="w-5 h-5" />
@@ -79,7 +79,7 @@ export default function MobileNav() {
           href="/#categories"
           onClick={handleCategoriesClick}
           className={`flex flex-col items-center gap-1 text-[10px] font-bold py-1 px-2.5 rounded-none transition-all active:scale-95 cursor-pointer ${
-            pathname?.startsWith('/category') ? 'text-[#8B9A6E]' : 'hover:text-[#232B1E]'
+            pathname?.startsWith('/category') ? 'text-[#39B54A]' : 'hover:text-[#0F172A]'
           }`}
         >
           <Grid className="w-5 h-5" />
@@ -90,7 +90,7 @@ export default function MobileNav() {
         <Link
           href="/search"
           className={`flex flex-col items-center gap-1 text-[10px] font-bold py-1 px-2.5 rounded-none transition-all active:scale-95 cursor-pointer ${
-            pathname === '/search' ? 'text-[#8B9A6E]' : 'hover:text-[#232B1E]'
+            pathname === '/search' ? 'text-[#39B54A]' : 'hover:text-[#0F172A]'
           }`}
         >
           <Search className="w-5 h-5" />
@@ -101,7 +101,7 @@ export default function MobileNav() {
         <Link
           href="/orders"
           className={`flex flex-col items-center gap-1 text-[10px] font-bold py-1 px-2.5 rounded-none transition-all active:scale-95 cursor-pointer ${
-            pathname === '/orders' ? 'text-[#8B9A6E]' : 'hover:text-[#232B1E]'
+            pathname === '/orders' ? 'text-[#39B54A]' : 'hover:text-[#0F172A]'
           }`}
         >
           <User className="w-5 h-5" />
@@ -112,12 +112,12 @@ export default function MobileNav() {
         <Link
           href="/cart"
           onClick={handleCartClick}
-          className="flex flex-col items-center gap-1 text-[10px] font-bold text-[#232B1E]/70 hover:text-[#8B9A6E] relative py-1 px-2.5 rounded-none transition-all active:scale-95 cursor-pointer"
+          className="flex flex-col items-center gap-1 text-[10px] font-bold text-[#0F172A]/70 hover:text-[#39B54A] relative py-1 px-2.5 rounded-none transition-all active:scale-95 cursor-pointer"
         >
           <div className="relative">
             <ShoppingBag className="w-5 h-5" />
             {totalItems > 0 && (
-              <span className="absolute -top-1.5 -right-2.5 bg-[#8B9A6E] text-white text-[9px] font-black w-4 h-4 rounded-none flex items-center justify-center border border-[#F7F2EB]">
+              <span className="absolute -top-1.5 -right-2.5 bg-[#39B54A] text-white text-[9px] font-black w-4 h-4 rounded-none flex items-center justify-center border border-[#FFFFFF]">
                 {totalItems}
               </span>
             )}

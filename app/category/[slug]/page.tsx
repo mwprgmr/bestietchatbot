@@ -86,29 +86,29 @@ export default function CategoryPage() {
         <div>
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#232B1E]/70 hover:text-[#8B9A6E] transition-colors mb-3"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0F172A]/70 hover:text-[#39B54A] transition-colors mb-3"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Storefront</span>
           </Link>
 
-          <div className="relative rounded-3xl overflow-hidden bg-[#232B1E] text-white p-6 sm:p-8 border border-[#8B9A6E]/30 shadow-md">
+          <div className="relative rounded-3xl overflow-hidden bg-[#0F172A] text-white p-6 sm:p-8 border border-[#39B54A]/30 shadow-md">
             <div className="relative z-10 max-w-xl space-y-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8B9A6E]">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#39B54A]">
                 Fresh Category
               </span>
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white uppercase">
                 {categoryObj.name}
               </h1>
-              <p className="text-xs text-[#EEEEEE]/80">{categoryObj.description}</p>
+              <p className="text-xs text-[#E2E8F0]/80">{categoryObj.description}</p>
             </div>
           </div>
         </div>
 
         {/* Filter Bar */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-          <span className="text-xs font-bold text-[#232B1E]/70 flex items-center gap-1 mr-2 shrink-0">
-            <Filter className="w-3.5 h-3.5 text-[#8B9A6E]" /> Filter:
+          <span className="text-xs font-bold text-[#0F172A]/70 flex items-center gap-1 mr-2 shrink-0">
+            <Filter className="w-3.5 h-3.5 text-[#39B54A]" /> Filter:
           </span>
           {['ALL', 'Cleaned', 'Curry Cut', 'Boneless', 'In Stock Only'].map((f) => (
             <button
@@ -116,8 +116,8 @@ export default function CategoryPage() {
               onClick={() => setFilterCut(f)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 filterCut === f
-                  ? 'bg-[#8B9A6E] text-white shadow-xs'
-                  : 'bg-[#F7F2EB] text-[#232B1E] border border-[#EEEEEE] hover:border-[#8B9A6E]'
+                  ? 'bg-[#39B54A] text-white shadow-xs'
+                  : 'bg-[#FFFFFF] text-[#0F172A] border border-[#E2E8F0] hover:border-[#39B54A]'
               }`}
             >
               {f}
@@ -128,13 +128,13 @@ export default function CategoryPage() {
         {/* Product Grid */}
         {loading ? (
           <div className="py-16 text-center space-y-3">
-            <div className="w-8 h-8 border-4 border-[#8B9A6E] border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs font-bold text-[#232B1E]/70 uppercase">Loading {categoryObj.name}...</p>
+            <div className="w-8 h-8 border-4 border-[#39B54A] border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-xs font-bold text-[#0F172A]/70 uppercase">Loading {categoryObj.name}...</p>
           </div>
         ) : products.length === 0 ? (
-          <div className="p-12 text-center bg-[#F7F2EB] rounded-3xl border border-[#EEEEEE] text-[#232B1E]/70 space-y-2">
-            <AlertCircle className="w-8 h-8 mx-auto text-[#8B9A6E]" />
-            <h3 className="text-sm font-extrabold text-[#232B1E]">No products found in this category</h3>
+          <div className="p-12 text-center bg-[#FFFFFF] rounded-3xl border border-[#E2E8F0] text-[#0F172A]/70 space-y-2">
+            <AlertCircle className="w-8 h-8 mx-auto text-[#39B54A]" />
+            <h3 className="text-sm font-extrabold text-[#0F172A]">No products found in this category</h3>
             <p className="text-xs">Try selecting another branch or category.</p>
           </div>
         ) : (

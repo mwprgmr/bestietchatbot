@@ -85,7 +85,7 @@ export default function HomepageHero() {
       <div
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className="relative rounded-none overflow-hidden bg-[#232B1E] shadow-lg border border-[#EEEEEE] h-[220px] xs:h-[260px] sm:h-[360px] md:h-[460px] lg:h-[500px] w-full group transition-all"
+        className="relative rounded-none overflow-hidden bg-[#0F172A] shadow-lg border border-[#E2E8F0] h-[220px] xs:h-[260px] sm:h-[360px] md:h-[460px] lg:h-[500px] w-full group transition-all"
       >
         <Link href={currentPoster.cta_link || '/category/fish'} className="block w-full h-full relative">
           {isVideo ? (
@@ -114,7 +114,7 @@ export default function HomepageHero() {
             <button
               type="button"
               onClick={prevSlide}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-none bg-[#232B1E]/60 hover:bg-[#232B1E]/90 text-white border border-white/20 transition-all opacity-80 group-hover:opacity-100 cursor-pointer"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-none bg-[#0F172A]/60 hover:bg-[#0F172A]/90 text-white border border-white/20 transition-all opacity-80 group-hover:opacity-100 cursor-pointer"
               aria-label="Previous Poster"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -123,14 +123,14 @@ export default function HomepageHero() {
             <button
               type="button"
               onClick={nextSlide}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-none bg-[#232B1E]/60 hover:bg-[#232B1E]/90 text-white border border-white/20 transition-all opacity-80 group-hover:opacity-100 cursor-pointer"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-none bg-[#0F172A]/60 hover:bg-[#0F172A]/90 text-white border border-white/20 transition-all opacity-80 group-hover:opacity-100 cursor-pointer"
               aria-label="Next Poster"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
 
             {/* Pagination Indicators */}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-[#232B1E]/70 px-3 py-1.5 rounded-none border border-white/10">
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-[#0F172A]/70 px-3 py-1.5 rounded-none border border-white/10">
               {posters.map((_, idx) => (
                 <button
                   key={idx}
@@ -138,7 +138,7 @@ export default function HomepageHero() {
                   onClick={() => setCurrentIndex(idx)}
                   className={`h-2 rounded-none transition-all cursor-pointer ${
                     currentIndex === idx
-                      ? 'w-6 bg-[#8B9A6E]'
+                      ? 'w-6 bg-[#39B54A]'
                       : 'w-2 bg-white/50 hover:bg-white/80'
                   }`}
                   aria-label={`Go to poster ${idx + 1}`}
@@ -153,14 +153,14 @@ export default function HomepageHero() {
       <section id="categories" className="space-y-4 pt-2 scroll-mt-20">
         <div className="flex items-baseline justify-between px-1">
           <div>
-            <h2 className="text-lg sm:text-2xl font-black text-[#232B1E] tracking-tight uppercase">
+            <h2 className="text-lg sm:text-2xl font-black text-[#0F172A] tracking-tight uppercase">
               Shop by Category
             </h2>
-            <p className="text-xs text-[#232B1E]/60 font-semibold hidden sm:block">
+            <p className="text-xs text-[#0F172A]/60 font-semibold hidden sm:block">
               Explore fresh ocean catch, tender meats, and value combos
             </p>
           </div>
-          <span className="text-[10px] font-extrabold uppercase text-[#8B9A6E] tracking-wider sm:hidden">
+          <span className="text-[10px] font-extrabold uppercase text-[#39B54A] tracking-wider sm:hidden">
             Swipe →
           </span>
         </div>
@@ -173,14 +173,14 @@ export default function HomepageHero() {
               href={`/category/${cat.slug}`}
               className="category-circle category-item group flex flex-col items-center shrink-0 snap-start cursor-pointer transition-all active:scale-95 animate-fade-in-up"
             >
-              <div className="category-circle category-item w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shadow-md group-hover:shadow-2xl group-hover:-translate-y-1 transition-all duration-300 border-2 border-[#8B9A6E]/30 bg-[#EEEEEE] relative flex items-center justify-center">
+              <div className="category-circle category-item w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shadow-md group-hover:shadow-2xl group-hover:-translate-y-1 transition-all duration-300 border-2 border-[#39B54A]/30 bg-[#F1F5F9] relative flex items-center justify-center">
                 <img
                   src={cat.image}
                   alt={cat.name}
                   className="category-circle category-item w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-500 ease-out"
                 />
               </div>
-              <span className="text-xs sm:text-sm font-black text-[#232B1E] group-hover:text-[#8B9A6E] transition-colors mt-2.5 text-center line-clamp-1 max-w-[100px] sm:max-w-[120px]">
+              <span className="text-xs sm:text-sm font-black text-[#0F172A] group-hover:text-[#39B54A] transition-colors mt-2.5 text-center line-clamp-1 max-w-[100px] sm:max-w-[120px]">
                 {cat.name}
               </span>
             </Link>

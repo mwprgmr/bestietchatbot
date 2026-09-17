@@ -134,15 +134,15 @@ function SearchContent() {
       {/* Back Link */}
       <Link
         href="/"
-        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#232B1E]/70 hover:text-[#8B9A6E] transition-colors"
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0F172A]/70 hover:text-[#39B54A] transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         <span>Back to Storefront</span>
       </Link>
 
       {/* Search Input Box */}
-      <div className="bg-white p-6 rounded-3xl border border-[#EEEEEE] shadow-xs space-y-4">
-        <h1 className="text-xl font-black text-[#232B1E] uppercase">SEARCH FRESH PRODUCTS</h1>
+      <div className="bg-white p-6 rounded-3xl border border-[#E2E8F0] shadow-xs space-y-4">
+        <h1 className="text-xl font-black text-[#0F172A] uppercase">SEARCH FRESH PRODUCTS</h1>
 
         <div className="relative">
           <input
@@ -150,14 +150,14 @@ function SearchContent() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Type fish or meat name e.g. Neymeen, Ayala, Prawns, Chicken, Mutton..."
-            className="w-full pl-11 pr-4 py-3 bg-[#F7F2EB] border border-[#EEEEEE] rounded-2xl text-sm font-semibold text-[#232B1E] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8B9A6E] shadow-inner"
+            className="w-full pl-11 pr-4 py-3 bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl text-sm font-semibold text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A] shadow-inner"
           />
-          <Search className="w-5 h-5 text-[#232B1E]/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-5 h-5 text-[#0F172A]/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
         </div>
 
         {/* Quick Search Chips */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1">
-          <span className="text-[11px] font-extrabold text-[#232B1E]/50 uppercase tracking-wider shrink-0">
+          <span className="text-[11px] font-extrabold text-[#0F172A]/50 uppercase tracking-wider shrink-0">
             Popular Searches:
           </span>
           {['Neymeen', 'Ayala', 'Mathi', 'Prawns', 'Chicken', 'Mutton', 'Karimeen', 'Salmon'].map((tag) => (
@@ -165,7 +165,7 @@ function SearchContent() {
               key={tag}
               type="button"
               onClick={() => setQuery(tag)}
-              className="px-3 py-1 bg-[#EEEEEE] hover:bg-[#8B9A6E]/20 hover:text-[#232B1E] text-[#232B1E] font-bold rounded-full text-xs transition-colors border border-[#EEEEEE] shrink-0 cursor-pointer"
+              className="px-3 py-1 bg-[#E2E8F0] hover:bg-[#39B54A]/20 hover:text-[#0F172A] text-[#0F172A] font-bold rounded-full text-xs transition-colors border border-[#E2E8F0] shrink-0 cursor-pointer"
             >
               {tag}
             </button>
@@ -176,8 +176,8 @@ function SearchContent() {
       {/* Search Results / States */}
       {loading ? (
         <div className="py-12 text-center space-y-2">
-          <div className="w-8 h-8 border-4 border-[#8B9A6E] border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs font-bold text-[#232B1E]/70 uppercase tracking-wider">
+          <div className="w-8 h-8 border-4 border-[#39B54A] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs font-bold text-[#0F172A]/70 uppercase tracking-wider">
             Searching fresh inventory...
           </p>
         </div>
@@ -187,26 +187,26 @@ function SearchContent() {
           <h3 className="text-base font-extrabold text-slate-900">{searchError}</h3>
           <button
             onClick={() => setQuery(query)}
-            className="px-4 py-2 bg-[#8B9A6E] text-white font-bold text-xs rounded-xl hover:bg-[#7A895D] transition-colors"
+            className="px-4 py-2 bg-[#39B54A] text-white font-bold text-xs rounded-xl hover:bg-[#2EA03E] transition-colors"
           >
             Try Again
           </button>
         </div>
       ) : !query.trim() ? (
-        <div className="p-12 text-center bg-white rounded-3xl border border-[#EEEEEE] text-[#232B1E]/70 space-y-2">
-          <ShoppingBag className="w-8 h-8 mx-auto text-[#8B9A6E]" />
-          <h3 className="text-base font-extrabold text-[#232B1E]">Search for fresh fish, meat & seafood</h3>
+        <div className="p-12 text-center bg-white rounded-3xl border border-[#E2E8F0] text-[#0F172A]/70 space-y-2">
+          <ShoppingBag className="w-8 h-8 mx-auto text-[#39B54A]" />
+          <h3 className="text-base font-extrabold text-[#0F172A]">Search for fresh fish, meat & seafood</h3>
           <p className="text-xs">Type a keyword above or select one of the popular search tags.</p>
         </div>
       ) : products.length === 0 ? (
-        <div className="p-12 text-center bg-white rounded-3xl border border-[#EEEEEE] text-[#232B1E]/70 space-y-2">
-          <AlertCircle className="w-8 h-8 mx-auto text-[#8B9A6E]" />
-          <h3 className="text-base font-extrabold text-[#232B1E]">No products found for "{query}"</h3>
+        <div className="p-12 text-center bg-white rounded-3xl border border-[#E2E8F0] text-[#0F172A]/70 space-y-2">
+          <AlertCircle className="w-8 h-8 mx-auto text-[#39B54A]" />
+          <h3 className="text-base font-extrabold text-[#0F172A]">No products found for "{query}"</h3>
           <p className="text-xs">Try searching for alternative names like Neymeen, Chicken, or Prawns.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-xs font-bold text-[#232B1E]/70">
+          <p className="text-xs font-bold text-[#0F172A]/70">
             Found {products.length} product(s) for "{query}" {branchDisplayName ? `in ${branchDisplayName}` : ''}
           </p>
 
@@ -224,7 +224,7 @@ function SearchContent() {
 export default function SearchPage() {
   return (
     <StorefrontLayout>
-      <Suspense fallback={<div className="py-12 text-center text-xs font-bold text-[#232B1E]/70 uppercase">Loading search page...</div>}>
+      <Suspense fallback={<div className="py-12 text-center text-xs font-bold text-[#0F172A]/70 uppercase">Loading search page...</div>}>
         <SearchContent />
       </Suspense>
     </StorefrontLayout>

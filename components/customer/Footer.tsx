@@ -6,7 +6,7 @@ import { Phone, Mail, MapPin, ShieldCheck, Heart, Clock, Truck } from 'lucide-re
 
 export default function Footer() {
   return (
-    <footer className="bg-[#232B1E] text-[#EEEEEE] pt-16 pb-24 md:pb-12 border-t border-[#8B9A6E]/30">
+    <footer className="bg-[#0B130B] text-[#F8FAF8] pt-16 pb-24 md:pb-12 border-t border-[#39B54A]/30">
       <div className="max-w-7xl mx-auto px-4">
 
 
@@ -18,7 +18,7 @@ export default function Footer() {
               <img src="/logo-white.png" alt="Bestiet Fresh" className="h-11 sm:h-12 w-auto object-contain" />
             </div>
 
-            <p className="text-xs text-[#EEEEEE]/80 leading-relaxed">
+            <p className="text-xs text-[#F8FAF8]/80 leading-relaxed">
               Bestiet Fresh delivers chemical-free ocean fish, backwater seafood, tender chicken, and fresh goat meat directly to your kitchen.
             </p>
             <div className="flex items-center gap-2 pt-2">
@@ -26,7 +26,7 @@ export default function Footer() {
                 href="https://wa.me/919656055969"
                 target="_blank"
                 rel="noreferrer"
-                className="px-4 py-2 bg-[#8B9A6E] hover:bg-[#7A895D] text-white font-extrabold rounded-xl text-xs shadow-md transition-all inline-flex items-center gap-2"
+                className="px-4 py-2 bg-[#39B54A] hover:bg-[#2EA03E] text-white font-extrabold rounded-xl text-xs shadow-md transition-all inline-flex items-center gap-2"
               >
                 <span>Order on WhatsApp</span>
               </a>
@@ -35,37 +35,37 @@ export default function Footer() {
 
           {/* Col 2: Categories */}
           <div>
-            <h4 className="text-xs font-black uppercase tracking-wider text-[#8B9A6E] mb-4">
+            <h4 className="text-xs font-black uppercase tracking-wider text-[#39B54A] mb-4">
               Shop Categories
             </h4>
-            <ul className="space-y-2.5 text-xs text-[#EEEEEE]/80 font-medium">
+            <ul className="space-y-2.5 text-xs text-[#F8FAF8]/80 font-medium">
               <li>
-                <Link href="/category/fish" className="hover:text-[#8B9A6E] transition-colors">
+                <Link href="/category/fish" className="hover:text-[#39B54A] transition-colors">
                   Fish & Seafood
                 </Link>
               </li>
               <li>
-                <Link href="/category/chicken" className="hover:text-[#8B9A6E] transition-colors">
+                <Link href="/category/chicken" className="hover:text-[#39B54A] transition-colors">
                   Fresh Tender Chicken
                 </Link>
               </li>
               <li>
-                <Link href="/category/mutton" className="hover:text-[#8B9A6E] transition-colors">
+                <Link href="/category/mutton" className="hover:text-[#39B54A] transition-colors">
                   Tender Kerala Mutton
                 </Link>
               </li>
               <li>
-                <Link href="/category/seafood" className="hover:text-[#8B9A6E] transition-colors">
+                <Link href="/category/seafood" className="hover:text-[#39B54A] transition-colors">
                   Prawns & Crabs
                 </Link>
               </li>
               <li>
-                <Link href="/category/ready-to-cook" className="hover:text-[#8B9A6E] transition-colors">
+                <Link href="/category/ready-to-cook" className="hover:text-[#39B54A] transition-colors">
                   Ready to Cook Marinated Packs
                 </Link>
               </li>
               <li>
-                <Link href="/category/combos" className="hover:text-[#8B9A6E] transition-colors">
+                <Link href="/category/combos" className="hover:text-[#39B54A] transition-colors">
                   Fresh Family Combos
                 </Link>
               </li>
@@ -74,32 +74,32 @@ export default function Footer() {
 
           {/* Col 3: Customer Care */}
           <div>
-            <h4 className="text-xs font-black uppercase tracking-wider text-[#8B9A6E] mb-4">
+            <h4 className="text-xs font-black uppercase tracking-wider text-[#39B54A] mb-4">
               Customer Care
             </h4>
-            <ul className="space-y-2.5 text-xs text-[#EEEEEE]/80 font-medium">
+            <ul className="space-y-2.5 text-xs text-[#F8FAF8]/80 font-medium">
               <li>
-                <Link href="/orders" className="hover:text-[#8B9A6E] transition-colors">
+                <Link href="/orders" className="hover:text-[#39B54A] transition-colors">
                   Track Your Order
                 </Link>
               </li>
               <li>
-                <Link href="/orders" className="hover:text-[#8B9A6E] transition-colors">
+                <Link href="/orders" className="hover:text-[#39B54A] transition-colors">
                   My Orders History
                 </Link>
               </li>
               <li>
-                <Link href="/offers" className="hover:text-[#8B9A6E] transition-colors">
+                <Link href="/offers" className="hover:text-[#39B54A] transition-colors">
                   Today's Offers & Discounts
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-[#8B9A6E] transition-colors">
+                <Link href="/contact" className="hover:text-[#39B54A] transition-colors">
                   Contact Support
                 </Link>
               </li>
               <li>
-                <a href="tel:+919656055969" className="hover:text-[#8B9A6E] transition-colors">
+                <a href="tel:+919656055969" className="hover:text-[#39B54A] transition-colors">
                   Help Line: +91 96560 55969
                 </a>
               </li>
@@ -108,27 +108,27 @@ export default function Footer() {
 
           {/* Col 4: Company & Legal */}
           <div>
-            <h4 className="text-xs font-black uppercase tracking-wider text-[#8B9A6E] mb-4">
+            <h4 className="text-xs font-black uppercase tracking-wider text-[#39B54A] mb-4">
               Company & Legal
             </h4>
-            <ul className="space-y-2.5 text-xs text-[#EEEEEE]/80 font-medium">
+            <ul className="space-y-2.5 text-xs text-[#F8FAF8]/80 font-medium">
               <li>
-                <Link href="/about" className="hover:text-[#8B9A6E] transition-colors">
+                <Link href="/about" className="hover:text-[#39B54A] transition-colors">
                   About Bestiet Fresh
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="hover:text-[#8B9A6E] transition-colors">
+                <Link href="/privacy" className="hover:text-[#39B54A] transition-colors">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="hover:text-[#8B9A6E] transition-colors">
+                <Link href="/terms" className="hover:text-[#39B54A] transition-colors">
                   Terms of Service
                 </Link>
               </li>
               <li>
-                <Link href="/refund" className="hover:text-[#8B9A6E] transition-colors">
+                <Link href="/refund" className="hover:text-[#39B54A] transition-colors">
                   Refund & Cancellation Policy
                 </Link>
               </li>
@@ -137,7 +137,7 @@ export default function Footer() {
         </div>
 
         {/* Copyright & Disclaimer */}
-        <div className="pt-8 border-t border-[#8B9A6E]/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#EEEEEE]/60">
+        <div className="pt-8 border-t border-[#39B54A]/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#F8FAF8]/60">
           <p>© {new Date().getFullYear()} BESTIET FRESH. All rights reserved.</p>
           <div className="flex items-center gap-4 text-[11px]">
             <span>Powered by Bestiet Fresh E-Commerce Engine</span>

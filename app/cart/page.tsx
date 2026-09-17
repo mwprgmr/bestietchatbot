@@ -41,30 +41,30 @@ export default function CartPage() {
         <div>
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#232B1E]/70 hover:text-[#8B9A6E] transition-colors mb-2"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0F172A]/70 hover:text-[#39B54A] transition-colors mb-2"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Continue Shopping</span>
           </Link>
-          <h1 className="text-2xl font-black text-[#232B1E] tracking-tight">YOUR FRESH SHOPPING CART</h1>
-          <p className="text-xs text-[#232B1E]/70">
-            Delivering to <span className="font-bold text-[#232B1E]">{deliveryAddress}</span> ({selectedBranch?.name || ''})
+          <h1 className="text-2xl font-black text-[#0F172A] tracking-tight">YOUR FRESH SHOPPING CART</h1>
+          <p className="text-xs text-[#0F172A]/70">
+            Delivering to <span className="font-bold text-[#0F172A]">{deliveryAddress}</span> ({selectedBranch?.name || ''})
 
           </p>
         </div>
 
         {cart.length === 0 ? (
-          <div className="bg-[#F7F2EB] p-8 sm:p-12 rounded-none border border-[#EEEEEE] text-center space-y-4 max-w-md mx-auto">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#EEEEEE] rounded-none flex items-center justify-center mx-auto text-[#8B9A6E]">
+          <div className="bg-[#FFFFFF] p-8 sm:p-12 rounded-none border border-[#E2E8F0] text-center space-y-4 max-w-md mx-auto">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#E2E8F0] rounded-none flex items-center justify-center mx-auto text-[#39B54A]">
               <ShoppingBag className="w-8 h-8 sm:w-10 sm:h-10" />
             </div>
-            <h2 className="text-base sm:text-lg font-extrabold text-[#232B1E]">Your Cart is Currently Empty</h2>
-            <p className="text-xs text-[#232B1E]/70">
+            <h2 className="text-base sm:text-lg font-extrabold text-[#0F172A]">Your Cart is Currently Empty</h2>
+            <p className="text-xs text-[#0F172A]/70">
               Explore today's fresh ocean fish, tender chicken, and mutton catch.
             </p>
             <Link
               href="/"
-              className="inline-block px-6 py-3 bg-[#8B9A6E] hover:bg-[#7A895D] text-white font-extrabold text-xs rounded-none shadow-md"
+              className="inline-block px-6 py-3 bg-[#39B54A] hover:bg-[#2EA03E] text-white font-extrabold text-xs rounded-none shadow-md"
             >
               BROWSE FRESH PRODUCTS
             </Link>
@@ -78,37 +78,37 @@ export default function CartPage() {
                 return (
                   <div
                     key={item.cart_key}
-                    className="p-3.5 sm:p-4 bg-white rounded-none border border-[#EEEEEE] shadow-xs flex flex-col xs:flex-row gap-3 sm:gap-4 items-start xs:items-center justify-between"
+                    className="p-3.5 sm:p-4 bg-white rounded-none border border-[#E2E8F0] shadow-xs flex flex-col xs:flex-row gap-3 sm:gap-4 items-start xs:items-center justify-between"
                   >
                     <div className="flex gap-3 items-center min-w-0">
                       <img
                         src={item.image_url || '/logo.png'}
                         alt={item.product_name}
-                        className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-none bg-[#EEEEEE] shrink-0"
+                        className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-none bg-[#E2E8F0] shrink-0"
                       />
                       <div className="min-w-0">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8B9A6E]">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#39B54A]">
                           {item.category}
                         </span>
-                        <h3 className="text-xs sm:text-sm font-extrabold text-[#232B1E] truncate">{item.product_name}</h3>
-                        <p className="text-[11px] sm:text-xs text-[#232B1E]/70 mt-0.5">
-                          Cut: <span className="font-bold text-[#232B1E]">{item.cleaning_option}</span> • Pack:{' '}
-                          <span className="font-bold text-[#232B1E]">
+                        <h3 className="text-xs sm:text-sm font-extrabold text-[#0F172A] truncate">{item.product_name}</h3>
+                        <p className="text-[11px] sm:text-xs text-[#0F172A]/70 mt-0.5">
+                          Cut: <span className="font-bold text-[#0F172A]">{item.cleaning_option}</span> • Pack:{' '}
+                          <span className="font-bold text-[#0F172A]">
                             {item.weight_kg === 0.5 ? '500g' : `${item.weight_kg}kg`}
                           </span>
                         </p>
-                        <div className="text-[11px] sm:text-xs font-bold text-[#232B1E]/50 mt-0.5">
+                        <div className="text-[11px] sm:text-xs font-bold text-[#0F172A]/50 mt-0.5">
                           Base Price: ₹{item.price_per_kg} / kg
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between xs:justify-end gap-4 sm:gap-6 w-full xs:w-auto pt-2.5 xs:pt-0 border-t xs:border-t-0 border-[#EEEEEE]">
+                    <div className="flex items-center justify-between xs:justify-end gap-4 sm:gap-6 w-full xs:w-auto pt-2.5 xs:pt-0 border-t xs:border-t-0 border-[#E2E8F0]">
                       {/* QTY Control */}
-                      <div className="flex items-center gap-2 bg-[#8B9A6E] text-white rounded-none p-1 shadow-xs">
+                      <div className="flex items-center gap-2 bg-[#39B54A] text-white rounded-none p-1 shadow-xs">
                         <button
                           onClick={() => updateCartQuantity(item.cart_key, -1)}
-                          className="w-6 h-6 rounded-none bg-[#232B1E]/20 hover:bg-[#232B1E]/40 flex items-center justify-center text-white cursor-pointer"
+                          className="w-6 h-6 rounded-none bg-[#0F172A]/20 hover:bg-[#0F172A]/40 flex items-center justify-center text-white cursor-pointer"
                         >
                           <Minus className="w-3 h-3 text-white" />
                         </button>
@@ -117,7 +117,7 @@ export default function CartPage() {
                         </span>
                         <button
                           onClick={() => updateCartQuantity(item.cart_key, 1)}
-                          className="w-6 h-6 rounded-none bg-[#232B1E]/20 hover:bg-[#232B1E]/40 flex items-center justify-center text-white cursor-pointer"
+                          className="w-6 h-6 rounded-none bg-[#0F172A]/20 hover:bg-[#0F172A]/40 flex items-center justify-center text-white cursor-pointer"
                         >
                           <Plus className="w-3 h-3 text-white" />
                         </button>
@@ -125,10 +125,10 @@ export default function CartPage() {
 
                       {/* Total & Remove */}
                       <div className="text-right">
-                        <div className="text-sm font-black text-[#232B1E]">₹{itemTotal}</div>
+                        <div className="text-sm font-black text-[#0F172A]">₹{itemTotal}</div>
                         <button
                           onClick={() => removeFromCart(item.cart_key)}
-                          className="text-[11px] font-bold text-[#232B1E]/60 hover:text-[#232B1E] transition-colors flex items-center gap-0.5 mt-0.5 ml-auto cursor-pointer"
+                          className="text-[11px] font-bold text-[#0F172A]/60 hover:text-[#0F172A] transition-colors flex items-center gap-0.5 mt-0.5 ml-auto cursor-pointer"
                         >
                           <Trash2 className="w-3 h-3" /> Remove
                         </button>
@@ -138,8 +138,8 @@ export default function CartPage() {
                 )
               })}
 
-              <div className="p-3.5 sm:p-4 rounded-none bg-[#8B9A6E]/15 border border-[#8B9A6E]/30 text-xs text-[#232B1E] flex items-center gap-3">
-                <ShieldCheck className="w-5 h-5 text-[#8B9A6E] shrink-0" />
+              <div className="p-3.5 sm:p-4 rounded-none bg-[#39B54A]/15 border border-[#39B54A]/30 text-xs text-[#0F172A] flex items-center gap-3">
+                <ShieldCheck className="w-5 h-5 text-[#39B54A] shrink-0" />
                 <div>
                   <span className="font-extrabold">Bestiet Fresh Guarantee:</span> All items are custom cleaned and packed in ice cold-chain boxes right before dispatch.
                 </div>
@@ -149,18 +149,18 @@ export default function CartPage() {
             {/* Right: Order Summary & Coupon */}
             <div className="space-y-4">
               {/* Coupon Box */}
-              <div className="p-4 sm:p-5 bg-white rounded-none border border-[#EEEEEE] shadow-xs space-y-3">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#232B1E] flex items-center gap-1.5">
-                  <Tag className="w-4 h-4 text-[#8B9A6E]" /> Apply Promo Coupon
+              <div className="p-4 sm:p-5 bg-white rounded-none border border-[#E2E8F0] shadow-xs space-y-3">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#0F172A] flex items-center gap-1.5">
+                  <Tag className="w-4 h-4 text-[#39B54A]" /> Apply Promo Coupon
                 </h3>
 
                 {appliedCoupon ? (
-                  <div className="p-3 rounded-none bg-[#8B9A6E]/20 border border-[#8B9A6E]/40 flex items-center justify-between text-xs">
+                  <div className="p-3 rounded-none bg-[#39B54A]/20 border border-[#39B54A]/40 flex items-center justify-between text-xs">
                     <div>
-                      <div className="font-extrabold text-[#232B1E]">'{appliedCoupon.code}' APPLIED</div>
-                      <div className="text-[10px] text-[#8B9A6E]">Saved ₹{discountAmount} on this order</div>
+                      <div className="font-extrabold text-[#0F172A]">'{appliedCoupon.code}' APPLIED</div>
+                      <div className="text-[10px] text-[#39B54A]">Saved ₹{discountAmount} on this order</div>
                     </div>
-                    <button onClick={removeCoupon} className="text-xs font-bold text-[#232B1E] hover:underline cursor-pointer">
+                    <button onClick={removeCoupon} className="text-xs font-bold text-[#0F172A] hover:underline cursor-pointer">
                       Remove
                     </button>
                   </div>
@@ -172,11 +172,11 @@ export default function CartPage() {
                         value={couponInput}
                         onChange={(e) => setCouponInput(e.target.value)}
                         placeholder="ENTER COUPON (e.g. BESTIET100)"
-                        className="flex-1 px-3 py-2 bg-[#EEEEEE] border border-[#EEEEEE] rounded-none text-xs font-bold uppercase focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8B9A6E] text-[#232B1E]"
+                        className="flex-1 px-3 py-2 bg-[#E2E8F0] border border-[#E2E8F0] rounded-none text-xs font-bold uppercase focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A] text-[#0F172A]"
                       />
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-[#8B9A6E] hover:bg-[#7A895D] text-white text-xs font-bold rounded-none transition-colors cursor-pointer"
+                        className="px-4 py-2 bg-[#39B54A] hover:bg-[#2EA03E] text-white text-xs font-bold rounded-none transition-colors cursor-pointer"
                       >
                         Apply
                       </button>
@@ -184,7 +184,7 @@ export default function CartPage() {
                     {couponMsg && (
                       <div
                         className={`text-[11px] font-medium ${
-                          couponMsg.success ? 'text-[#8B9A6E]' : 'text-[#232B1E]'
+                          couponMsg.success ? 'text-[#39B54A]' : 'text-[#0F172A]'
                         }`}
                       >
                         {couponMsg.text}
@@ -195,27 +195,27 @@ export default function CartPage() {
               </div>
 
               {/* Bill Details Box */}
-              <div className="p-4 sm:p-5 bg-[#EEEEEE] rounded-none border border-[#EEEEEE] shadow-xs space-y-4">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#232B1E]">
+              <div className="p-4 sm:p-5 bg-[#E2E8F0] rounded-none border border-[#E2E8F0] shadow-xs space-y-4">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#0F172A]">
                   Bill Details
                 </h3>
 
-                <div className="space-y-2 text-xs text-[#232B1E]/80">
+                <div className="space-y-2 text-xs text-[#0F172A]/80">
                   <div className="flex justify-between">
                     <span>Item Subtotal</span>
-                    <span className="font-bold text-[#232B1E]">₹{cartSubtotal}</span>
+                    <span className="font-bold text-[#0F172A]">₹{cartSubtotal}</span>
                   </div>
                   {discountAmount > 0 && (
-                    <div className="flex justify-between text-[#8B9A6E] font-bold">
+                    <div className="flex justify-between text-[#39B54A] font-bold">
                       <span>Promo Discount</span>
                       <span>- ₹{discountAmount}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span>Delivery Charge</span>
-                    <span className="font-bold text-[#232B1E]">
+                    <span className="font-bold text-[#0F172A]">
                       {deliveryFee === 0 ? (
-                        <span className="text-[#8B9A6E] font-extrabold uppercase text-[10px]">
+                        <span className="text-[#39B54A] font-extrabold uppercase text-[10px]">
                           FREE
                         </span>
                       ) : (
@@ -223,15 +223,15 @@ export default function CartPage() {
                       )}
                     </span>
                   </div>
-                  <div className="pt-3 border-t border-[#8B9A6E]/20 flex justify-between text-base font-black text-[#232B1E]">
+                  <div className="pt-3 border-t border-[#39B54A]/20 flex justify-between text-base font-black text-[#0F172A]">
                     <span>Grand Total</span>
-                    <span className="text-[#8B9A6E]">₹{grandTotal}</span>
+                    <span className="text-[#39B54A]">₹{grandTotal}</span>
                   </div>
                 </div>
 
                 <button
                   onClick={() => router.push('/checkout')}
-                  className="w-full py-3.5 px-4 bg-[#8B9A6E] hover:bg-[#7A895D] text-white font-extrabold rounded-none text-sm shadow-md shadow-[#8B9A6E]/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 group cursor-pointer"
+                  className="w-full py-3.5 px-4 bg-[#39B54A] hover:bg-[#2EA03E] text-white font-extrabold rounded-none text-sm shadow-md shadow-[#39B54A]/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 group cursor-pointer"
                 >
                   <span>PROCEED TO CHECKOUT</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

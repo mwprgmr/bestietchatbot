@@ -30,18 +30,18 @@ export default function FlashSale({ products }: { products: ProductProps[] }) {
   const formatNum = (num: number) => String(num).padStart(2, '0')
 
   return (
-    <section className="bg-[#232B1E] rounded-3xl p-6 text-[#EEEEEE] shadow-xl my-8 overflow-hidden relative border border-[#8B9A6E]/30">
+    <section className="bg-[#0F172A] rounded-3xl p-6 text-[#E2E8F0] shadow-xl my-8 overflow-hidden relative border border-[#39B54A]/30">
       {/* Decorative Accent */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-[#8B9A6E]/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 right-0 w-80 h-80 bg-[#39B54A]/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Flash Sale Header & Timer */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#8B9A6E]/40 mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#39B54A]/40 mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-[#8B9A6E] text-white font-black shadow-lg shadow-[#8B9A6E]/30 flex items-center justify-center animate-bounce">
+          <div className="p-2.5 rounded-2xl bg-[#39B54A] text-white font-black shadow-lg shadow-[#39B54A]/30 flex items-center justify-center animate-bounce">
             <Flame className="w-6 h-6 fill-white" />
           </div>
           <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#8B9A6E]">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#39B54A]">
               Limited Time Deals
             </span>
             <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
@@ -51,19 +51,19 @@ export default function FlashSale({ products }: { products: ProductProps[] }) {
         </div>
 
         {/* Countdown Timer */}
-        <div className="flex items-center gap-2 bg-[#F7F2EB]/10 px-4 py-2 rounded-2xl border border-[#8B9A6E]/40 shadow-inner">
-          <Clock className="w-4 h-4 text-[#8B9A6E] shrink-0" />
-          <span className="text-[11px] font-bold text-[#EEEEEE] uppercase mr-1">Ends In:</span>
-          <div className="flex items-center gap-1 font-mono text-sm font-black text-[#8B9A6E]">
-            <span className="bg-[#232B1E] px-2 py-0.5 rounded-lg border border-[#8B9A6E]/40 text-white">
+        <div className="flex items-center gap-2 bg-[#FFFFFF]/10 px-4 py-2 rounded-2xl border border-[#39B54A]/40 shadow-inner">
+          <Clock className="w-4 h-4 text-[#39B54A] shrink-0" />
+          <span className="text-[11px] font-bold text-[#E2E8F0] uppercase mr-1">Ends In:</span>
+          <div className="flex items-center gap-1 font-mono text-sm font-black text-[#39B54A]">
+            <span className="bg-[#0F172A] px-2 py-0.5 rounded-lg border border-[#39B54A]/40 text-white">
               {formatNum(timeLeft.hours)}
             </span>
             <span className="text-white">:</span>
-            <span className="bg-[#232B1E] px-2 py-0.5 rounded-lg border border-[#8B9A6E]/40 text-white">
+            <span className="bg-[#0F172A] px-2 py-0.5 rounded-lg border border-[#39B54A]/40 text-white">
               {formatNum(timeLeft.minutes)}
             </span>
             <span className="text-white">:</span>
-            <span className="bg-[#232B1E] px-2 py-0.5 rounded-lg border border-[#8B9A6E]/40 text-white">
+            <span className="bg-[#0F172A] px-2 py-0.5 rounded-lg border border-[#39B54A]/40 text-white">
               {formatNum(timeLeft.seconds)}
             </span>
           </div>
