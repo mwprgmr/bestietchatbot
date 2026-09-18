@@ -14,6 +14,21 @@ function OrdersContent() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const [channelFilter, setChannelFilter] = useState<'ALL' | 'STOREFRONT' | 'WHATSAPP'>('ALL')
+  const [productsMap, setProductsMap] = useState<Record<string, string>>({})
+
+  const getProductName = (i: any) => {
+    const rawName = i.product?.name || i.product_name || (i.product_id ? productsMap[i.product_id] : '') || ''
+    if (!rawName) return 'Fresh Item'
+    return rawName.replace(/\b[a-z]/g, (l: string) => l.toUpperCase())
+  }
+
+  const getItemIcon = (name: string) => {
+    const n = (name || '').toLowerCase()
+    if (n.includes('chicken')) return '🍗'
+    if (n.includes('mutton') || n.includes('goat') || n.includes('beef') || n.includes('meat')) return '🥩'
+    if (n.includes('prawn') || n.includes('shrimp') || n.includes('crab') || n.includes('squid')) return '🦐'
+    return '🐟'
+  }
 
   useEffect(() => {
     fetchOrders()
@@ -22,6 +37,13 @@ function OrdersContent() {
   const fetchOrders = async () => {
     setLoading(true)
     try {
+      const { data: prods } = await supabase.from('products').select('id, name')
+      if (prods && Array.isArray(prods)) {
+        const pMap: Record<string, string> = {}
+        prods.forEach((p: any) => { pMap[p.id] = p.name })
+        setProductsMap(pMap)
+      }
+
       let query = supabase
         .from('orders')
         .select(`
@@ -351,8 +373,9 @@ function OrdersContent() {
                           <span className="text-slate-500 italic text-[11px]">No item details</span>
                         ) : (
                           <div className="flex flex-col gap-1">
-                            {itemsList.map((i: any, idx: number) => {
-                              const fishName = i.product?.name || i.product_name || 'Fresh Fish'
+                             {itemsList.map((i: any, idx: number) => {
+                              const fishName = getProductName(i)
+                              const icon = getItemIcon(fishName)
                               const qtyKg = i.quantity_kg ?? i.quantity ?? 0
                               const cutType = (i.cutting_type || i.cut_type || 'whole').replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
                               return (
@@ -360,7 +383,7 @@ function OrdersContent() {
                                   key={idx}
                                   className="inline-flex items-center gap-1 bg-emerald-950/60 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap"
                                 >
-                                  🐟 <strong>{fishName}</strong> — {qtyKg} kg <span className="text-slate-400 font-normal">({cutType})</span>
+                                  {icon} <strong>{fishName}</strong> — {qtyKg} kg <span className="text-slate-400 font-normal">({cutType})</span>
                                 </span>
                               )
                             })}

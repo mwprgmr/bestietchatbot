@@ -54,6 +54,22 @@ export default function OrdersPage() {
   // Date Filter State
   const [dateFilterPreset, setDateFilterPreset] = useState<'ALL' | 'TODAY' | 'YESTERDAY' | 'LAST_7_DAYS' | 'THIS_MONTH' | 'CUSTOM'>('ALL')
   const [customDate, setCustomDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [productsMap, setProductsMap] = useState<Record<string, string>>({})
+
+  const getProductName = (i: any) => {
+    const rawName = i.product?.name || i.product_name || (i.product_id ? productsMap[i.product_id] : '') || ''
+    if (!rawName) return 'Fresh Item'
+    return rawName.replace(/\b[a-z]/g, (l: string) => l.toUpperCase())
+  }
+
+  const getItemIcon = (name: string) => {
+    const n = (name || '').toLowerCase()
+    if (n.includes('chicken')) return '🍗'
+    if (n.includes('mutton') || n.includes('goat') || n.includes('beef') || n.includes('meat')) return '🥩'
+    if (n.includes('prawn') || n.includes('shrimp') || n.includes('crab') || n.includes('squid')) return '🦐'
+    return '🐟'
+  }
+
 
   // Helper functions for Quantity and Price formatting
   const formatQuantity = (item: any) => {
@@ -237,6 +253,13 @@ export default function OrdersPage() {
     setLoading(true)
     setQueryError(null)
     try {
+      const { data: prods } = await supabase.from('products').select('id, name')
+      if (prods && Array.isArray(prods)) {
+        const pMap: Record<string, string> = {}
+        prods.forEach((p: any) => { pMap[p.id] = p.name })
+        setProductsMap(pMap)
+      }
+
       let query = supabase
         .from('orders')
         .select(`
@@ -978,7 +1001,8 @@ export default function OrdersPage() {
                           return (
                             <div className="flex flex-col gap-1">
                               {itemsList.map((i: any, idx: number) => {
-                                const fishName = i.product?.name || i.product_name || 'Fresh Fish'
+                                const fishName = getProductName(i)
+                                const icon = getItemIcon(fishName)
                                 const qtyKg = i.quantity_kg ?? i.quantity ?? 0
                                 const cutType = (i.cutting_type || i.cut_type || 'whole').replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
                                 return (
@@ -986,7 +1010,7 @@ export default function OrdersPage() {
                                     key={idx}
                                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-950 border border-emerald-200/90 shadow-2xs whitespace-nowrap"
                                   >
-                                    <span>🐟 <strong>{fishName}</strong></span>
+                                    <span>{icon} <strong>{fishName}</strong></span>
                                     <span className="text-emerald-700 font-extrabold">• {qtyKg} kg</span>
                                     <span className="text-slate-600 font-medium text-[11px]">({cutType})</span>
                                   </span>
@@ -1373,14 +1397,17 @@ export default function OrdersPage() {
                         const unitPrice = Number(item.unit_price ?? item.price_per_kg ?? item.product?.price_per_kg ?? 0)
                         const subtotalAmt = Number(item.total ?? item.total_price ?? item.subtotal ?? (qty * unitPrice))
 
+                        const itemName = getProductName(item)
+                        const itemIcon = getItemIcon(itemName)
+
                         return (
                           <div key={item.id || item.product_id} className="p-3.5 flex items-center justify-between text-xs">
                             <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
-                                <Fish className="w-4 h-4 text-emerald-600" />
+                              <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 text-base">
+                                {itemIcon}
                               </div>
                               <div>
-                                <p className="font-bold text-slate-900">{item.product?.name || 'Fresh Fish'}</p>
+                                <p className="font-bold text-slate-900">{itemName}</p>
                                 <p className="text-[11px] text-slate-500 capitalize">
                                   Cut: <span className="font-semibold text-slate-700">{(item.cutting_type || 'whole').replace('_', ' ')}</span>
                                 </p>

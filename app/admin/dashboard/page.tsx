@@ -403,7 +403,10 @@ export default function DashboardPage() {
                             <span className="text-[11px] text-slate-400 italic">No item details</span>
                           ) : (
                             itemsList.map((item: any, idx: number) => {
-                              const fishName = item.product?.name || item.product_name || 'Fresh Fish'
+                              const rawName = item.product?.name || item.product_name || 'Fresh Item'
+                              const fishName = rawName.replace(/\b[a-z]/g, (l: string) => l.toUpperCase())
+                              const n = rawName.toLowerCase()
+                              const icon = n.includes('chicken') ? '🍗' : (n.includes('mutton') || n.includes('goat') || n.includes('beef') || n.includes('meat')) ? '🥩' : (n.includes('prawn') || n.includes('shrimp') || n.includes('crab')) ? '🦐' : '🐟'
                               const qtyKg = item.quantity_kg ?? item.quantity ?? 0
                               const cutType = (item.cutting_type || item.cut_type || 'whole').replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
                               return (
@@ -411,7 +414,7 @@ export default function DashboardPage() {
                                   key={idx}
                                   className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-900 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-bold"
                                 >
-                                  🐟 <strong>{fishName}</strong> — {qtyKg}kg <span className="text-emerald-700 font-normal">({cutType})</span>
+                                  {icon} <strong>{fishName}</strong> — {qtyKg}kg <span className="text-emerald-700 font-normal">({cutType})</span>
                                 </span>
                               )
                             })

@@ -156,13 +156,16 @@ export default function MyOrdersPage() {
                         {/* Items Breakdown */}
                         <div className="space-y-1.5 text-xs text-[#0F172A]">
                           {o.items?.map((item: any, idx: number) => {
-                            const pName = item.product?.name || item.product_name || 'Fresh Fish'
+                            const rawName = item.product?.name || item.product_name || 'Fresh Item'
+                            const pName = rawName.replace(/\b[a-z]/g, (l: string) => l.toUpperCase())
+                            const n = rawName.toLowerCase()
+                            const icon = n.includes('chicken') ? '🍗' : (n.includes('mutton') || n.includes('goat') || n.includes('beef') || n.includes('meat')) ? '🥩' : (n.includes('prawn') || n.includes('shrimp') || n.includes('crab')) ? '🦐' : '🐟'
                             const qtyKg = item.quantity_kg ?? item.quantity ?? 0
                             const cutType = (item.cutting_type || item.cut_type || 'whole').replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
                             return (
                               <div key={item.id || idx} className="flex justify-between items-center py-0.5">
                                 <span className="font-semibold text-xs text-[#0F172A]">
-                                  🐟 {pName}{' '}
+                                  {icon} {pName}{' '}
                                   <span className="text-[11px] text-[#0F172A]/70 font-bold ml-1">
                                     — {qtyKg}kg <span className="font-normal text-[#0F172A]/60">({cutType})</span>
                                   </span>
