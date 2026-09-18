@@ -172,7 +172,7 @@ export default function CategoryPage() {
             <p className="text-xs">Try selecting another branch or category.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {products
               .filter((p) => {
                 if (filterCut === 'In Stock Only') return p.available_stock > 0

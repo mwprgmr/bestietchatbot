@@ -214,7 +214,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
             <div className="flex items-center justify-between h-16">
               {/* Brand Logo & Super Admin badge */}
               <div className="flex items-center gap-3">
-                <img src="/logo-brand.png" alt="Bestiet Fresh Logo" className="h-9 w-auto object-contain" />
+                <img src="/logo-brand.png" alt="Bestiet Fresh Logo" className="h-12 sm:h-14 w-auto object-contain" />
                 <span className="bg-emerald-100 border border-emerald-200 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
                   SUPER ADMIN
                 </span>

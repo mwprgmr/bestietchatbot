@@ -118,7 +118,7 @@ export default function AppPromoPoster() {
               <img
                 src="/logo.png"
                 alt="Bestiet Fresh Logo"
-                className="h-10 lg:h-12 w-auto object-contain"
+                className="h-14 sm:h-16 lg:h-20 w-auto object-contain"
               />
             </div>
 
