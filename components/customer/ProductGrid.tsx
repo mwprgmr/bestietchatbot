@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useCustomer } from '@/lib/context/CustomerContext'
 import ProductCard, { ProductProps } from './ProductCard'
 import FlashSale from './FlashSale'
+import AppPromoBanner from './AppPromoBanner'
+import ScrollReveal from '@/components/ui/ScrollReveal'
 import { ArrowRight, Sparkles, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { ProductGridSkeleton } from '@/components/ui/Skeleton'
@@ -131,14 +133,18 @@ export default function ProductGrid() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4">
-          {freshPicks.map((p) => (
-            <ProductCard key={p.id} product={p} />
+          {freshPicks.map((p, idx) => (
+            <ScrollReveal key={p.id} delayMs={idx * 60}>
+              <ProductCard product={p} />
+            </ScrollReveal>
           ))}
         </div>
       </section>
 
-
-
+      {/* 2. APP PROMO BANNER (SWIGGY-STYLE) */}
+      <ScrollReveal>
+        <AppPromoBanner />
+      </ScrollReveal>
 
       {/* 3. FISH & SEAFOOD SECTION */}
       {fishProducts.length > 0 && (
@@ -162,8 +168,10 @@ export default function ProductGrid() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4">
-            {fishProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
+            {fishProducts.map((p, idx) => (
+              <ScrollReveal key={p.id} delayMs={(idx % 4) * 60}>
+                <ProductCard product={p} />
+              </ScrollReveal>
             ))}
           </div>
         </section>
@@ -191,8 +199,10 @@ export default function ProductGrid() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4">
-            {chickenProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
+            {chickenProducts.map((p, idx) => (
+              <ScrollReveal key={p.id} delayMs={(idx % 4) * 60}>
+                <ProductCard product={p} />
+              </ScrollReveal>
             ))}
           </div>
         </section>
@@ -220,8 +230,10 @@ export default function ProductGrid() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4">
-            {muttonProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
+            {muttonProducts.map((p, idx) => (
+              <ScrollReveal key={p.id} delayMs={(idx % 4) * 60}>
+                <ProductCard product={p} />
+              </ScrollReveal>
             ))}
           </div>
         </section>
@@ -249,8 +261,10 @@ export default function ProductGrid() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4">
-            {comboProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
+            {comboProducts.map((p, idx) => (
+              <ScrollReveal key={p.id} delayMs={(idx % 4) * 60}>
+                <ProductCard product={p} />
+              </ScrollReveal>
             ))}
           </div>
         </section>
