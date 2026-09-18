@@ -83,11 +83,11 @@ export default function ProductCard({ product }: { product: ProductProps }) {
   }
 
   return (
-    <div className="group relative bg-white/90 backdrop-blur-md border border-[#E2ECE7] hover:border-[#079669]/50 rounded-[20px] p-2.5 sm:p-3.5 shadow-2xs hover:shadow-md transition-all duration-300 overflow-hidden h-full flex flex-col justify-between">
+    <div className="group relative bg-white/75 backdrop-blur-xl border border-white/90 hover:border-[#39B54A]/50 rounded-[22px] p-2.5 sm:p-3.5 shadow-[0_8px_25px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_rgba(57,181,74,0.12)] transition-all duration-300 overflow-hidden h-full flex flex-col justify-between">
       <Link href={`/product/${product.id}`} className="flex flex-col sm:flex-row gap-3 sm:gap-3.5 items-stretch h-full">
         
         {/* 1. PRODUCT IMAGE CONTAINER (Left side on Desktop, Top on Mobile 2-column) */}
-        <div className="relative shrink-0 w-full sm:w-36 h-36 sm:h-36 rounded-[16px] overflow-hidden bg-slate-100 shadow-2xs">
+        <div className="relative shrink-0 w-full sm:w-36 h-36 sm:h-36 rounded-[18px] overflow-hidden bg-slate-100 border border-slate-100/80 shadow-2xs">
           <img
             src={imageSrc}
             alt={product.name}
@@ -102,8 +102,8 @@ export default function ProductCard({ product }: { product: ProductProps }) {
 
           {/* STOCK BADGE — TOP LEFT */}
           {!isOutOfStock ? (
-            <div className="absolute top-2 left-2 z-10 bg-[#079669]/90 text-white backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-xs">
-              <Leaf className="w-2.5 h-2.5 text-emerald-200 fill-emerald-200" />
+            <div className="absolute top-2 left-2 z-10 bg-[#39B54A] text-white backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-xs">
+              <Leaf className="w-2.5 h-2.5 text-white fill-white/40" />
               <span>{product.available_stock} kg left</span>
             </div>
           ) : (
@@ -116,7 +116,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
           <button
             type="button"
             onClick={toggleFavorite}
-            className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-white/80 hover:bg-white backdrop-blur-md border border-white/60 flex items-center justify-center text-slate-700 hover:text-rose-500 shadow-xs transition-all active:scale-90 cursor-pointer"
+            className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-white/80 hover:bg-white backdrop-blur-md border border-white/90 flex items-center justify-center text-slate-700 hover:text-rose-500 shadow-xs transition-all active:scale-90 cursor-pointer"
             aria-label="Save to Wishlist"
           >
             <Heart
@@ -126,9 +126,9 @@ export default function ProductCard({ product }: { product: ProductProps }) {
             />
           </button>
 
-          {/* DISCOUNT BADGE OVERLAY — BOTTOM LEFT OF IMAGE (SWIGGY STYLE) */}
+          {/* DISCOUNT BADGE OVERLAY — BOTTOM LEFT OF IMAGE (SWIGGY STYLE MATCHING LOGO GREEN) */}
           {savings > 0 && !isOutOfStock && (
-            <div className="absolute bottom-2 left-2 z-10 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-[10px] px-2 py-0.5 rounded-md shadow-xs uppercase tracking-tight">
+            <div className="absolute bottom-2 left-2 z-10 bg-gradient-to-r from-[#39B54A] to-[#2EA03E] text-white font-black text-[10px] px-2 py-0.5 rounded-md shadow-xs uppercase tracking-tight">
               SAVE ₹{savings}
             </div>
           )}
@@ -148,11 +148,11 @@ export default function ProductCard({ product }: { product: ProductProps }) {
           
           <div className="space-y-1">
             {/* PRODUCT TITLE */}
-            <h3 className="font-extrabold text-[#142B27] text-sm sm:text-[15px] leading-snug tracking-tight line-clamp-1 group-hover:text-[#079669] transition-colors capitalize">
+            <h3 className="font-extrabold text-[#142B27] text-sm sm:text-[15px] leading-snug tracking-tight line-clamp-1 group-hover:text-[#39B54A] transition-colors capitalize">
               {product.name}
             </h3>
 
-            {/* RATING & DELIVERY TIME (Swiggy / Zomato style line) */}
+            {/* RATING & DELIVERY TIME (Matching Brand Color) */}
             <div className="flex items-center gap-1.5 text-[11px] sm:text-xs">
               <div className="flex items-center gap-0.5 bg-amber-50 text-amber-700 font-bold px-1.5 py-0.2 rounded border border-amber-200/60">
                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
@@ -161,7 +161,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
               </div>
               <span className="text-slate-300">•</span>
               <div className="flex items-center gap-1 text-[#758681] font-semibold text-[11px]">
-                <Clock className="w-3 h-3 text-[#079669]" />
+                <Clock className="w-3 h-3 text-[#39B54A]" />
                 <span>20-35 MINS</span>
               </div>
             </div>
@@ -171,22 +171,22 @@ export default function ProductCard({ product }: { product: ProductProps }) {
               <span className="truncate">{product.category} • Chemical Free</span>
               <span className="text-slate-300">•</span>
               <span className="shrink-0 flex items-center gap-0.5 text-slate-500">
-                <MapPin className="w-2.5 h-2.5 text-[#079669]" />
+                <MapPin className="w-2.5 h-2.5 text-[#39B54A]" />
                 {branchName}
               </span>
             </div>
           </div>
 
-          {/* WEIGHT SELECTOR PILLS */}
-          <div className="flex items-center justify-between gap-1 bg-[#F4F8F6] border border-[#E2ECE7] rounded-xl p-1">
+          {/* WEIGHT SELECTOR PILLS (GLASSY MATCHING LOGO GREEN) */}
+          <div className="flex items-center justify-between gap-1 bg-white/60 backdrop-blur-md border border-[#39B54A]/20 rounded-xl p-1">
             <div className="flex items-center gap-1 min-w-0 pl-1">
-              <Package className="w-3 h-3 text-[#079669] shrink-0" />
+              <Package className="w-3 h-3 text-[#39B54A] shrink-0" />
               <span className="text-[11px] font-bold text-[#142B27] truncate">
                 {selectedWeight === 0.5 ? '500g Pack' : '1kg Pack'}
               </span>
             </div>
 
-            <div className="flex items-center gap-1 shrink-0 bg-white p-0.5 rounded-lg border border-[#E2ECE7]">
+            <div className="flex items-center gap-1 shrink-0 bg-white/90 p-0.5 rounded-lg border border-slate-200/60">
               {[0.5, 1.0].map((w) => (
                 <button
                   key={w}
@@ -198,7 +198,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                   }}
                   className={`px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-extrabold transition-all cursor-pointer ${
                     selectedWeight === w
-                      ? 'bg-[#079669] text-white shadow-2xs'
+                      ? 'bg-[#39B54A] text-white shadow-xs'
                       : 'text-[#758681] hover:text-[#142B27]'
                   }`}
                 >
@@ -209,7 +209,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
           </div>
 
           {/* PRICE & ADD TO CART ROW */}
-          <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#F0F5F3]">
+          <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
             
             {/* Left: Prices */}
             <div className="flex flex-col min-w-0">
@@ -237,12 +237,12 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                       e.preventDefault()
                       e.stopPropagation()
                     }}
-                    className="flex items-center gap-1 bg-white text-[#079669] border border-[#079669] rounded-full px-2 py-0.5 shadow-2xs h-[34px]"
+                    className="flex items-center gap-1 bg-white text-[#39B54A] border border-[#39B54A] rounded-full px-2 py-0.5 shadow-2xs h-[34px]"
                   >
                     <button
                       type="button"
                       onClick={(e) => handleQtyChange(e, -1)}
-                      className="w-5 h-5 rounded-full bg-slate-100 hover:bg-[#079669]/10 flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+                      className="w-5 h-5 rounded-full bg-slate-100 hover:bg-[#39B54A]/10 flex items-center justify-center transition-colors cursor-pointer active:scale-95"
                     >
                       <Minus className="w-3 h-3 text-[#142B27] stroke-[3]" />
                     </button>
@@ -252,7 +252,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                     <button
                       type="button"
                       onClick={(e) => handleQtyChange(e, 1)}
-                      className="w-5 h-5 rounded-full bg-[#079669] hover:bg-[#057a55] flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+                      className="w-5 h-5 rounded-full bg-[#39B54A] hover:bg-[#2EA03E] flex items-center justify-center transition-colors cursor-pointer active:scale-95"
                     >
                       <Plus className="w-3 h-3 text-white stroke-[3]" />
                     </button>
@@ -261,7 +261,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                   <button
                     type="button"
                     onClick={handleInitialAdd}
-                    className="bg-[#079669] hover:bg-[#057a55] text-white font-extrabold text-xs px-3.5 py-1.5 h-[34px] rounded-full shadow-xs flex items-center gap-1 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                    className="bg-[#39B54A] hover:bg-[#2EA03E] text-white font-extrabold text-xs px-3.5 py-1.5 h-[34px] rounded-full shadow-md shadow-[#39B54A]/25 flex items-center gap-1 transition-all cursor-pointer hover:scale-105 active:scale-95"
                   >
                     <Plus className="w-3.5 h-3.5 stroke-[3]" />
                     <span>ADD</span>
