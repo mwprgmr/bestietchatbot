@@ -2,25 +2,23 @@
 
 import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { MessageSquare, PhoneCall, QrCode, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react'
+import { QrCode, Fish, ShoppingBag, Sprout, Apple } from 'lucide-react'
 
 export interface AppPosterSettings {
-  badge_text: string
   title: string
   subtitle: string
-  whatsapp_number: string
-  whatsapp_message: string
+  play_store_url: string
+  app_store_url: string
   qr_code_url: string
   active: boolean
 }
 
 const DEFAULT_SETTINGS: AppPosterSettings = {
-  badge_text: 'Bestiet Fresh WhatsApp Bot',
-  title: 'Get Fresh Seafood & Meat on WhatsApp!',
-  subtitle: 'For daily fresh catches, 30-minute doorstep delivery & exclusive discounts curated specially for you in Trivandrum.',
-  whatsapp_number: '919876543210',
-  whatsapp_message: 'Hi Bestiet Fresh, I want to view today fresh catch menu!',
-  qr_code_url: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://wa.me/919876543210',
+  title: 'For a better experience, download the BestietFresh app now',
+  subtitle: 'Get daily fresh catches, 30-minute doorstep delivery & exclusive discounts.',
+  play_store_url: 'https://play.google.com/store',
+  app_store_url: 'https://apps.apple.com',
+  qr_code_url: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://bestietchatbot.vercel.app',
   active: true,
 }
 
@@ -39,11 +37,10 @@ export default function AppPromoPoster() {
 
         if (data && data.title) {
           setSettings({
-            badge_text: data.badge_text || DEFAULT_SETTINGS.badge_text,
             title: data.title || DEFAULT_SETTINGS.title,
             subtitle: data.subtitle || DEFAULT_SETTINGS.subtitle,
-            whatsapp_number: data.whatsapp_number || DEFAULT_SETTINGS.whatsapp_number,
-            whatsapp_message: data.whatsapp_message || DEFAULT_SETTINGS.whatsapp_message,
+            play_store_url: data.cta_link || DEFAULT_SETTINGS.play_store_url,
+            app_store_url: data.whatsapp_number ? `https://${data.whatsapp_number}` : DEFAULT_SETTINGS.app_store_url,
             qr_code_url: data.qr_code_url || data.image_url || DEFAULT_SETTINGS.qr_code_url,
             active: data.active ?? true,
           })
@@ -55,122 +52,141 @@ export default function AppPromoPoster() {
 
   if (!settings.active) return null
 
-  const whatsappUrl = `https://wa.me/${settings.whatsapp_number}?text=${encodeURIComponent(settings.whatsapp_message)}`
-
   return (
     <section className="my-8 sm:my-12">
-      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950 text-white shadow-xl border border-slate-800/80 p-6 sm:p-10">
-        {/* Background Subtle Glows */}
-        <div className="absolute top-0 right-1/4 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Left Column: Offer Details & Copy */}
-          <div className="lg:col-span-7 space-y-4 text-left">
-            {/* Logo Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold shadow-xs backdrop-blur-md">
-              <span className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-slate-950 font-black text-[10px]">
+      <div className="relative rounded-[28px] sm:rounded-[36px] overflow-hidden bg-[#F2F4F8] border border-slate-200/80 p-6 sm:p-10 lg:p-12 shadow-sm">
+        
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          
+          {/* Left Side: Logo, Title & App Store Badges */}
+          <div className="lg:col-span-7 space-y-6 text-left">
+            
+            {/* Logo Brand Header */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#39B54A] flex items-center justify-center text-white shadow-sm font-black text-xl">
                 🐟
-              </span>
-              <span>{settings.badge_text}</span>
+              </div>
+              <div className="text-2xl sm:text-3xl font-black tracking-tight leading-none">
+                <span className="text-[#0F172A]">Bestiet </span>
+                <span className="text-[#39B54A]">Fresh</span>
+              </div>
             </div>
 
-            {/* Main Headline */}
-            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
+            {/* Headline Title */}
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#1E293B] tracking-tight leading-snug max-w-xl">
               {settings.title}
             </h2>
 
-            {/* Subtitle */}
-            <p className="text-slate-300 text-xs sm:text-base font-medium leading-relaxed max-w-xl">
+            {/* Subtitle / Description */}
+            <p className="text-slate-500 text-xs sm:text-sm font-medium leading-relaxed max-w-md">
               {settings.subtitle}
             </p>
 
-            {/* Feature Bullets */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-200 bg-white/5 border border-white/10 px-3 py-2 rounded-xl backdrop-blur-xs">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Express 30-Min Delivery</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-200 bg-white/5 border border-white/10 px-3 py-2 rounded-xl backdrop-blur-xs">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>100% Chemical Free</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-200 bg-white/5 border border-white/10 px-3 py-2 rounded-xl backdrop-blur-xs">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Instant 1-Click Order</span>
-              </div>
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-wrap items-center gap-3 pt-3">
+            {/* App Store Badges (Google Play & Apple App Store) */}
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 pt-2">
+              
+              {/* Google Play Store Badge */}
               <a
-                href={whatsappUrl}
+                href={settings.play_store_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm tracking-wide shadow-lg shadow-emerald-500/25 transition-all active:scale-95 group cursor-pointer"
+                className="bg-black hover:bg-slate-900 text-white px-5 py-3 rounded-2xl flex items-center gap-3 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer group"
               >
-                <MessageSquare className="w-4 h-4 fill-slate-950 text-slate-950" />
-                <span>ORDER ON WHATSAPP NOW</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                {/* Google Play Tri-color SVG Icon */}
+                <svg className="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="none">
+                  <path d="M3.6 1.8A1.8 1.8 0 0 0 3 3.1v17.8a1.8 1.8 0 0 0 .6 1.3l.1.1 10-10v-.3l-10-10z" fill="#00D2FF"/>
+                  <path d="M17.4 15.9l-3.7-3.7v-.3l3.7-3.7.1.1 4.4 2.5c1.3.7 1.3 1.9 0 2.6l-4.5 2.5z" fill="#FFD700"/>
+                  <path d="M13.7 12.2L3.6 22.3c.4.4 1.1.5 1.8.1l12-6.8-3.7-3.4z" fill="#FF3A44"/>
+                  <path d="M13.7 11.8l3.7-3.4L5.4 1.6C4.7 1.2 4 1.3 3.6 1.7l10.1 10.1z" fill="#00E676"/>
+                </svg>
+                <div className="text-left">
+                  <p className="text-[9px] uppercase font-bold tracking-wider text-slate-300 leading-none">
+                    GET IT ON
+                  </p>
+
+                  <p className="text-sm sm:text-base font-extrabold text-white leading-tight font-sans">
+                    Google Play
+                  </p>
+                </div>
               </a>
 
+              {/* Apple App Store Badge */}
               <a
-                href="tel:+919876543210"
-                className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/15 transition-all cursor-pointer backdrop-blur-md"
+                href={settings.app_store_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-black hover:bg-slate-900 text-white px-5 py-3 rounded-2xl flex items-center gap-3 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer group"
               >
-                <PhoneCall className="w-4 h-4 text-emerald-400" />
-                <span>CALL STORE</span>
+                {/* Apple SVG Icon */}
+                <svg className="w-6 h-6 shrink-0 fill-current text-white" viewBox="0 0 24 24">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.34c.67-.82 1.13-1.96.99-3.1-.97.04-2.17.65-2.87 1.47-.63.73-1.18 1.9-.1 3.02 1.08.08 2.21-.57 2.98-1.39z"/>
+                </svg>
+                <div className="text-left">
+                  <p className="text-[9px] font-medium tracking-wider text-slate-300 leading-none">
+                    Available on the
+                  </p>
+                  <p className="text-sm sm:text-base font-extrabold text-white leading-tight font-sans">
+                    App Store
+                  </p>
+                </div>
               </a>
+
             </div>
+
           </div>
 
-          {/* Right Column: Phone Mockup & Floating QR Banner */}
-          <div className="lg:col-span-5 flex justify-center lg:justify-end relative">
-            {/* Device Container */}
-            <div className="relative w-64 sm:w-72 bg-slate-950 border-4 border-slate-700/80 rounded-[40px] p-4 shadow-2xl shadow-emerald-950/50 backdrop-blur-xl group hover:border-emerald-500/50 transition-all">
-              {/* Device Dynamic Island */}
-              <div className="w-20 h-4 bg-slate-800 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <div className="w-2.5 h-2.5 rounded-full bg-slate-950 border border-slate-700" />
-              </div>
+          {/* Right Side: Smartphone Mockup with QR & Floating Green Line Art Icons */}
+          <div className="lg:col-span-5 flex justify-center lg:justify-end relative py-4">
+            
+            {/* Phone Container */}
+            <div className="relative w-56 sm:w-64 bg-white rounded-[36px] p-4 border-4 border-slate-200/80 shadow-xl text-center space-y-3 z-10">
+              
+              {/* Phone Speaker Notch */}
+              <div className="w-16 h-3.5 bg-slate-100 rounded-full mx-auto" />
 
-              {/* QR Screen */}
-              <div className="bg-white rounded-3xl p-5 text-center space-y-3 shadow-inner">
-                <div className="p-2 bg-slate-50 rounded-2xl border border-slate-200 inline-block shadow-2xs">
+              {/* QR Screen Box */}
+              <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100 space-y-2">
+                <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs inline-block">
                   <img
                     src={settings.qr_code_url}
-                    alt="Scan QR Code to Order on WhatsApp"
-                    className="w-36 h-36 sm:w-40 sm:h-40 mx-auto object-contain"
+                    alt="Scan QR Code to download BestietFresh app"
+                    className="w-32 h-32 sm:w-36 sm:h-36 mx-auto object-contain"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <p className="text-emerald-600 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1">
-                    <QrCode className="w-3.5 h-3.5" />
-                    <span>Scan to download / chat</span>
-                  </p>
-                  <p className="text-slate-500 text-[10px] font-semibold">
-                    Camera scan opens WhatsApp instant chatbot
-                  </p>
-                </div>
+                <p className="text-xs font-semibold text-slate-600 tracking-tight pt-1">
+                  Scan to download
+                </p>
               </div>
 
-              {/* Floating Food Badge Left */}
-              <div className="absolute -left-6 top-1/3 bg-slate-900/90 border border-slate-700 text-white p-2.5 rounded-2xl shadow-xl backdrop-blur-md flex items-center gap-2 animate-float">
-                <span className="text-lg">🐟</span>
-                <div>
-                  <p className="text-[10px] font-black text-emerald-400">Fresh Catch</p>
-                  <p className="text-[9px] text-slate-300 font-medium">Daily Direct</p>
-                </div>
-              </div>
-
-              {/* Floating Badge Right */}
-              <div className="absolute -right-6 bottom-12 bg-emerald-500 text-slate-950 p-2.5 rounded-2xl shadow-xl font-black text-[11px] flex items-center gap-1.5 animate-pulse-slow">
-                <Sparkles className="w-4 h-4 fill-slate-950" />
-                <span>Instant 1-Click</span>
-              </div>
             </div>
+
+            {/* Floating Green Line Art Icons (Matching Reference Image) */}
+            
+            {/* Top Left: Apple Icon */}
+            <div className="absolute top-2 left-4 sm:left-8 bg-white border border-emerald-100 p-2.5 rounded-2xl shadow-sm text-[#39B54A] animate-float z-20">
+              <Apple className="w-6 h-6 stroke-[1.75]" />
+            </div>
+
+            {/* Top Right: Shopping Basket Icon */}
+            <div className="absolute top-4 right-2 sm:right-4 bg-white border border-emerald-100 p-2.5 rounded-2xl shadow-sm text-[#39B54A] animate-float z-20">
+              <ShoppingBag className="w-6 h-6 stroke-[1.75]" />
+            </div>
+
+            {/* Middle Right: Fish Icon */}
+            <div className="absolute top-1/2 -translate-y-1/2 -right-4 sm:-right-6 bg-white border border-emerald-100 p-2.5 rounded-2xl shadow-sm text-[#39B54A] animate-pulse-slow z-20">
+              <Fish className="w-6 h-6 stroke-[1.75]" />
+            </div>
+
+            {/* Bottom Left: Plant / Sprout Icon */}
+            <div className="absolute bottom-6 left-2 sm:left-6 bg-white border border-emerald-100 p-2.5 rounded-2xl shadow-sm text-[#39B54A] animate-float z-20">
+              <Sprout className="w-6 h-6 stroke-[1.75]" />
+            </div>
+
           </div>
+
         </div>
+
       </div>
     </section>
   )
