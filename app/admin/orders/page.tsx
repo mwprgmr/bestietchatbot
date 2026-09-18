@@ -58,7 +58,7 @@ export default function OrdersPage() {
 
   const getProductName = (i: any) => {
     const rawName = i.product?.name || i.product_name || (i.product_id ? productsMap[i.product_id] : '') || ''
-    if (!rawName) return 'Fresh Item'
+    if (!rawName) return 'Ayala'
     return rawName.replace(/\b[a-z]/g, (l: string) => l.toUpperCase())
   }
 
@@ -253,12 +253,27 @@ export default function OrdersPage() {
     setLoading(true)
     setQueryError(null)
     try {
-      const { data: prods } = await supabase.from('products').select('id, name')
-      if (prods && Array.isArray(prods)) {
-        const pMap: Record<string, string> = {}
-        prods.forEach((p: any) => { pMap[p.id] = p.name })
-        setProductsMap(pMap)
+      let prodsMapObj: Record<string, string> = {}
+      try {
+        const res = await fetch('/api/products')
+        const json = await res.json()
+        if (json.success && Array.isArray(json.products)) {
+          json.products.forEach((p: any) => {
+            if (p.id && p.name) prodsMapObj[p.id] = p.name
+          })
+        }
+      } catch (e) {
+        console.warn('API products fetch fallback:', e)
       }
+
+      if (Object.keys(prodsMapObj).length === 0) {
+        const { data: prods } = await supabase.from('products').select('id, name')
+        if (prods && Array.isArray(prods)) {
+          prods.forEach((p: any) => { prodsMapObj[p.id] = p.name })
+        }
+      }
+
+      setProductsMap(prodsMapObj)
 
       let query = supabase
         .from('orders')
