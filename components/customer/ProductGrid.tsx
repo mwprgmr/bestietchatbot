@@ -1,14 +1,99 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useCustomer } from '@/lib/context/CustomerContext'
 import ProductCard, { ProductProps } from './ProductCard'
 import AppPromoPoster from './AppPromoPoster'
-import FlashSale from './FlashSale'
-import { ArrowRight, Sparkles, AlertCircle } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { ProductGridSkeleton } from '@/components/ui/Skeleton'
+
+// Helper component for Horizontal Section Slider
+function ProductSectionSlider({
+  subtitle,
+  title,
+  viewAllHref,
+  viewAllLabel = 'VIEW ALL',
+  products,
+}: {
+  subtitle: string
+  title: string
+  viewAllHref: string
+  viewAllLabel?: string
+  products: ProductProps[]
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = direction === 'left' ? -360 : 360
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+    }
+  }
+
+  if (!products || products.length === 0) return null
+
+  return (
+    <section className="space-y-3 sm:space-y-4">
+      {/* Header with Title & Left/Right Slider Controls */}
+      <div className="flex items-end justify-between pb-2 border-b border-[#E2ECE7]">
+        <div>
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#39B54A]">
+            {subtitle}
+          </span>
+          <h2 className="text-lg sm:text-xl md:text-2xl font-black text-[#0F172A] tracking-tight">
+            {title}
+          </h2>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Link
+            href={viewAllHref}
+            className="text-xs font-bold text-[#39B54A] hover:text-[#2EA03E] flex items-center gap-1 group"
+          >
+            <span>{viewAllLabel}</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+          </Link>
+
+          <div className="hidden sm:flex items-center gap-1.5 pl-2 border-l border-slate-200">
+            <button
+              type="button"
+              onClick={() => scroll('left')}
+              className="w-8 h-8 rounded-full bg-white border border-[#E2ECE7] hover:border-[#39B54A] text-slate-700 hover:text-[#39B54A] flex items-center justify-center shadow-2xs transition-all active:scale-95 cursor-pointer"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scroll('right')}
+              className="w-8 h-8 rounded-full bg-white border border-[#E2ECE7] hover:border-[#39B54A] text-slate-700 hover:text-[#39B54A] flex items-center justify-center shadow-2xs transition-all active:scale-95 cursor-pointer"
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* HORIZONTAL SCROLL SLIDER CONTAINER */}
+      <div
+        ref={scrollRef}
+        className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory py-1 scroll-smooth"
+      >
+        {products.map((p) => (
+          <div
+            key={p.id}
+            className="w-[270px] sm:w-[330px] md:w-[370px] shrink-0 snap-start"
+          >
+            <ProductCard product={p} />
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
 
 export default function ProductGrid() {
   const { selectedBranch } = useCustomer()
@@ -22,7 +107,6 @@ export default function ProductGrid() {
       setError(null)
       try {
         const supabase = createClient()
-        const today = new Date().toISOString().split('T')[0]
 
         // Fetch products
         const { data: rawProducts, error: pErr } = await supabase
@@ -44,7 +128,6 @@ export default function ProductGrid() {
 
         // Map product with stock and branch price
         const mapped: ProductProps[] = (rawProducts || []).map((p) => {
-          // Find matching branch inventory record
           const invMatch = (rawInventory || []).find((i) => i.product_id === p.id)
           const price = invMatch?.price_per_kg ? Number(invMatch.price_per_kg) : (p.price_per_kg || 450)
           const stock = invMatch?.available_stock !== undefined ? Math.max(0, Number(invMatch.available_stock)) : 0
@@ -102,160 +185,61 @@ export default function ProductGrid() {
   }
 
   // Filter category lists
-  const freshPicks = products.slice(0, 4)
+  const freshPicks = products.slice(0, 8)
   const fishProducts = products.filter((p) => p.category.toLowerCase().includes('fish'))
   const chickenProducts = products.filter((p) => p.category.toLowerCase().includes('chicken'))
   const muttonProducts = products.filter((p) => p.category.toLowerCase().includes('mutton'))
-  const seafoodProducts = products.filter((p) => p.category.toLowerCase().includes('seafood') || p.category.toLowerCase().includes('specialty'))
   const comboProducts = products.filter((p) => p.category.toLowerCase().includes('combo') || p.category.toLowerCase().includes('ready'))
 
   return (
     <div className="space-y-12">
-      {/* 1. TODAY'S FRESH PICKS */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#39B54A]">
-              Selected for You Today
-            </span>
-            <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight">
-              TODAY'S FRESH PICKS
-            </h2>
-          </div>
-          <Link
-            href="/category/fish"
-            className="text-xs font-bold text-[#39B54A] hover:text-[#2EA03E] flex items-center gap-1 group"
-          >
-            <span>VIEW ALL</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {freshPicks.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      </section>
+      {/* 1. TODAY'S FRESH PICKS SLIDER */}
+      <ProductSectionSlider
+        subtitle="Selected for You Today"
+        title="TODAY'S FRESH PICKS"
+        viewAllHref="/category/fish"
+        products={freshPicks}
+      />
 
       {/* 2. APP & WHATSAPP PROMOTIONAL POSTER BANNER */}
       <AppPromoPoster />
 
-      {/* 3. FISH & SEAFOOD SECTION */}
-      {fishProducts.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#39B54A]">
-                Ocean & Backwater Catch
-              </span>
-              <h2 className="text-lg sm:text-xl font-black text-[#0F172A]">
-                FRESH FISH & SEAFOOD
-              </h2>
-            </div>
-            <Link
-              href="/category/fish"
-              className="text-xs font-bold text-[#39B54A] hover:text-[#2EA03E] flex items-center gap-1"
-            >
-              <span>Explore Fish ({fishProducts.length})</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+      {/* 3. FRESH FISH & SEAFOOD SLIDER */}
+      <ProductSectionSlider
+        subtitle="Ocean & Backwater Catch"
+        title="FRESH FISH & SEAFOOD"
+        viewAllHref="/category/fish"
+        viewAllLabel={`Explore Fish (${fishProducts.length})`}
+        products={fishProducts}
+      />
 
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {fishProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </section>
-      )}
+      {/* 4. FRESH CHICKEN SLIDER */}
+      <ProductSectionSlider
+        subtitle="Antibiotic-Free Farm Fresh"
+        title="FRESH TENDER CHICKEN"
+        viewAllHref="/category/chicken"
+        viewAllLabel={`Explore Chicken (${chickenProducts.length})`}
+        products={chickenProducts}
+      />
 
-      {/* 4. FRESH CHICKEN SECTION */}
-      {chickenProducts.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#39B54A]">
-                Antibiotic-Free Farm Fresh
-              </span>
-              <h2 className="text-lg sm:text-xl font-black text-[#0F172A]">
-                FRESH TENDER CHICKEN
-              </h2>
-            </div>
-            <Link
-              href="/category/chicken"
-              className="text-xs font-bold text-[#39B54A] hover:text-[#2EA03E] flex items-center gap-1"
-            >
-              <span>Explore Chicken ({chickenProducts.length})</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+      {/* 5. TENDER KERALA MUTTON SLIDER */}
+      <ProductSectionSlider
+        subtitle="Pasture Raised Goat Meat"
+        title="TENDER KERALA MUTTON"
+        viewAllHref="/category/mutton"
+        viewAllLabel={`Explore Mutton (${muttonProducts.length})`}
+        products={muttonProducts}
+      />
 
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {chickenProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 5. TENDER MUTTON SECTION */}
-      {muttonProducts.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#39B54A]">
-                Pasture Raised Goat Meat
-              </span>
-              <h2 className="text-lg sm:text-xl font-black text-[#0F172A]">
-                TENDER KERALA MUTTON
-              </h2>
-            </div>
-            <Link
-              href="/category/mutton"
-              className="text-xs font-bold text-[#39B54A] hover:text-[#2EA03E] flex items-center gap-1"
-            >
-              <span>Explore Mutton ({muttonProducts.length})</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {muttonProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 6. COMBOS & READY TO COOK */}
-      {comboProducts.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#39B54A]">
-                Marinated & Special Value
-              </span>
-              <h2 className="text-lg sm:text-xl font-black text-[#0F172A]">
-                COMBOS & READY TO COOK
-              </h2>
-            </div>
-            <Link
-              href="/category/combos"
-              className="text-xs font-bold text-[#39B54A] hover:text-[#2EA03E] flex items-center gap-1"
-            >
-              <span>Explore Combos ({comboProducts.length})</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {comboProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </section>
-      )}
+      {/* 6. COMBOS & READY TO COOK SLIDER */}
+      <ProductSectionSlider
+        subtitle="Marinated & Special Value"
+        title="COMBOS & READY TO COOK"
+        viewAllHref="/category/combos"
+        viewAllLabel={`Explore Combos (${comboProducts.length})`}
+        products={comboProducts}
+      />
     </div>
   )
 }
+
