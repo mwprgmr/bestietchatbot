@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import StorefrontLayout from '@/components/customer/StorefrontLayout'
 import { ShoppingBag, Truck, Clock, ArrowRight, MessageSquare, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react'
+import { OrderRowSkeleton } from '@/components/ui/Skeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState<any[]>([])
@@ -90,22 +92,20 @@ export default function MyOrdersPage() {
         </div>
 
         {loading ? (
-          <div className="py-16 text-center space-y-3">
-            <div className="w-8 h-8 border-4 border-[#39B54A] border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs font-bold text-[#0F172A]/70 uppercase">Loading order details...</p>
+          <div className="space-y-4">
+            <OrderRowSkeleton />
+            <OrderRowSkeleton />
+            <OrderRowSkeleton />
           </div>
         ) : orders.length === 0 ? (
-          <div className="p-12 text-center bg-[#FFFFFF] rounded-3xl border border-[#E2E8F0] text-[#0F172A]/70 space-y-3 max-w-md mx-auto">
-            <ShoppingBag className="w-10 h-10 mx-auto text-[#39B54A]" />
-            <h2 className="text-base font-extrabold text-[#0F172A]">No Orders Found</h2>
-            <p className="text-xs">Once you place an order for fresh fish or meat, it will appear here live.</p>
-            <Link
-              href="/"
-              className="inline-block px-5 py-2.5 bg-[#39B54A] hover:bg-[#2EA03E] text-white font-extrabold text-xs rounded-xl shadow-md"
-            >
-              BROWSE STOREFRONT
-            </Link>
-          </div>
+          <EmptyState
+            icon={ShoppingBag}
+            title="No Orders Found"
+            description="You haven't placed any fresh catch orders yet. Start shopping fresh today!"
+            actionLabel="START SHOPPING"
+            actionHref="/"
+            className="my-10 max-w-md mx-auto"
+          />
         ) : (
           <div className="space-y-8">
             {/* 1. ACTIVE / ONGOING ORDERS SECTION */}

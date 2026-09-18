@@ -74,17 +74,17 @@ export default function ProductCard({ product }: { product: ProductProps }) {
   }
 
   return (
-    <div className="group flex flex-col justify-between animate-fade-in-up">
-      <Link href={`/product/${product.id}`} className="block relative">
-        {/* 1. PRODUCT IMAGE CONTAINER (Boxy design) */}
-        <div className="relative aspect-[4/3] h-44 sm:h-52 w-full bg-[#F1F5F9] rounded-none overflow-hidden border border-[#E2E8F0] shadow-xs">
+    <div className="group flex flex-col justify-between bg-white border border-slate-100 hover:border-[#39B54A]/30 rounded-2xl p-2.5 sm:p-3 shadow-xs hover-lift transition-all animate-fade-in-up h-full">
+      <Link href={`/product/${product.id}`} className="flex flex-col justify-between h-full">
+        {/* 1. PRODUCT IMAGE CONTAINER */}
+        <div className="relative aspect-[4/3] w-full bg-slate-100 rounded-xl overflow-hidden shadow-2xs">
           <img
             src={imageSrc}
             alt={product.name}
             onError={(e) => {
               ;(e.currentTarget as HTMLImageElement).src = '/logo.png'
             }}
-            className={`w-full h-full object-cover object-center ${
+            className={`w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105 ${
               isOutOfStock ? 'grayscale opacity-60' : ''
             }`}
             loading="lazy"
@@ -92,19 +92,19 @@ export default function ProductCard({ product }: { product: ProductProps }) {
 
           {/* Inventory Stock Badge (Kg Left) */}
           {!isOutOfStock ? (
-            <span className="absolute top-2 left-2 z-10 bg-[#39B54A] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-none shadow-xs">
+            <span className="absolute top-2 left-2 z-10 bg-[#39B54A] text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs">
               {product.available_stock} kg left
             </span>
           ) : (
-            <span className="absolute top-2 left-2 z-10 bg-red-600 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-none shadow-xs">
-              0 kg left
+            <span className="absolute top-2 left-2 z-10 bg-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-xs">
+              Sold Out
             </span>
           )}
 
           {/* Out of stock Overlay */}
           {isOutOfStock && (
-            <div className="absolute inset-0 bg-[#0F172A]/60 backdrop-blur-[1px] flex items-center justify-center z-10">
-              <span className="bg-red-600 text-white text-[10px] font-extrabold px-3 py-1 rounded-none uppercase tracking-wider">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[1px] flex items-center justify-center z-10">
+              <span className="bg-rose-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
                 Out of Stock
               </span>
             </div>
@@ -119,22 +119,22 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                     e.preventDefault()
                     e.stopPropagation()
                   }}
-                  className="flex items-center gap-1.5 bg-white text-[#39B54A] border-2 border-[#39B54A] rounded-none px-2 py-1 shadow-lg"
+                  className="flex items-center gap-1.5 bg-white text-[#39B54A] border-2 border-[#39B54A] rounded-xl px-2 py-1 shadow-md animate-scale-up"
                 >
                   <button
                     type="button"
                     onClick={(e) => handleQtyChange(e, -1)}
-                    className="w-5 h-5 rounded-none bg-[#F1F5F9] hover:bg-[#39B54A]/20 flex items-center justify-center transition-colors cursor-pointer"
+                    className="w-5 h-5 rounded-lg bg-slate-100 hover:bg-[#39B54A]/20 flex items-center justify-center transition-colors cursor-pointer active:scale-95"
                   >
-                    <Minus className="w-3 h-3 text-[#0F172A] stroke-[3]" />
+                    <Minus className="w-3 h-3 text-slate-800 stroke-[3]" />
                   </button>
-                  <span className="text-xs font-black px-1 min-w-4 text-center text-[#0F172A]">
+                  <span className="text-xs font-black px-1 min-w-4 text-center text-slate-900">
                     {currentPackQty}
                   </span>
                   <button
                     type="button"
                     onClick={(e) => handleQtyChange(e, 1)}
-                    className="w-5 h-5 rounded-none bg-[#39B54A] hover:bg-[#2EA03E] flex items-center justify-center transition-colors cursor-pointer"
+                    className="w-5 h-5 rounded-lg bg-[#39B54A] hover:bg-[#2ea03e] flex items-center justify-center transition-colors cursor-pointer active:scale-95"
                   >
                     <Plus className="w-3 h-3 text-white stroke-[3]" />
                   </button>
@@ -143,7 +143,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                 <button
                   type="button"
                   onClick={handleInitialAdd}
-                  className="bg-white hover:bg-[#F8FAF8] border-2 border-[#39B54A] text-[#39B54A] font-black text-xs md:text-sm px-3.5 sm:px-4 py-1.5 rounded-none shadow-md transition-colors cursor-pointer uppercase tracking-wider"
+                  className="bg-white hover:bg-[#39B54A] border-2 border-[#39B54A] text-[#39B54A] hover:text-white font-black text-xs px-3.5 py-1.5 rounded-xl shadow-md transition-all cursor-pointer uppercase tracking-wider active:scale-95"
                 >
                   ADD
                 </button>
@@ -153,66 +153,70 @@ export default function ProductCard({ product }: { product: ProductProps }) {
         </div>
 
         {/* 2. CARD CONTENT BELOW IMAGE */}
-        <div className="mt-2.5 space-y-1">
-          {/* PRICE ROW: Sage Solid Badge + Strikethrough Price */}
-          <div className="flex items-center gap-2">
-            <span className="bg-[#39B54A] text-white text-base md:text-lg font-black px-2.5 py-0.5 rounded-none shadow-2xs">
-              ₹{itemPrice}
-            </span>
-            {originalPrice > itemPrice && (
-              <span className="text-[#0F172A]/60 font-bold text-xs md:text-sm line-through">
-                ₹{originalPrice}
+        <div className="mt-2.5 space-y-1.5 flex flex-col justify-between flex-1">
+          <div>
+            {/* PRICE ROW */}
+            <div className="flex items-center gap-2">
+              <span className="bg-[#39B54A] text-white text-sm sm:text-base font-black px-2.5 py-0.5 rounded-lg shadow-2xs">
+                ₹{itemPrice}
               </span>
+              {originalPrice > itemPrice && (
+                <span className="text-slate-400 font-bold text-xs line-through">
+                  ₹{originalPrice}
+                </span>
+              )}
+            </div>
+
+            {/* SAVINGS TAG */}
+            {savings > 0 && (
+              <div className="flex items-center gap-1.5 pt-0.5">
+                <span className="text-[#39B54A] font-extrabold text-[11px] tracking-tight">
+                  Save ₹{savings}
+                </span>
+                <div className="flex-1 border-b border-dashed border-slate-200"></div>
+              </div>
             )}
+
+            {/* PRODUCT TITLE */}
+            <h3 className="font-extrabold text-slate-900 text-xs sm:text-sm leading-snug line-clamp-2 group-hover:text-[#39B54A] transition-colors pt-1">
+              {product.name}
+            </h3>
           </div>
 
-          {/* SAVINGS TAG + DASHED DIVIDER LINE */}
-          {savings > 0 && (
-            <div className="flex items-center gap-1.5 pt-0.5">
-              <span className="text-[#39B54A] font-black text-xs tracking-tight">
-                ₹{savings} OFF
-              </span>
-              <div className="flex-1 border-b border-dashed border-[#E2E8F0]"></div>
+          <div>
+            {/* PACK SIZE / WEIGHT & QUICK WEIGHT TOGGLE */}
+            <div className="flex items-center justify-between gap-1 text-slate-500 text-[11px] font-semibold pt-1 border-t border-slate-50">
+              <span>{selectedWeight === 0.5 ? '500 g pack' : '1 kg pack'}</span>
+
+              {/* Quick Weight Selector */}
+              <div className="flex items-center gap-1">
+                {[0.5, 1.0].map((w) => (
+                  <button
+                    key={w}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setSelectedWeight(w)
+                    }}
+                    className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                      selectedWeight === w
+                        ? 'bg-[#39B54A] text-white'
+                        : 'bg-slate-100 text-slate-700 hover:bg-[#39B54A]/20'
+                    }`}
+                  >
+                    {w === 0.5 ? '500g' : '1kg'}
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
 
-          {/* PRODUCT TITLE */}
-          <h3 className="font-bold text-[#0F172A] text-sm md:text-base leading-snug line-clamp-2 group-hover:text-[#39B54A] transition-colors pt-1">
-            {product.name}
-          </h3>
-
-          {/* PACK SIZE / WEIGHT & QUICK WEIGHT TOGGLE */}
-          <div className="flex items-center justify-between gap-1 text-[#0F172A]/70 text-xs font-medium pt-0.5">
-            <span>1 pack ({selectedWeight === 0.5 ? '450 g' : '1 kg'})</span>
-
-            {/* Quick Weight Selector */}
-            <div className="flex items-center gap-1">
-              {[0.5, 1.0].map((w) => (
-                <button
-                  key={w}
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setSelectedWeight(w)
-                  }}
-                  className={`px-1.5 py-0.5 rounded-none text-[10px] font-bold transition-all ${
-                    selectedWeight === w
-                      ? 'bg-[#39B54A] text-white'
-                      : 'bg-[#F1F5F9] text-[#0F172A] hover:bg-[#39B54A]/20'
-                  }`}
-                >
-                  {w === 0.5 ? '450g' : '1kg'}
-                </button>
-              ))}
+            {/* RATING BADGE */}
+            <div className="flex items-center gap-1 text-[11px] pt-1">
+              <Star className="w-3.5 h-3.5 fill-[#39B54A] text-[#39B54A]" />
+              <span className="font-extrabold text-slate-900">{ratingScore}</span>
+              <span className="text-slate-400 font-medium">({reviewCount})</span>
             </div>
-          </div>
-
-          {/* RATING BADGE: Sage Star Icon + Score + Count */}
-          <div className="flex items-center gap-1 text-xs pt-1">
-            <Star className="w-3.5 h-3.5 fill-[#39B54A] text-[#39B54A]" />
-            <span className="font-bold text-[#0F172A]">{ratingScore}</span>
-            <span className="text-[#0F172A]/60 font-medium">({reviewCount})</span>
           </div>
         </div>
       </Link>

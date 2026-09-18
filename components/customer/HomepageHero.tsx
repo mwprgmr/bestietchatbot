@@ -95,11 +95,11 @@ export default function HomepageHero() {
 
   return (
     <div className="space-y-8 mb-10">
-      {/* Pure Image/Video Poster Slider (Boxy design) */}
+      {/* Pure Image/Video Poster Slider */}
       <div
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className="relative rounded-none overflow-hidden bg-[#0F172A] shadow-lg border border-[#E2E8F0] h-[220px] xs:h-[260px] sm:h-[360px] md:h-[460px] lg:h-[500px] w-full group transition-all"
+        className="relative rounded-3xl overflow-hidden bg-slate-900 shadow-md border border-slate-200/60 h-[220px] xs:h-[260px] sm:h-[360px] md:h-[460px] lg:h-[500px] w-full group transition-all"
       >
         <Link href={currentPoster.cta_link || '/category/fish'} className="block w-full h-full relative">
           {isVideo ? (
@@ -128,7 +128,7 @@ export default function HomepageHero() {
             <button
               type="button"
               onClick={prevSlide}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-none bg-[#0F172A]/60 hover:bg-[#0F172A]/90 text-white border border-white/20 transition-all opacity-80 group-hover:opacity-100 cursor-pointer"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-slate-900/60 hover:bg-slate-900/90 text-white backdrop-blur-md border border-white/20 transition-all opacity-80 group-hover:opacity-100 cursor-pointer active:scale-95"
               aria-label="Previous Poster"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -137,20 +137,20 @@ export default function HomepageHero() {
             <button
               type="button"
               onClick={nextSlide}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-none bg-[#0F172A]/60 hover:bg-[#0F172A]/90 text-white border border-white/20 transition-all opacity-80 group-hover:opacity-100 cursor-pointer"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-slate-900/60 hover:bg-slate-900/90 text-white backdrop-blur-md border border-white/20 transition-all opacity-80 group-hover:opacity-100 cursor-pointer active:scale-95"
               aria-label="Next Poster"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
 
             {/* Pagination Indicators */}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-[#0F172A]/70 px-3 py-1.5 rounded-none border border-white/10">
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-slate-900/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
               {posters.map((_, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => setCurrentIndex(idx)}
-                  className={`h-2 rounded-none transition-all cursor-pointer ${
+                  className={`h-2 rounded-full transition-all cursor-pointer ${
                     currentIndex === idx
                       ? 'w-6 bg-[#39B54A]'
                       : 'w-2 bg-white/50 hover:bg-white/80'

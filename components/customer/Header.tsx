@@ -29,14 +29,14 @@ export default function Header() {
   const clearSearch = () => setSearchQuery('')
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-[#E2E8F0] shadow-xs w-full max-w-full overflow-hidden">
-      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 py-2.5 sm:py-4">
+    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-2xs w-full max-w-full">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 py-2.5 sm:py-3.5">
         {/* Main Nav Row */}
         <div className="flex items-center justify-between gap-3 sm:gap-6 lg:gap-10">
           
           {/* 1. BRAND LOGO (Left on Mobile & Desktop) */}
-          <Link href="/" className="flex items-center shrink-0">
-            <img src="/logo-brand.png" alt="Bestiet Fresh Logo" className="h-8 sm:h-11 md:h-13 w-auto object-contain" />
+          <Link href="/" className="flex items-center shrink-0 group">
+            <img src="/logo-brand.png" alt="Bestiet Fresh Logo" className="h-8 sm:h-10 md:h-12 w-auto object-contain transition-transform group-hover:scale-105" />
           </Link>
 
           {/* 2. CENTER SEARCH BAR (Desktop Only) */}
@@ -46,15 +46,15 @@ export default function Header() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder='Search fresh fish, chicken, mutton, prawns...'
-                className="w-full pl-11 pr-10 py-3 sm:py-3.5 bg-[#F8FAF8] border border-[#E2E8F0] rounded-xl text-xs sm:text-sm font-semibold text-[#0F172A] placeholder-[#0F172A]/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/30 focus:border-[#39B54A] transition-all shadow-2xs"
+                placeholder="Search fresh fish, chicken, mutton, prawns..."
+                className="w-full pl-11 pr-10 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/25 focus:border-[#39B54A] transition-all shadow-2xs"
               />
-              <Search className="w-4.5 h-4.5 text-[#39B54A] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-[#39B54A] absolute left-3.5 top-1/2 -translate-y-1/2" />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={clearSearch}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#0F172A]/40 hover:text-[#0F172A] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -62,49 +62,51 @@ export default function Header() {
             </div>
           </form>
 
-          {/* 3. LOCATION SELECTOR (Right on Mobile, Center-Left on Desktop) */}
+          {/* 3. LOCATION SELECTOR */}
           <button
             onClick={() => setIsLocationOpen(true)}
-            className="flex items-center gap-1.5 sm:gap-2 text-left cursor-pointer px-2.5 sm:px-3.5 py-1.5 bg-[#F8FAF8] sm:bg-transparent rounded-full sm:rounded-none border sm:border-0 border-[#E2E8F0] sm:border-l shrink-0 max-w-[170px] sm:max-w-xs"
+            className="flex items-center gap-2 text-left cursor-pointer px-3 py-1.5 bg-slate-50 hover:bg-slate-100 sm:bg-slate-50/80 rounded-xl border border-slate-200 shrink-0 max-w-[170px] sm:max-w-xs transition-all active:scale-[0.98]"
           >
-            <Zap className="w-4 h-4 text-[#39B54A] fill-[#39B54A] shrink-0 hidden sm:block" />
-            <MapPin className="w-3.5 h-3.5 text-[#39B54A] shrink-0 sm:hidden" />
+            <div className="w-7 h-7 rounded-lg bg-[#39B54A]/10 flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4 text-[#39B54A] fill-[#39B54A] hidden sm:block" />
+              <MapPin className="w-4 h-4 text-[#39B54A] sm:hidden" />
+            </div>
             <div className="flex flex-col leading-tight min-w-0">
-              <span className="text-[10px] sm:text-xs font-black text-[#0F172A] uppercase hidden sm:block">
-                Delivery in 15-30 Mins*
+              <span className="text-[10px] font-black text-[#39B54A] uppercase tracking-wider hidden sm:block">
+                Express Delivery 15-30 Mins
               </span>
-              <span className="text-xs sm:text-sm font-bold text-[#0F172A] sm:text-[#0F172A]/70 truncate">
-                {deliveryAddress || selectedBranch?.name || 'Kazhakkoottam Branch'}
+              <span className="text-xs sm:text-sm font-bold text-slate-800 truncate">
+                {deliveryAddress || selectedBranch?.name || 'Select Location'}
               </span>
             </div>
-            <ChevronDown className="w-3.5 h-3.5 shrink-0 text-[#39B54A] ml-0.5" />
+            <ChevronDown className="w-3.5 h-3.5 shrink-0 text-slate-400 ml-0.5" />
           </button>
 
-          {/* 4. RIGHT USER & CART ACTIONS (Desktop Only - Hidden on Mobile as per request) */}
-          <div className="hidden md:flex items-center gap-5 sm:gap-7 shrink-0">
+          {/* 4. RIGHT USER & CART ACTIONS (Desktop) */}
+          <div className="hidden md:flex items-center gap-5 sm:gap-6 shrink-0">
             {/* Account Link */}
             <Link
               href="/orders"
-              className="flex flex-col items-center justify-center text-[#0F172A] hover:text-[#39B54A] transition-colors group"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:text-[#39B54A] hover:bg-slate-50 transition-all font-bold text-xs sm:text-sm"
             >
-              <User className="w-5 h-5 sm:w-6 sm:h-6" />
-              <span className="text-[10px] sm:text-xs font-extrabold mt-0.5">Account</span>
+              <User className="w-4.5 h-4.5" />
+              <span>Orders</span>
             </Link>
 
             {/* Cart Button */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="flex flex-col items-center justify-center text-[#0F172A] hover:text-[#39B54A] transition-colors relative group cursor-pointer"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#39B54A] hover:bg-[#2ea03e] text-white transition-all font-bold text-xs sm:text-sm shadow-xs cursor-pointer active:scale-[0.98]"
             >
               <div className="relative">
-                <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />
+                <ShoppingBag className="w-4.5 h-4.5" />
                 {totalItemCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 bg-[#39B54A] text-white text-[10px] font-extrabold w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white">
+                  <span className="absolute -top-2 -right-2 bg-white text-[#39B54A] text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-2xs">
                     {totalItemCount}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] sm:text-xs font-extrabold mt-0.5">Cart</span>
+              <span>Cart</span>
             </button>
           </div>
         </div>
@@ -116,15 +118,15 @@ export default function Header() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder='Search fresh fish, chicken, mutton...'
-              className="w-full pl-10 pr-9 py-2.5 sm:py-3 bg-[#F8FAF8] border border-[#E2E8F0] rounded-xl text-xs font-semibold text-[#0F172A] placeholder-[#0F172A]/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/30 focus:border-[#39B54A] transition-all shadow-2xs"
+              placeholder="Search fresh fish, chicken, mutton..."
+              className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/25 focus:border-[#39B54A] transition-all shadow-2xs"
             />
             <Search className="w-4 h-4 text-[#39B54A] absolute left-3 top-1/2 -translate-y-1/2" />
             {searchQuery && (
               <button
                 type="button"
                 onClick={clearSearch}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-[#0F172A]/40 hover:text-[#0F172A]"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700"
               >
                 <X className="w-3.5 h-3.5" />
               </button>

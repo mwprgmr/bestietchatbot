@@ -25,54 +25,20 @@ body {
   scroll-behavior: smooth !important;
 }
 
-/* Boxy Storefront Theme Override - Force sharp square corners on all storefront elements */
-.storefront-boxy,
-.storefront-boxy button,
-.storefront-boxy input,
-.storefront-boxy select,
-.storefront-boxy textarea,
-.storefront-boxy img,
-.storefront-boxy div,
-.storefront-boxy span,
-.storefront-boxy a,
-.storefront-boxy nav,
-.storefront-boxy section,
-.storefront-boxy footer,
-.storefront-boxy header {
-  border-radius: 0px !important;
-}
-
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #F1F5F9;
+  background: #F8FAF8;
 }
 ::-webkit-scrollbar-thumb {
-  background: #39B54A;
-  border-radius: 0px;
+  background: #CBD5E1;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2EA03E;
-}
-
-/* Category Circle Exception for round plate design */
-.category-circle,
-.category-circle *,
-.category-circle img,
-.category-circle div,
-.category-circle a,
-.category-circle span,
-.category-item,
-.category-item *,
-.category-item img,
-.category-item div,
-#categories .category-circle,
-#categories .category-circle *,
-#categories img {
-  border-radius: 9999px !important;
+  background: #39B54A;
 }
 
 /* Hide scrollbar utility for horizontal category slider */
@@ -88,7 +54,7 @@ body {
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -108,7 +74,7 @@ body {
 @keyframes scaleUp {
   from {
     opacity: 0;
-    transform: scale(0.96);
+    transform: scale(0.97);
   }
   to {
     opacity: 1;
@@ -122,8 +88,8 @@ body {
     opacity: 1;
   }
   50% {
-    transform: scale(1.04);
-    opacity: 0.9;
+    transform: scale(1.03);
+    opacity: 0.85;
   }
 }
 
@@ -132,7 +98,7 @@ body {
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-5px);
+    transform: translateY(-4px);
   }
 }
 
@@ -156,26 +122,17 @@ body {
   }
 }
 
-@keyframes bounceSubtle {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-3px);
-  }
-}
-
 /* Animation Utility Classes */
 .animate-fade-in-up {
-  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.35s ease-out forwards;
+  animation: fadeIn 0.25s ease-out forwards;
 }
 
 .animate-scale-up {
-  animation: scaleUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-pulse-slow {
@@ -187,26 +144,36 @@ body {
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+  background: linear-gradient(90deg, #F1F5F9 0%, #F8FAF8 50%, #F1F5F9 100%);
   background-size: 200% 100%;
-  animation: shimmer 2.5s infinite;
+  animation: shimmer 1.75s infinite ease-in-out;
 }
 
 .animate-slide-in-right {
-  animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.animate-bounce-subtle {
-  animation: bounceSubtle 2s infinite ease-in-out;
+/* Utility Design System Classes */
+.glass-surface {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-/* Disable all hover animations as requested */
-.hover-lift,
-.hover-lift:hover,
-.hover-scale,
-.hover-scale:hover {
-  transform: none !important;
-  box-shadow: none !important;
-  transition: none !important;
+.glass-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
 }
+
+.hover-lift {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+}
+
 

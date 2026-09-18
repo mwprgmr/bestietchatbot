@@ -402,14 +402,14 @@ export default function CheckoutPage() {
 
         {/* Inline Safe Error Notification */}
         {errorMsg && (
-          <div className="p-4 rounded-none bg-white border-2 border-red-500/50 text-[#0F172A] text-xs font-bold flex items-center justify-between gap-3 shadow-sm">
+          <div className="p-4 rounded-2xl bg-white border-2 border-rose-500/50 text-slate-900 text-xs font-bold flex items-center justify-between gap-3 shadow-xs">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
               <span>{errorMsg}</span>
             </div>
             <button
               onClick={() => setErrorMsg(null)}
-              className="text-xs underline font-extrabold text-[#0F172A] hover:text-red-600 cursor-pointer"
+              className="text-xs underline font-extrabold text-slate-900 hover:text-rose-600 cursor-pointer"
             >
               Dismiss
             </button>
@@ -420,79 +420,79 @@ export default function CheckoutPage() {
           {/* Left Column: Checkout Multi-step Forms */}
           <div className="lg:col-span-2 space-y-6">
             {/* STEP 1: BRANCH STOCK CONFIRMATION */}
-            <div className="p-4 sm:p-5 bg-white rounded-none border border-[#E2E8F0] shadow-xs space-y-3">
-              <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-none bg-[#39B54A] text-white font-extrabold text-xs flex items-center justify-center">
+            <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-xl bg-[#39B54A] text-white font-black text-xs flex items-center justify-center shadow-2xs">
                     1
                   </div>
-                  <h2 className="text-sm sm:text-base font-extrabold text-[#0F172A] flex items-center gap-2">
+                  <h2 className="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
                     <Building2 className="w-4 h-4 text-[#39B54A]" /> Branch Stock Confirmation
                   </h2>
                 </div>
-                <span className="text-[10px] font-extrabold bg-[#39B54A]/20 text-[#39B54A] px-2.5 py-1 border border-[#39B54A]/30 uppercase">
+                <span className="text-[10px] font-black bg-[#39B54A]/10 text-[#39B54A] px-3 py-1 rounded-full border border-[#39B54A]/20 uppercase">
                   ACTIVE BRANCH
                 </span>
               </div>
-              <div className="p-3 bg-[#E2E8F0]/60 border border-[#E2E8F0] text-xs text-[#0F172A] flex items-center justify-between">
+              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-900 flex items-center justify-between">
                 <div>
-                  <div className="font-extrabold text-[#0F172A]">{selectedBranch?.name || 'Manvila Kazhakkoottam Branch'}</div>
-                  <div className="text-[11px] text-[#0F172A]/70">{selectedBranch?.location || 'Manvila, Kazhakkoottam, Trivandrum'}</div>
+                  <div className="font-extrabold text-slate-900">{selectedBranch?.name || 'Manvila Kazhakkoottam Branch'}</div>
+                  <div className="text-[11px] text-slate-500">{selectedBranch?.location || 'Manvila, Kazhakkoottam, Trivandrum'}</div>
                 </div>
-                <div className="text-[10px] font-bold text-[#39B54A] bg-white px-2 py-1 border border-[#39B54A]/30">
+                <div className="text-[10px] font-black text-[#39B54A] bg-white px-2.5 py-1 rounded-full border border-[#39B54A]/30">
                   Stock Verified
                 </div>
               </div>
             </div>
 
             {/* STEP 2: DELIVERY ADDRESS */}
-            <div className="p-4 sm:p-6 bg-white rounded-none border border-[#E2E8F0] shadow-xs space-y-4">
-              <div className="flex items-center gap-2 pb-3 border-b border-[#E2E8F0]">
-                <div className="w-7 h-7 rounded-none bg-[#39B54A] text-white font-extrabold text-xs flex items-center justify-center">
+            <div className="p-5 sm:p-6 bg-white rounded-2xl border border-slate-100 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+                <div className="w-7 h-7 rounded-xl bg-[#39B54A] text-white font-black text-xs flex items-center justify-center shadow-2xs">
                   2
                 </div>
-                <h2 className="text-sm sm:text-base font-extrabold text-[#0F172A] flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-[#39B54A]" /> Delivery Address Details
                 </h2>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-extrabold text-[#0F172A] uppercase mb-1">
+                  <label className="block text-xs font-extrabold text-slate-900 uppercase mb-1">
                     Full Name *
                   </label>
                   <div className="relative">
-                    <User className="w-4 h-4 text-[#0F172A]/40 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       required
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder="e.g. Anjali Nair"
-                      className="w-full pl-9 pr-3.5 py-2.5 bg-[#E2E8F0] border border-[#E2E8F0] rounded-none text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A] text-[#0F172A]"
+                      className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/20 focus:border-[#39B54A] text-slate-900"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-extrabold text-[#0F172A] uppercase mb-1">
+                  <label className="block text-xs font-extrabold text-slate-900 uppercase mb-1">
                     WhatsApp Mobile Number *
                   </label>
                   <div className="relative">
-                    <Phone className="w-4 h-4 text-[#0F172A]/40 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="tel"
                       required
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       placeholder="e.g. 9656055969"
-                      className="w-full pl-9 pr-3.5 py-2.5 bg-[#E2E8F0] border border-[#E2E8F0] rounded-none text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A] text-[#0F172A]"
+                      className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/20 focus:border-[#39B54A] text-slate-900"
                     />
                   </div>
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-extrabold text-[#0F172A] uppercase mb-1">
+                  <label className="block text-xs font-extrabold text-slate-900 uppercase mb-1">
                     House Name / Flat No / Street Address *
                   </label>
                   <input
@@ -501,12 +501,12 @@ export default function CheckoutPage() {
                     value={houseAddress}
                     onChange={(e) => setHouseAddress(e.target.value)}
                     placeholder="e.g. Apartment 4B, Emerald Heights, Kazhakkoottam"
-                    className="w-full px-3.5 py-2.5 bg-[#E2E8F0] border border-[#E2E8F0] rounded-none text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A] text-[#0F172A]"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/20 focus:border-[#39B54A] text-slate-900"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-extrabold text-[#0F172A] uppercase mb-1">
+                  <label className="block text-xs font-extrabold text-slate-900 uppercase mb-1">
                     Landmark (Optional)
                   </label>
                   <input
@@ -514,35 +514,35 @@ export default function CheckoutPage() {
                     value={landmark}
                     onChange={(e) => setLandmark(e.target.value)}
                     placeholder="e.g. Near Technopark Gate 1"
-                    className="w-full px-3.5 py-2.5 bg-[#E2E8F0] border border-[#E2E8F0] rounded-none text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A] text-[#0F172A]"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/20 focus:border-[#39B54A] text-slate-900"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-extrabold text-[#0F172A] uppercase mb-1">
+                  <label className="block text-xs font-extrabold text-slate-900 uppercase mb-1">
                     Pincode
                   </label>
                   <input
                     type="text"
                     value={pincode}
                     onChange={(e) => setPincode(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-[#E2E8F0] border border-[#E2E8F0] rounded-none text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A] text-[#0F172A]"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/20 focus:border-[#39B54A] text-slate-900"
                   />
                 </div>
 
                 {/* GPS Live Location Sharing Feature */}
-                <div className="sm:col-span-2 pt-2 border-t border-[#E2E8F0] space-y-2">
-                  <label className="block text-xs font-extrabold text-[#0F172A] uppercase flex items-center gap-1.5">
+                <div className="sm:col-span-2 pt-3 border-t border-slate-100 space-y-2">
+                  <label className="block text-xs font-extrabold text-slate-900 uppercase flex items-center gap-1.5">
                     <MapPin className="w-4 h-4 text-[#39B54A]" /> Live Satellite GPS Location Sharing
                   </label>
                   
                   {gpsCoords ? (
-                    <div className="p-3 bg-[#39B54A]/10 border border-[#39B54A] rounded-none flex items-center justify-between gap-2">
+                    <div className="p-3 bg-[#39B54A]/10 border border-[#39B54A]/30 rounded-xl flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-[#39B54A] shrink-0" />
                         <div>
-                          <p className="text-xs font-extrabold text-[#0F172A]">GPS Location Attached!</p>
-                          <p className="text-[11px] font-mono text-[#0F172A]/80">
+                          <p className="text-xs font-extrabold text-slate-900">GPS Location Attached!</p>
+                          <p className="text-[11px] font-mono text-slate-600">
                             {gpsCoords.lat.toFixed(4)}° N, {gpsCoords.lng.toFixed(4)}° E
                           </p>
                         </div>
@@ -552,14 +552,14 @@ export default function CheckoutPage() {
                           href={gpsCoords.mapsUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-2.5 py-1 bg-[#39B54A] text-white text-[11px] font-bold rounded-none hover:bg-[#2EA03E] inline-flex items-center gap-1"
+                          className="px-3 py-1.5 bg-[#39B54A] text-white text-[11px] font-bold rounded-lg hover:bg-[#2ea03e] inline-flex items-center gap-1 shadow-2xs"
                         >
                           <ExternalLink className="w-3 h-3" /> Preview Map
                         </a>
                         <button
                           type="button"
                           onClick={() => setGpsCoords(null)}
-                          className="text-[11px] font-bold text-red-600 underline"
+                          className="text-[11px] font-bold text-rose-600 underline"
                         >
                           Remove
                         </button>
@@ -571,13 +571,13 @@ export default function CheckoutPage() {
                         type="button"
                         onClick={handleShareGps}
                         disabled={gpsLoading}
-                        className="w-full py-2.5 px-4 bg-[#0F172A] hover:bg-[#1E293B] text-white font-extrabold text-xs rounded-none transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                        className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-[0.98]"
                       >
                         <Navigation className={`w-4 h-4 text-[#39B54A] ${gpsLoading ? 'animate-spin' : ''}`} />
                         <span>{gpsLoading ? 'Fetching Satellite GPS...' : '📍 SHARE MY CURRENT GPS LOCATION FOR FAST DELIVERY'}</span>
                       </button>
                       {gpsError && (
-                        <p className="text-[11px] font-semibold text-red-600 flex items-center gap-1">
+                        <p className="text-[11px] font-semibold text-rose-600 flex items-center gap-1">
                           <AlertCircle className="w-3.5 h-3.5" /> {gpsError}
                         </p>
                       )}
@@ -588,12 +588,12 @@ export default function CheckoutPage() {
             </div>
 
             {/* STEP 3: DELIVERY SLOT */}
-            <div className="p-4 sm:p-6 bg-white rounded-none border border-[#E2E8F0] shadow-xs space-y-4">
-              <div className="flex items-center gap-2 pb-3 border-b border-[#E2E8F0]">
-                <div className="w-7 h-7 rounded-none bg-[#39B54A] text-white font-extrabold text-xs flex items-center justify-center">
+            <div className="p-5 sm:p-6 bg-white rounded-2xl border border-slate-100 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+                <div className="w-7 h-7 rounded-xl bg-[#39B54A] text-white font-black text-xs flex items-center justify-center shadow-2xs">
                   3
                 </div>
-                <h2 className="text-sm sm:text-base font-extrabold text-[#0F172A] flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
                   <Clock className="w-4 h-4 text-[#39B54A]" /> Select Delivery Time Slot
                 </h2>
               </div>
@@ -605,29 +605,29 @@ export default function CheckoutPage() {
                     <div
                       key={slot.id}
                       onClick={() => !slot.isFull && setSelectedSlot(slot)}
-                      className={`p-3.5 rounded-none border transition-all cursor-pointer flex items-center justify-between ${
+                      className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                         slot.isFull
-                          ? 'opacity-50 bg-[#E2E8F0] border-[#E2E8F0] cursor-not-allowed'
+                          ? 'opacity-50 bg-slate-100 border-slate-200 cursor-not-allowed'
                           : isSelected
-                          ? 'bg-[#39B54A]/15 border-[#39B54A] ring-2 ring-[#39B54A]/30 shadow-xs'
-                          : 'bg-white border-[#E2E8F0] hover:border-[#39B54A]'
+                          ? 'bg-[#39B54A]/10 border-[#39B54A] ring-2 ring-[#39B54A]/20 shadow-xs'
+                          : 'bg-white border-slate-200 hover:border-[#39B54A]'
                       }`}
                     >
                       <div>
-                        <div className="text-[10px] font-extrabold text-[#39B54A] uppercase">
+                        <div className="text-[10px] font-black text-[#39B54A] uppercase">
                           {slot.dateLabel}
                         </div>
-                        <div className="text-xs font-extrabold text-[#0F172A] mt-0.5">
+                        <div className="text-xs font-extrabold text-slate-900 mt-0.5">
                           {slot.timeSlot}
                         </div>
                       </div>
 
                       {slot.isFull ? (
-                        <span className="text-[10px] font-extrabold text-[#0F172A] uppercase bg-[#E2E8F0] px-2 py-0.5 rounded-none">
+                        <span className="text-[10px] font-black text-slate-500 uppercase bg-slate-200 px-2 py-0.5 rounded-full">
                           FULL
                         </span>
                       ) : isSelected ? (
-                        <div className="w-5 h-5 rounded-none bg-[#39B54A] text-white flex items-center justify-center">
+                        <div className="w-5 h-5 rounded-full bg-[#39B54A] text-white flex items-center justify-center shadow-2xs">
                           <CheckCircle2 className="w-3.5 h-3.5 text-white" />
                         </div>
                       ) : null}
@@ -638,12 +638,12 @@ export default function CheckoutPage() {
             </div>
 
             {/* STEP 4: PAYMENT METHOD */}
-            <div className="p-4 sm:p-6 bg-white rounded-none border border-[#E2E8F0] shadow-xs space-y-4">
-              <div className="flex items-center gap-2 pb-3 border-b border-[#E2E8F0]">
-                <div className="w-7 h-7 rounded-none bg-[#39B54A] text-white font-extrabold text-xs flex items-center justify-center">
+            <div className="p-5 sm:p-6 bg-white rounded-2xl border border-slate-100 shadow-xs space-y-4">
+              <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+                <div className="w-7 h-7 rounded-xl bg-[#39B54A] text-white font-black text-xs flex items-center justify-center shadow-2xs">
                   4
                 </div>
-                <h2 className="text-sm sm:text-base font-extrabold text-[#0F172A] flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-[#39B54A]" /> Choose Payment Method
                 </h2>
               </div>
@@ -651,47 +651,47 @@ export default function CheckoutPage() {
               <div className="space-y-3">
                 <div
                   onClick={() => setPaymentMethod('COD')}
-                  className={`p-4 rounded-none border transition-all cursor-pointer flex items-center justify-between ${
+                  className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                     paymentMethod === 'COD'
-                      ? 'bg-[#39B54A]/15 border-[#39B54A] ring-2 ring-[#39B54A]/30'
-                      : 'bg-white border-[#E2E8F0] hover:border-[#39B54A]'
+                      ? 'bg-[#39B54A]/10 border-[#39B54A] ring-2 ring-[#39B54A]/20 shadow-xs'
+                      : 'bg-white border-slate-200 hover:border-[#39B54A]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 rounded-none border-2 border-[#39B54A] flex items-center justify-center">
-                      {paymentMethod === 'COD' && <div className="w-2 h-2 rounded-none bg-[#39B54A]" />}
+                    <div className="w-4 h-4 rounded-full border-2 border-[#39B54A] flex items-center justify-center">
+                      {paymentMethod === 'COD' && <div className="w-2 h-2 rounded-full bg-[#39B54A]" />}
                     </div>
                     <div>
-                      <div className="text-xs font-extrabold text-[#0F172A]">
+                      <div className="text-xs font-extrabold text-slate-900">
                         Pay on Delivery (Cash / UPI at Doorstep)
                       </div>
-                      <div className="text-[11px] text-[#0F172A]/70">
+                      <div className="text-[11px] text-slate-500 font-medium">
                         Pay cash or scan QR code when your fresh catch arrives
                       </div>
                     </div>
                   </div>
-                  <span className="text-[10px] font-extrabold bg-[#39B54A] text-white px-2 py-0.5 rounded-none">
+                  <span className="text-[10px] font-black bg-[#39B54A] text-white px-2.5 py-0.5 rounded-full shadow-2xs">
                     RECOMMENDED
                   </span>
                 </div>
 
                 <div
                   onClick={() => setPaymentMethod('ONLINE_UPI')}
-                  className={`p-4 rounded-none border transition-all cursor-pointer flex items-center justify-between ${
+                  className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                     paymentMethod === 'ONLINE_UPI'
-                      ? 'bg-[#39B54A]/15 border-[#39B54A] ring-2 ring-[#39B54A]/30'
-                      : 'bg-white border-[#E2E8F0] hover:border-[#39B54A]'
+                      ? 'bg-[#39B54A]/10 border-[#39B54A] ring-2 ring-[#39B54A]/20 shadow-xs'
+                      : 'bg-white border-slate-200 hover:border-[#39B54A]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 rounded-none border-2 border-[#39B54A] flex items-center justify-center">
-                      {paymentMethod === 'ONLINE_UPI' && <div className="w-2 h-2 rounded-none bg-[#39B54A]" />}
+                    <div className="w-4 h-4 rounded-full border-2 border-[#39B54A] flex items-center justify-center">
+                      {paymentMethod === 'ONLINE_UPI' && <div className="w-2 h-2 rounded-full bg-[#39B54A]" />}
                     </div>
                     <div>
-                      <div className="text-xs font-extrabold text-[#0F172A]">
+                      <div className="text-xs font-extrabold text-slate-900">
                         Instant Online UPI (Google Pay, PhonePe, Paytm)
                       </div>
-                      <div className="text-[11px] text-[#0F172A]/70">
+                      <div className="text-[11px] text-slate-500 font-medium">
                         Pay securely online before delivery
                       </div>
                     </div>
@@ -703,29 +703,29 @@ export default function CheckoutPage() {
 
           {/* Right Column: Order Summary & Place Order Action */}
           <div className="space-y-4">
-            <div className="p-4 sm:p-6 bg-[#E2E8F0] rounded-none border border-[#E2E8F0] shadow-xs space-y-4">
-              <h2 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#0F172A]">
+            <div className="p-5 sm:p-6 bg-slate-50 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+              <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900">
                 Order Summary ({cart.length} item{cart.length > 1 ? 's' : ''})
               </h2>
 
-              <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+              <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
                 {cart.map((item) => {
                   const itemWeightTotal = (item.weight_kg || 0.5) * (item.quantity || 1)
                   const itemSubtotal = Math.round((item.price_per_kg || 200) * itemWeightTotal)
                   return (
-                    <div key={item.cart_key || item.product_id} className="flex justify-between items-center text-xs bg-white p-2.5 border border-[#E2E8F0]">
+                    <div key={item.cart_key || item.product_id} className="flex justify-between items-center text-xs bg-white p-3 rounded-xl border border-slate-200/80">
                       <div>
-                        <div className="font-extrabold text-[#0F172A] line-clamp-1">
+                        <div className="font-extrabold text-slate-900 line-clamp-1">
                           {item.product_name || 'Fresh Item'}
                         </div>
-                        <div className="text-[10px] text-[#39B54A] font-bold">
+                        <div className="text-[11px] text-[#39B54A] font-extrabold mt-0.5">
                           Cut: {item.cleaning_option || 'Whole'} • {item.weight_kg === 0.5 ? '500g' : `${item.weight_kg}kg`} ({item.quantity}x)
                         </div>
-                        <div className="text-[10px] text-[#0F172A]/60">
+                        <div className="text-[10px] text-slate-400 font-medium">
                           Rate: ₹{item.price_per_kg}/kg
                         </div>
                       </div>
-                      <div className="font-black text-[#0F172A] text-sm">
+                      <div className="font-black text-slate-900 text-sm">
                         ₹{itemSubtotal}
                       </div>
                     </div>
@@ -733,10 +733,10 @@ export default function CheckoutPage() {
                 })}
               </div>
 
-              <div className="pt-3 border-t border-[#39B54A]/20 space-y-2 text-xs text-[#0F172A]/80">
+              <div className="pt-3 border-t border-slate-200 space-y-2 text-xs text-slate-600">
                 <div className="flex justify-between">
                   <span>Item Subtotal</span>
-                  <span className="font-bold text-[#0F172A]">₹{cartSubtotal}</span>
+                  <span className="font-bold text-slate-900">₹{cartSubtotal}</span>
                 </div>
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-[#39B54A] font-bold">
@@ -746,15 +746,15 @@ export default function CheckoutPage() {
                 )}
                 <div className="flex justify-between">
                   <span>Delivery Charge</span>
-                  <span className="font-bold text-[#0F172A]">
+                  <span className="font-bold text-slate-900">
                     {deliveryFee === 0 ? (
-                      <span className="text-[#39B54A] font-extrabold uppercase text-[10px]">FREE</span>
+                      <span className="text-[#39B54A] font-black uppercase text-[10px]">FREE</span>
                     ) : (
                       `₹${deliveryFee}`
                     )}
                   </span>
                 </div>
-                <div className="pt-2 border-t border-[#39B54A]/20 flex justify-between text-base font-black text-[#0F172A]">
+                <div className="pt-2 border-t border-slate-200 flex justify-between text-base font-black text-slate-900">
                   <span>Grand Total</span>
                   <span className="text-[#39B54A]">₹{grandTotal}</span>
                 </div>
@@ -763,7 +763,7 @@ export default function CheckoutPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 px-4 bg-[#39B54A] hover:bg-[#2EA03E] text-white font-black rounded-none text-sm shadow-lg shadow-[#39B54A]/30 hover:shadow-xl transition-all flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-50"
+                className="w-full py-3.5 px-4 bg-[#39B54A] hover:bg-[#2ea03e] text-white font-extrabold rounded-xl text-sm shadow-md shadow-[#39B54A]/25 transition-all flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-50 active:scale-[0.98]"
               >
                 {loading ? (
                   <div className="flex items-center gap-2">
@@ -778,7 +778,7 @@ export default function CheckoutPage() {
                 )}
               </button>
 
-              <div className="text-[10px] text-[#0F172A]/60 text-center flex items-center justify-center gap-1">
+              <div className="text-[10px] text-slate-500 font-semibold text-center flex items-center justify-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#39B54A]" />
                 <span>100% Safe & Secure Order Processing</span>
               </div>

@@ -36,9 +36,39 @@ export default function Footer() {
   }, [])
 
   return (
-    <footer className="bg-[#0B130B] text-[#F8FAF8] pt-16 pb-24 md:pb-12 border-t border-[#39B54A]/30">
+    <footer className="bg-slate-950 text-slate-100 pt-12 pb-24 md:pb-12 border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4">
-
+        {/* Top Trust Ribbon */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-12 border-b border-slate-800">
+          <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <ShieldCheck className="w-6 h-6 text-[#39B54A] shrink-0" />
+            <div>
+              <div className="text-xs font-black text-white">100% Chemical-Free</div>
+              <div className="text-[10px] text-slate-400 font-medium">Naturally preserved in ice</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <Clock className="w-6 h-6 text-[#39B54A] shrink-0" />
+            <div>
+              <div className="text-xs font-black text-white">15-30 Min Express</div>
+              <div className="text-[10px] text-slate-400 font-medium">Fast doorstep delivery</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <Truck className="w-6 h-6 text-[#39B54A] shrink-0" />
+            <div>
+              <div className="text-xs font-black text-white">Cold-Chain Packed</div>
+              <div className="text-[10px] text-slate-400 font-medium">Temperature controlled</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <Heart className="w-6 h-6 text-[#39B54A] shrink-0" />
+            <div>
+              <div className="text-xs font-black text-white">Custom Meat Cut</div>
+              <div className="text-[10px] text-slate-400 font-medium">Hygienic precision cuts</div>
+            </div>
+          </div>
+        </div>
 
         {/* Footer Navigation Columns */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 py-12">

@@ -7,6 +7,7 @@ import ProductCard, { ProductProps } from './ProductCard'
 import FlashSale from './FlashSale'
 import { ArrowRight, Sparkles, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
+import { ProductGridSkeleton } from '@/components/ui/Skeleton'
 
 export default function ProductGrid() {
   const { selectedBranch } = useCustomer()
@@ -71,21 +72,30 @@ export default function ProductGrid() {
 
   if (loading) {
     return (
-      <div className="py-16 text-center space-y-4">
-        <div className="w-10 h-10 border-4 border-[#39B54A] border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-xs font-bold text-[#0F172A]/70 uppercase tracking-wider">
-          Fetching Today's Fresh Catch for {selectedBranch?.name || 'Branch'}...
-
-        </p>
+      <div className="space-y-6 py-4">
+        <div className="flex justify-between items-center">
+          <div className="space-y-2">
+            <div className="h-3 w-32 animate-shimmer bg-slate-200 rounded" />
+            <div className="h-6 w-48 animate-shimmer bg-slate-200 rounded-lg" />
+          </div>
+        </div>
+        <ProductGridSkeleton count={8} />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="p-6 rounded-2xl bg-[#FFFFFF] border border-[#E2E8F0] text-center text-xs text-[#0F172A] space-y-2">
-        <AlertCircle className="w-6 h-6 mx-auto text-[#39B54A]" />
-        <p className="font-bold">{error}</p>
+      <div className="p-8 rounded-3xl bg-white border border-slate-200 text-center space-y-3 my-6 shadow-xs">
+        <AlertCircle className="w-10 h-10 mx-auto text-amber-500" />
+        <h3 className="font-extrabold text-slate-900 text-base">Unable to load catalog</h3>
+        <p className="text-xs font-semibold text-slate-500 max-w-sm mx-auto">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-5 py-2 rounded-xl bg-[#39B54A] text-white font-bold text-xs shadow-xs hover:bg-[#2ea03e] transition-all"
+        >
+          Try Again
+        </button>
       </div>
     )
   }
