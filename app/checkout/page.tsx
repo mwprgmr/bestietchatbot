@@ -161,196 +161,46 @@ export default function CheckoutPage() {
     setErrorMsg(null)
 
     try {
-      const supabase = createClient()
       const cleanPhone = customerPhone.replace(/\D/g, '')
       const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
-      const todayDate = new Date().toISOString().split('T')[0]
-      const idempotencyKey = `web_chk_${cleanPhone}_${Date.now()}`
 
-      let formattedPhone = cleanPhone
-      if (formattedPhone.length === 10) {
-        formattedPhone = `91${formattedPhone}`
+      // Call secure server API route to place order (uses Admin Service Role Key)
+      const res = await fetch('/api/orders/place', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: customerName.trim(),
+          customerPhone: cleanPhone,
+          houseAddress: houseAddress.trim(),
+          landmark: landmark.trim(),
+          pincode: pincode.trim(),
+          gpsCoords,
+          selectedSlot,
+          selectedBranchId: targetBranchId,
+          paymentMethod,
+          cart,
+          cartSubtotal,
+          deliveryFee,
+          grandTotal,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok || !data.success || !data.order_id) {
+        throw new Error(data.error || 'Failed to place order. Please try again.')
       }
 
-      // 1. Customer Query & Upsert/Create
-      let customerId: string | null = null
+      const placedOrderId = data.order_id
+      const finalOrderNumber = data.order_number
+
+      // Save Credentials & History Locally
       try {
-        const { data: existingCust } = await supabase
-          .from('customers')
-          .select('id, name')
-          .or(`phone.eq.${cleanPhone},phone.eq.${formattedPhone}`)
-          .maybeSingle()
-
-        if (existingCust?.id) {
-          customerId = existingCust.id
-          if (customerName.trim() && (!existingCust.name || existingCust.name.startsWith('Customer '))) {
-            await supabase.from('customers').update({ name: customerName.trim() }).eq('id', customerId)
-          }
-        } else {
-          const { data: newCust } = await supabase
-            .from('customers')
-            .insert({
-              name: customerName.trim(),
-              phone: formattedPhone || cleanPhone,
-            })
-            .select('id')
-            .single()
-
-          if (newCust?.id) {
-            customerId = newCust.id
-          }
-        }
-      } catch (cEx) {
-        console.warn('Customer query/create non-fatal exception:', cEx)
-      }
-
-      let fullAddressString = `${houseAddress.trim()}${landmark.trim() ? `, Landmark: ${landmark.trim()}` : ''}${pincode ? `, Pincode: ${pincode}` : ''}`
-      if (gpsCoords) {
-        fullAddressString += ` | GPS: ${gpsCoords.mapsUrl}`
-      }
-
-      const orderNum = `BF-${todayDate.replace(/-/g, '')}-${Math.floor(1000 + Math.random() * 9000)}`
-      const slotText = selectedSlot ? `${selectedSlot.dateLabel} ${selectedSlot.timeSlot}` : 'Express Slot'
-      const customerRemarkDetails = `Customer: ${customerName.trim()} (${cleanPhone}), Delivery: ${fullAddressString}, Slot: ${slotText}${gpsCoords ? ` | GPS Shared: ${gpsCoords.mapsUrl}` : ''}`
-
-      // 2. Normalize Cart Items Payload
-      const normalizedCart = cart.map((item) => ({
-        product_id: item.product_id,
-        quantity_kg: Number(item.weight_kg || 0.5) * Number(item.quantity || 1),
-        weight_kg: Number(item.weight_kg || 0.5),
-        quantity: Number(item.quantity || 1),
-        unit_price: Number(item.price_per_kg || 200),
-        price_per_kg: Number(item.price_per_kg || 200),
-        cutting_type: item.cleaning_option || 'Whole',
-        product_name: item.product_name || 'Fresh Catch',
-      }))
-
-      let placedOrderId = ''
-      let finalOrderNumber = orderNum
-
-      // 3. ATTEMPT RPC PLACEMENT
-      let rpcSuccess = false
-      try {
-        const { data: rpcRes, error: rpcErr } = await supabase.rpc('create_order_atomic', {
-          p_customer_id: customerId,
-          p_branch_id: targetBranchId,
-          p_address_id: null,
-          p_delivery_fee: deliveryFee || 35,
-          p_customer_remarks: customerRemarkDetails,
-          p_idempotency_key: idempotencyKey,
-          p_inventory_date: todayDate,
-          p_items: normalizedCart,
-          p_latitude: gpsCoords?.lat || null,
-          p_longitude: gpsCoords?.lng || null,
-          p_maps_url: gpsCoords?.mapsUrl || null,
-        })
-
-        if (!rpcErr && rpcRes && rpcRes.success) {
-          rpcSuccess = true
-          placedOrderId = rpcRes.order_id
-          finalOrderNumber = rpcRes.order_number || orderNum
-        } else {
-          console.warn('RPC create_order_atomic returned error:', rpcErr || rpcRes)
-        }
-      } catch (rpcEx) {
-        console.warn('RPC create_order_atomic call exception:', rpcEx)
-      }
-
-      // 4. FALLBACK CLIENT-SIDE ATOMIC PLACEMENT WITH VERIFIED SCHEMA
-      if (!rpcSuccess) {
-        console.warn('Executing client-side verified schema fallback for order placement...')
-        const directInsertObj: any = {
-          order_number: orderNum,
-          customer_id: customerId || null,
-          branch_id: targetBranchId,
-          status: 'pending',
-          subtotal: cartSubtotal || 0,
-          delivery_charge: deliveryFee || 35,
-          total: grandTotal || 0,
-          total_amount: grandTotal || 0,
-          payment_status: paymentMethod === 'COD' ? 'pending' : 'paid',
-          payment_method: paymentMethod,
-          delivery_address: fullAddressString,
-          customer_phone: cleanPhone,
-          business_date: todayDate,
-          customer_remarks: customerRemarkDetails,
-          idempotency_key: idempotencyKey,
-          order_channel: 'storefront',
-        }
-
+        let fullAddressString = `${houseAddress.trim()}${landmark.trim() ? `, Landmark: ${landmark.trim()}` : ''}${pincode ? `, Pincode: ${pincode}` : ''}`
         if (gpsCoords) {
-          directInsertObj.latitude = gpsCoords.lat
-          directInsertObj.longitude = gpsCoords.lng
-          directInsertObj.maps_url = gpsCoords.mapsUrl
+          fullAddressString += ` | GPS: ${gpsCoords.mapsUrl}`
         }
 
-        const { data: directOrder, error: oErr } = await supabase
-          .from('orders')
-          .insert([directInsertObj])
-          .select('id')
-          .single()
-
-        if (oErr) {
-          throw new Error(oErr.message || 'Failed to record order details. Please try again.')
-        }
-
-        placedOrderId = directOrder.id
-
-        // Insert Order Items & Deduct Inventory Stock
-        for (const item of normalizedCart) {
-          const totalWeightKg = item.quantity_kg
-          const itemSubtotal = Math.round(item.unit_price * totalWeightKg)
-
-          const { error: iErr } = await supabase.from('order_items').insert([
-            {
-              order_id: placedOrderId,
-              product_id: item.product_id,
-              quantity: totalWeightKg,
-              price_per_kg: item.unit_price,
-              cutting_type: item.cutting_type,
-              total: itemSubtotal,
-            },
-          ])
-
-          if (iErr) console.warn('Order Item Insert Warning:', iErr.message)
-
-          // Deduct Stock
-          const { data: inv } = await supabase
-            .from('inventory')
-            .select('id, available_stock, sold_stock')
-            .eq('product_id', item.product_id)
-            .eq('branch_id', targetBranchId)
-            .maybeSingle()
-
-          if (inv?.id) {
-            const newAvailable = Math.max(0, Number(inv.available_stock || 0) - totalWeightKg)
-            const newSold = Number(inv.sold_stock || 0) + totalWeightKg
-
-            await supabase
-              .from('inventory')
-              .update({
-                available_stock: newAvailable,
-                sold_stock: newSold,
-                status: newAvailable <= 0 ? 'out_of_stock' : 'available',
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', inv.id)
-
-            await supabase.from('inventory_movements').insert([
-              {
-                inventory_id: inv.id,
-                movement_type: 'SALE',
-                quantity: -totalWeightKg,
-                reason: `Order ${orderNum} (WEBSITE)`,
-                reference_id: placedOrderId,
-              },
-            ])
-          }
-        }
-      }
-
-      // 5. Save Credentials & History Locally
-      try {
         localStorage.setItem('bestiet_customer_phone', cleanPhone)
         localStorage.setItem('bestiet_customer_name', customerName.trim())
         localStorage.setItem('bestiet_delivery_address', fullAddressString)
@@ -366,17 +216,16 @@ export default function CheckoutPage() {
           prevOrders.unshift(placedOrderId)
         }
         localStorage.setItem('bestiet_placed_orders', JSON.stringify(prevOrders.slice(0, 50)))
-      } catch (lErr) {
-        console.warn('LocalStorage save error:', lErr)
+      } catch (err) {
+        console.warn('LocalStorage save error:', err)
       }
 
-      // 6. Clear Cart & Navigate to Order Success Page
-      setDeliveryAddress(fullAddressString)
+      // Clear cart & Redirect
       clearCart()
-      router.push(`/order-success/${placedOrderId}?num=${finalOrderNumber}`)
+      router.push(`/order-success/${placedOrderId}?num=${encodeURIComponent(finalOrderNumber)}`)
     } catch (err: any) {
-      console.error('Checkout Error:', err)
-      setErrorMsg(err.message || 'An error occurred while placing your order. Please try again.')
+      console.error('Order Placement Failure:', err)
+      setErrorMsg(err.message || 'Something went wrong while placing your order. Please try again.')
     } finally {
       setLoading(false)
     }

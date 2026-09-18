@@ -2358,6 +2358,9 @@ async function fallbackCreateOrderAtomic(
     p_delivery_fee: deliveryFeeAmt,
     p_branch_id: validBranchId,
     p_customer_remarks: customerRemarks,
+    p_latitude: activeSession.latitude || null,
+    p_longitude: activeSession.longitude || null,
+    p_maps_url: activeSession.maps_url || null,
   })
 
   let resObj = typeof result === 'string' ? JSON.parse(result) : result
@@ -2370,24 +2373,6 @@ async function fallbackCreateOrderAtomic(
     }
   }
 
-  // Fallback order placement if RPC fails due to missing columns or SQL procedure mismatch
-  if ((orderErr || !resObj?.success) && !orderErr?.message?.includes('NO_INVENTORY') && !orderErr?.message?.includes('INSUFFICIENT_STOCK')) {
-    console.warn('[ORDER PLACEMENT RECOVERY]: RPC failed with non-inventory error. Triggering fallback order placement using core verified columns...', orderErr)
-    const fbRes = await fallbackCreateOrderAtomic(supabase, {
-      customerId: validCustomerId,
-      addressId: validAddressId,
-      cart,
-      branchId: validBranchId,
-      customerRemarks,
-      idempotencyKey: stableIdempotencyKey,
-      deliveryFee: deliveryFeeAmt,
-      today,
-    })
-    if (fbRes.success) {
-      console.log('[ORDER PLACEMENT RECOVERY SUCCESSFUL]: Order created via fallback:', fbRes)
-      resObj = fbRes
-    }
-  }
 
   // 7. RESET AND CLEAR CART ON FAILED ORDER AS DIRECTED BY USER
   if ((orderErr && !resObj?.success) || !resObj?.success) {

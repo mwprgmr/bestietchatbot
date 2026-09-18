@@ -83,6 +83,8 @@ export default function CategoryPage() {
           .from('inventory')
           .select('*')
           .eq('branch_id', targetBranchId)
+          .order('inventory_date', { ascending: false })
+
 
         const mapped: ProductProps[] = (rawProducts || []).map((p) => {
           const invMatch = (rawInventory || []).find((i) => i.product_id === p.id)

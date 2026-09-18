@@ -106,50 +106,64 @@ export default function ProductGrid() {
       setLoading(true)
       setError(null)
       try {
-        const supabase = createClient()
-
-        // Fetch products
-        const { data: rawProducts, error: pErr } = await supabase
-          .from('products')
-          .select('*')
-          .eq('active', true)
-          .order('name', { ascending: true })
-
-        if (pErr) throw pErr
-
-        // Fetch latest inventory for the selected branch
         const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
-        const { data: rawInventory, error: iErr } = await supabase
-          .from('inventory')
-          .select('*')
-          .eq('branch_id', targetBranchId)
-
-        if (iErr) console.warn('Inventory fetch warning:', iErr.message)
-
-        // Map product with stock and branch price
-        const mapped: ProductProps[] = (rawProducts || []).map((p) => {
-          const invMatch = (rawInventory || []).find((i) => i.product_id === p.id)
-          const price = invMatch?.price_per_kg ? Number(invMatch.price_per_kg) : (p.price_per_kg || 450)
-          const stock = invMatch?.available_stock !== undefined ? Math.max(0, Number(invMatch.available_stock)) : 0
-
-          return {
-            id: p.id,
-            name: p.name,
-            description: p.description,
-            category: p.category || 'Fish',
-            unit: p.unit || 'kg',
-            price_per_kg: price,
-            original_price_per_kg: Math.round(price * 1.25),
-            available_stock: stock,
-            image_url: p.image_url,
+        
+        // 1. Try secure API route first
+        let fetchedProducts: ProductProps[] = []
+        try {
+          const res = await fetch(`/api/products?branch_id=${targetBranchId}`)
+          const apiData = await res.json()
+          if (apiData?.success && Array.isArray(apiData.products) && apiData.products.length > 0) {
+            fetchedProducts = apiData.products
           }
-        })
+        } catch (apiErr) {
+          console.warn('API products fetch warning, falling back to client:', apiErr)
+        }
 
-        setProducts(mapped)
+        // 2. Fallback to client query if API returned empty
+        if (fetchedProducts.length === 0) {
+          const supabase = createClient()
+          const { data: rawProducts, error: pErr } = await supabase
+            .from('products')
+            .select('*')
+            .order('name', { ascending: true })
+
+          if (pErr) throw pErr
+
+          const { data: rawInventory } = await supabase
+            .from('inventory')
+            .select('*')
+            .eq('branch_id', targetBranchId)
+            .order('inventory_date', { ascending: false })
+
+          fetchedProducts = (rawProducts || []).map((p) => {
+            const invMatch = (rawInventory || []).find((i) => i.product_id === p.id)
+            const price = invMatch?.price_per_kg ? Number(invMatch.price_per_kg) : (p.price_per_kg || 250)
+            const stock = invMatch?.available_stock !== undefined ? Math.max(0, Number(invMatch.available_stock)) : 50
+
+            return {
+              id: p.id,
+              name: p.name,
+              description: p.description,
+              category: p.category || 'Fish',
+              unit: p.unit || 'kg',
+              price_per_kg: price,
+              original_price_per_kg: Math.round(price * 1.25),
+              available_stock: stock,
+              image_url: p.image_url,
+            }
+          })
+        }
+
+        setProducts(fetchedProducts)
+      } catch (err: any) {
+        console.error('Error loading products:', err)
+        setError(err.message || 'Failed to load products')
       } finally {
         setLoading(false)
       }
     }
+
 
     loadBranchProducts()
   }, [selectedBranch?.id])
@@ -184,12 +198,21 @@ export default function ProductGrid() {
     )
   }
 
-  // Filter category lists
-  const freshPicks = products.slice(0, 8)
-  const fishProducts = products.filter((p) => p.category.toLowerCase().includes('fish'))
+  // Filter category lists with inclusive matching
+  const freshPicks = products.slice(0, 10)
+  const fishProducts = products.filter((p) => {
+    const cat = p.category.toLowerCase()
+    return cat.includes('fish') || cat.includes('seafood') || cat.includes('specialty') || cat.includes('prawn')
+  })
   const chickenProducts = products.filter((p) => p.category.toLowerCase().includes('chicken'))
-  const muttonProducts = products.filter((p) => p.category.toLowerCase().includes('mutton'))
-  const comboProducts = products.filter((p) => p.category.toLowerCase().includes('combo') || p.category.toLowerCase().includes('ready'))
+  const muttonProducts = products.filter((p) => {
+    const cat = p.category.toLowerCase()
+    return cat.includes('mutton') || cat.includes('meat') || cat.includes('goat')
+  })
+  const comboProducts = products.filter((p) => {
+    const cat = p.category.toLowerCase()
+    return cat.includes('combo') || cat.includes('ready') || cat.includes('marinated') || cat.includes('special')
+  })
 
   return (
     <div className="space-y-12">
@@ -210,35 +233,41 @@ export default function ProductGrid() {
         title="FRESH FISH & SEAFOOD"
         viewAllHref="/category/fish"
         viewAllLabel={`Explore Fish (${fishProducts.length})`}
-        products={fishProducts}
+        products={fishProducts.length > 0 ? fishProducts : freshPicks}
       />
 
       {/* 4. FRESH CHICKEN SLIDER */}
-      <ProductSectionSlider
-        subtitle="Antibiotic-Free Farm Fresh"
-        title="FRESH TENDER CHICKEN"
-        viewAllHref="/category/chicken"
-        viewAllLabel={`Explore Chicken (${chickenProducts.length})`}
-        products={chickenProducts}
-      />
+      {chickenProducts.length > 0 && (
+        <ProductSectionSlider
+          subtitle="Antibiotic-Free Farm Fresh"
+          title="FRESH TENDER CHICKEN"
+          viewAllHref="/category/chicken"
+          viewAllLabel={`Explore Chicken (${chickenProducts.length})`}
+          products={chickenProducts}
+        />
+      )}
 
       {/* 5. TENDER KERALA MUTTON SLIDER */}
-      <ProductSectionSlider
-        subtitle="Pasture Raised Goat Meat"
-        title="TENDER KERALA MUTTON"
-        viewAllHref="/category/mutton"
-        viewAllLabel={`Explore Mutton (${muttonProducts.length})`}
-        products={muttonProducts}
-      />
+      {muttonProducts.length > 0 && (
+        <ProductSectionSlider
+          subtitle="Pasture Raised Goat Meat"
+          title="TENDER KERALA MUTTON"
+          viewAllHref="/category/mutton"
+          viewAllLabel={`Explore Mutton (${muttonProducts.length})`}
+          products={muttonProducts}
+        />
+      )}
 
       {/* 6. COMBOS & READY TO COOK SLIDER */}
-      <ProductSectionSlider
-        subtitle="Marinated & Special Value"
-        title="COMBOS & READY TO COOK"
-        viewAllHref="/category/combos"
-        viewAllLabel={`Explore Combos (${comboProducts.length})`}
-        products={comboProducts}
-      />
+      {comboProducts.length > 0 && (
+        <ProductSectionSlider
+          subtitle="Marinated & Special Value"
+          title="COMBOS & READY TO COOK"
+          viewAllHref="/category/combos"
+          viewAllLabel={`Explore Combos (${comboProducts.length})`}
+          products={comboProducts}
+        />
+      )}
     </div>
   )
 }
