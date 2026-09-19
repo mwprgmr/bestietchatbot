@@ -96,7 +96,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
   const [userLocation, setUserLocation] = useState<{ lat?: number; lng?: number; addressName?: string } | null>(null)
   const [cart, setCart] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
-  const [isLocationOpen, setIsLocationOpen] = useState(false)
+  const [isLocationOpen, setIsLocationOpen] = useState(true)
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null)
 
   const fetchCustomerProfile = async (phoneOrId?: string) => {
@@ -154,7 +154,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Load saved state from localStorage on mount
+  // Load saved state from localStorage on mount & open Location Selection popup
   useEffect(() => {
     try {
       fetchCustomerProfile()
@@ -176,9 +176,12 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
           setCart(parsedCart)
         }
       }
+      // Show location modal popup on initial website open
+      setIsLocationOpen(true)
     } catch (e) {
       console.warn('Failed to load local storage state:', e)
       setAuthLoading(false)
+      setIsLocationOpen(true)
     }
   }, [])
 
