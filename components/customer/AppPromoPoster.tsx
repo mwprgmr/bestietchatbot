@@ -199,19 +199,19 @@ export default function AppPromoPoster() {
             </div>
 
             {/* Floating Green Icons */}
-            <div className="absolute top-2 left-8 bg-white border border-emerald-100 p-2.5 rounded-2xl shadow-sm text-[#39B54A] animate-float z-20">
+            <div className="absolute top-2 left-8 bg-white border border-[#7FBA44]/20 p-2.5 rounded-2xl shadow-sm text-[#7FBA44] animate-float z-20">
               <Apple className="w-6 h-6 stroke-[1.75]" />
             </div>
 
-            <div className="absolute top-4 right-4 bg-white border border-emerald-100 p-2.5 rounded-2xl shadow-sm text-[#39B54A] animate-float z-20">
+            <div className="absolute top-4 right-4 bg-white border border-[#7FBA44]/20 p-2.5 rounded-2xl shadow-sm text-[#7FBA44] animate-float z-20">
               <ShoppingBag className="w-6 h-6 stroke-[1.75]" />
             </div>
 
-            <div className="absolute top-1/2 -translate-y-1/2 -right-6 bg-white border border-emerald-100 p-2.5 rounded-2xl shadow-sm text-[#39B54A] animate-pulse-slow z-20">
+            <div className="absolute top-1/2 -translate-y-1/2 -right-6 bg-white border border-[#7FBA44]/20 p-2.5 rounded-2xl shadow-sm text-[#7FBA44] animate-pulse-slow z-20">
               <Fish className="w-6 h-6 stroke-[1.75]" />
             </div>
 
-            <div className="absolute bottom-6 left-6 bg-white border border-emerald-100 p-2.5 rounded-2xl shadow-sm text-[#39B54A] animate-float z-20">
+            <div className="absolute bottom-6 left-6 bg-white border border-[#7FBA44]/20 p-2.5 rounded-2xl shadow-sm text-[#7FBA44] animate-float z-20">
               <Sprout className="w-6 h-6 stroke-[1.75]" />
             </div>
 

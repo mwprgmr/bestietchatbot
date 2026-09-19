@@ -39,7 +39,7 @@ function ProductSectionSlider({
       {/* Header with Title & Left/Right Slider Controls */}
       <div className="flex items-end justify-between pb-2 border-b border-[#E2ECE7]">
         <div>
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#39B54A]">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#7FBA44]">
             {subtitle}
           </span>
           <h2 className="text-lg sm:text-xl md:text-2xl font-black text-[#0F172A] tracking-tight">
@@ -50,7 +50,7 @@ function ProductSectionSlider({
         <div className="flex items-center gap-3">
           <Link
             href={viewAllHref}
-            className="text-xs font-bold text-[#39B54A] hover:text-[#2EA03E] flex items-center gap-1 group"
+            className="text-xs font-bold text-[#7FBA44] hover:text-[#71A83A] flex items-center gap-1 group"
           >
             <span>{viewAllLabel}</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -60,7 +60,7 @@ function ProductSectionSlider({
             <button
               type="button"
               onClick={() => scroll('left')}
-              className="w-8 h-8 rounded-full bg-white border border-[#E2ECE7] hover:border-[#39B54A] text-slate-700 hover:text-[#39B54A] flex items-center justify-center shadow-2xs transition-all active:scale-95 cursor-pointer"
+              className="w-8 h-8 rounded-full bg-white border border-[#E2ECE7] hover:border-[#7FBA44] text-slate-700 hover:text-[#7FBA44] flex items-center justify-center shadow-2xs transition-all active:scale-95 cursor-pointer"
               aria-label="Scroll left"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -68,7 +68,7 @@ function ProductSectionSlider({
             <button
               type="button"
               onClick={() => scroll('right')}
-              className="w-8 h-8 rounded-full bg-white border border-[#E2ECE7] hover:border-[#39B54A] text-slate-700 hover:text-[#39B54A] flex items-center justify-center shadow-2xs transition-all active:scale-95 cursor-pointer"
+              className="w-8 h-8 rounded-full bg-white border border-[#E2ECE7] hover:border-[#7FBA44] text-slate-700 hover:text-[#7FBA44] flex items-center justify-center shadow-2xs transition-all active:scale-95 cursor-pointer"
               aria-label="Scroll right"
             >
               <ChevronRight className="w-4 h-4" />
@@ -215,7 +215,7 @@ export default function ProductGrid() {
         <p className="text-xs font-semibold text-slate-500 max-w-sm mx-auto">{error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="px-5 py-2 rounded-xl bg-[#39B54A] text-white font-bold text-xs shadow-xs hover:bg-[#2ea03e] transition-all"
+          className="px-5 py-2 rounded-xl bg-[#7FBA44] text-white font-bold text-xs shadow-xs hover:bg-[#71A83A] transition-all"
         >
           Try Again
         </button>

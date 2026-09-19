@@ -116,32 +116,27 @@ export default function CheckoutPage() {
     return (
       <StorefrontLayout>
         <div className="py-20 text-center space-y-4 max-w-md mx-auto">
-          <Loader2 className="w-8 h-8 text-[#39B54A] animate-spin mx-auto" />
-          <p className="text-xs font-extrabold text-[#0F172A] uppercase tracking-wider">
-            Loading Fresh Checkout...
-          </p>
+          <Loader2 className="w-8 h-8 text-[#7FBA44] animate-spin mx-auto" />
+          <p className="text-xs font-bold text-slate-500">Loading checkout session...</p>
         </div>
       </StorefrontLayout>
     )
   }
 
-  // Safe empty cart guard after hydration
-  if (!cart || !Array.isArray(cart) || cart.length === 0) {
+  if (cart.length === 0) {
     return (
       <StorefrontLayout>
-        <div className="py-16 px-4 text-center space-y-4 max-w-md mx-auto">
-          <div className="w-16 h-16 bg-[#E2E8F0] rounded-none flex items-center justify-center mx-auto text-[#39B54A]">
+        <div className="max-w-md mx-auto py-16 px-4 text-center space-y-4">
+          <div className="w-16 h-16 bg-[#E2E8F0] rounded-none flex items-center justify-center mx-auto text-[#7FBA44]">
             <ShoppingBag className="w-8 h-8" />
           </div>
-          <h2 className="text-lg font-extrabold text-[#0F172A]">Your Cart is Currently Empty</h2>
-          <p className="text-xs text-[#0F172A]/70 leading-relaxed">
-            Please add fresh fish, chicken, or mutton to your cart before proceeding to checkout.
-          </p>
+          <h2 className="text-lg font-black text-slate-900 uppercase">YOUR CART IS EMPTY</h2>
+          <p className="text-xs text-slate-500">Add fresh fish or meat to your cart before proceeding to checkout.</p>
           <Link
             href="/"
-            className="inline-block px-6 py-3 bg-[#39B54A] text-white font-extrabold text-xs rounded-none hover:bg-[#2EA03E] shadow-md"
+            className="inline-block px-6 py-3 bg-[#7FBA44] text-white font-extrabold text-xs rounded-none hover:bg-[#71A83A] shadow-md"
           >
-            BROWSE FRESH PRODUCTS
+            EXPLORE FRESH PRODUCTS
           </Link>
         </div>
       </StorefrontLayout>
@@ -238,7 +233,7 @@ export default function CheckoutPage() {
         <div>
           <Link
             href="/cart"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0F172A]/70 hover:text-[#39B54A] transition-colors mb-2"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0F172A]/70 hover:text-[#7FBA44] transition-colors mb-2"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Shopping Cart</span>
@@ -272,14 +267,14 @@ export default function CheckoutPage() {
             <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-xs space-y-3">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-xl bg-[#39B54A] text-white font-black text-xs flex items-center justify-center shadow-2xs">
+                  <div className="w-7 h-7 rounded-xl bg-[#7FBA44] text-white font-black text-xs flex items-center justify-center shadow-2xs">
                     1
                   </div>
                   <h2 className="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-[#39B54A]" /> Branch Stock Confirmation
+                    <Building2 className="w-4 h-4 text-[#7FBA44]" /> Branch Stock Confirmation
                   </h2>
                 </div>
-                <span className="text-[10px] font-black bg-[#39B54A]/10 text-[#39B54A] px-3 py-1 rounded-full border border-[#39B54A]/20 uppercase">
+                <span className="text-[10px] font-black bg-[#7FBA44]/10 text-[#7FBA44] px-3 py-1 rounded-full border border-[#7FBA44]/20 uppercase">
                   ACTIVE BRANCH
                 </span>
               </div>
@@ -288,7 +283,7 @@ export default function CheckoutPage() {
                   <div className="font-extrabold text-slate-900">{selectedBranch?.name || 'Manvila Kazhakkoottam Branch'}</div>
                   <div className="text-[11px] text-slate-500">{selectedBranch?.location || 'Manvila, Kazhakkoottam, Trivandrum'}</div>
                 </div>
-                <div className="text-[10px] font-black text-[#39B54A] bg-white px-2.5 py-1 rounded-full border border-[#39B54A]/30">
+                <div className="text-[10px] font-black text-[#7FBA44] bg-white px-2.5 py-1 rounded-full border border-[#7FBA44]/30">
                   Stock Verified
                 </div>
               </div>
@@ -297,11 +292,11 @@ export default function CheckoutPage() {
             {/* STEP 2: DELIVERY ADDRESS */}
             <div className="p-5 sm:p-6 bg-white rounded-2xl border border-slate-100 shadow-xs space-y-4">
               <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-                <div className="w-7 h-7 rounded-xl bg-[#39B54A] text-white font-black text-xs flex items-center justify-center shadow-2xs">
+                <div className="w-7 h-7 rounded-xl bg-[#7FBA44] text-white font-black text-xs flex items-center justify-center shadow-2xs">
                   2
                 </div>
                 <h2 className="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-[#39B54A]" /> Delivery Address Details
+                  <MapPin className="w-4 h-4 text-[#7FBA44]" /> Delivery Address Details
                 </h2>
               </div>
 
@@ -318,7 +313,7 @@ export default function CheckoutPage() {
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder="e.g. Anjali Nair"
-                      className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/20 focus:border-[#39B54A] text-slate-900"
+                      className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#7FBA44]/20 focus:border-[#7FBA44] text-slate-900"
                     />
                   </div>
                 </div>
@@ -335,7 +330,7 @@ export default function CheckoutPage() {
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                       placeholder="e.g. 9656055969"
-                      className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/20 focus:border-[#39B54A] text-slate-900"
+                      className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#7FBA44]/20 focus:border-[#7FBA44] text-slate-900"
                     />
                   </div>
                 </div>
@@ -350,7 +345,7 @@ export default function CheckoutPage() {
                     value={houseAddress}
                     onChange={(e) => setHouseAddress(e.target.value)}
                     placeholder="e.g. Apartment 4B, Emerald Heights, Kazhakkoottam"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/20 focus:border-[#39B54A] text-slate-900"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#7FBA44]/20 focus:border-[#7FBA44] text-slate-900"
                   />
                 </div>
 
@@ -363,7 +358,7 @@ export default function CheckoutPage() {
                     value={landmark}
                     onChange={(e) => setLandmark(e.target.value)}
                     placeholder="e.g. Near Technopark Gate 1"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/20 focus:border-[#39B54A] text-slate-900"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#7FBA44]/20 focus:border-[#7FBA44] text-slate-900"
                   />
                 </div>
 
@@ -375,20 +370,20 @@ export default function CheckoutPage() {
                     type="text"
                     value={pincode}
                     onChange={(e) => setPincode(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/20 focus:border-[#39B54A] text-slate-900"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#7FBA44]/20 focus:border-[#7FBA44] text-slate-900"
                   />
                 </div>
 
                 {/* GPS Live Location Sharing Feature */}
                 <div className="sm:col-span-2 pt-3 border-t border-slate-100 space-y-2">
                   <label className="block text-xs font-extrabold text-slate-900 uppercase flex items-center gap-1.5">
-                    <MapPin className="w-4 h-4 text-[#39B54A]" /> Live Satellite GPS Location Sharing
+                    <MapPin className="w-4 h-4 text-[#7FBA44]" /> Live Satellite GPS Location Sharing
                   </label>
                   
                   {gpsCoords ? (
-                    <div className="p-3 bg-[#39B54A]/10 border border-[#39B54A]/30 rounded-xl flex items-center justify-between gap-2">
+                    <div className="p-3 bg-[#7FBA44]/10 border border-[#7FBA44]/30 rounded-xl flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-[#39B54A] shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-[#7FBA44] shrink-0" />
                         <div>
                           <p className="text-xs font-extrabold text-slate-900">GPS Location Attached!</p>
                           <p className="text-[11px] font-mono text-slate-600">
@@ -401,7 +396,7 @@ export default function CheckoutPage() {
                           href={gpsCoords.mapsUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-3 py-1.5 bg-[#39B54A] text-white text-[11px] font-bold rounded-lg hover:bg-[#2ea03e] inline-flex items-center gap-1 shadow-2xs"
+                          className="px-3 py-1.5 bg-[#7FBA44] text-white text-[11px] font-bold rounded-lg hover:bg-[#71A83A] inline-flex items-center gap-1 shadow-2xs"
                         >
                           <ExternalLink className="w-3 h-3" /> Preview Map
                         </a>
@@ -422,7 +417,7 @@ export default function CheckoutPage() {
                         disabled={gpsLoading}
                         className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-[0.98]"
                       >
-                        <Navigation className={`w-4 h-4 text-[#39B54A] ${gpsLoading ? 'animate-spin' : ''}`} />
+                        <Navigation className={`w-4 h-4 text-[#7FBA44] ${gpsLoading ? 'animate-spin' : ''}`} />
                         <span>{gpsLoading ? 'Fetching Satellite GPS...' : '📍 SHARE MY CURRENT GPS LOCATION FOR FAST DELIVERY'}</span>
                       </button>
                       {gpsError && (
@@ -439,11 +434,11 @@ export default function CheckoutPage() {
             {/* STEP 3: DELIVERY SLOT */}
             <div className="p-5 sm:p-6 bg-white rounded-2xl border border-slate-100 shadow-xs space-y-4">
               <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-                <div className="w-7 h-7 rounded-xl bg-[#39B54A] text-white font-black text-xs flex items-center justify-center shadow-2xs">
+                <div className="w-7 h-7 rounded-xl bg-[#7FBA44] text-white font-black text-xs flex items-center justify-center shadow-2xs">
                   3
                 </div>
                 <h2 className="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-[#39B54A]" /> Select Delivery Time Slot
+                  <Clock className="w-4 h-4 text-[#7FBA44]" /> Select Delivery Time Slot
                 </h2>
               </div>
 
@@ -458,12 +453,12 @@ export default function CheckoutPage() {
                         slot.isFull
                           ? 'opacity-50 bg-slate-100 border-slate-200 cursor-not-allowed'
                           : isSelected
-                          ? 'bg-[#39B54A]/10 border-[#39B54A] ring-2 ring-[#39B54A]/20 shadow-xs'
-                          : 'bg-white border-slate-200 hover:border-[#39B54A]'
+                          ? 'bg-[#7FBA44]/10 border-[#7FBA44] ring-2 ring-[#7FBA44]/20 shadow-xs'
+                          : 'bg-white border-slate-200 hover:border-[#7FBA44]'
                       }`}
                     >
                       <div>
-                        <div className="text-[10px] font-black text-[#39B54A] uppercase">
+                        <div className="text-[10px] font-black text-[#7FBA44] uppercase">
                           {slot.dateLabel}
                         </div>
                         <div className="text-xs font-extrabold text-slate-900 mt-0.5">
@@ -476,7 +471,7 @@ export default function CheckoutPage() {
                           FULL
                         </span>
                       ) : isSelected ? (
-                        <div className="w-5 h-5 rounded-full bg-[#39B54A] text-white flex items-center justify-center shadow-2xs">
+                        <div className="w-5 h-5 rounded-full bg-[#7FBA44] text-white flex items-center justify-center shadow-2xs">
                           <CheckCircle2 className="w-3.5 h-3.5 text-white" />
                         </div>
                       ) : null}
@@ -489,11 +484,11 @@ export default function CheckoutPage() {
             {/* STEP 4: PAYMENT METHOD */}
             <div className="p-5 sm:p-6 bg-white rounded-2xl border border-slate-100 shadow-xs space-y-4">
               <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-                <div className="w-7 h-7 rounded-xl bg-[#39B54A] text-white font-black text-xs flex items-center justify-center shadow-2xs">
+                <div className="w-7 h-7 rounded-xl bg-[#7FBA44] text-white font-black text-xs flex items-center justify-center shadow-2xs">
                   4
                 </div>
                 <h2 className="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-[#39B54A]" /> Choose Payment Method
+                  <CreditCard className="w-4 h-4 text-[#7FBA44]" /> Choose Payment Method
                 </h2>
               </div>
 
@@ -502,13 +497,13 @@ export default function CheckoutPage() {
                   onClick={() => setPaymentMethod('COD')}
                   className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                     paymentMethod === 'COD'
-                      ? 'bg-[#39B54A]/10 border-[#39B54A] ring-2 ring-[#39B54A]/20 shadow-xs'
-                      : 'bg-white border-slate-200 hover:border-[#39B54A]'
+                      ? 'bg-[#7FBA44]/10 border-[#7FBA44] ring-2 ring-[#7FBA44]/20 shadow-xs'
+                      : 'bg-white border-slate-200 hover:border-[#7FBA44]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 rounded-full border-2 border-[#39B54A] flex items-center justify-center">
-                      {paymentMethod === 'COD' && <div className="w-2 h-2 rounded-full bg-[#39B54A]" />}
+                    <div className="w-4 h-4 rounded-full border-2 border-[#7FBA44] flex items-center justify-center">
+                      {paymentMethod === 'COD' && <div className="w-2 h-2 rounded-full bg-[#7FBA44]" />}
                     </div>
                     <div>
                       <div className="text-xs font-extrabold text-slate-900">
@@ -519,7 +514,7 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                   </div>
-                  <span className="text-[10px] font-black bg-[#39B54A] text-white px-2.5 py-0.5 rounded-full shadow-2xs">
+                  <span className="text-[10px] font-black bg-[#7FBA44] text-white px-2.5 py-0.5 rounded-full shadow-2xs">
                     RECOMMENDED
                   </span>
                 </div>
@@ -528,13 +523,13 @@ export default function CheckoutPage() {
                   onClick={() => setPaymentMethod('ONLINE_UPI')}
                   className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                     paymentMethod === 'ONLINE_UPI'
-                      ? 'bg-[#39B54A]/10 border-[#39B54A] ring-2 ring-[#39B54A]/20 shadow-xs'
-                      : 'bg-white border-slate-200 hover:border-[#39B54A]'
+                      ? 'bg-[#7FBA44]/10 border-[#7FBA44] ring-2 ring-[#7FBA44]/20 shadow-xs'
+                      : 'bg-white border-slate-200 hover:border-[#7FBA44]'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 rounded-full border-2 border-[#39B54A] flex items-center justify-center">
-                      {paymentMethod === 'ONLINE_UPI' && <div className="w-2 h-2 rounded-full bg-[#39B54A]" />}
+                    <div className="w-4 h-4 rounded-full border-2 border-[#7FBA44] flex items-center justify-center">
+                      {paymentMethod === 'ONLINE_UPI' && <div className="w-2 h-2 rounded-full bg-[#7FBA44]" />}
                     </div>
                     <div>
                       <div className="text-xs font-extrabold text-slate-900">
@@ -567,7 +562,7 @@ export default function CheckoutPage() {
                         <div className="font-extrabold text-slate-900 line-clamp-1">
                           {item.product_name || 'Fresh Item'}
                         </div>
-                        <div className="text-[11px] text-[#39B54A] font-extrabold mt-0.5">
+                        <div className="text-[11px] text-[#7FBA44] font-extrabold mt-0.5">
                           Cut: {item.cleaning_option || 'Whole'} • {item.weight_kg === 0.5 ? '500g' : `${item.weight_kg}kg`} ({item.quantity}x)
                         </div>
                         <div className="text-[10px] text-slate-400 font-medium">
@@ -588,7 +583,7 @@ export default function CheckoutPage() {
                   <span className="font-bold text-slate-900">₹{cartSubtotal}</span>
                 </div>
                 {discountAmount > 0 && (
-                  <div className="flex justify-between text-[#39B54A] font-bold">
+                  <div className="flex justify-between text-[#7FBA44] font-bold">
                     <span>Discount</span>
                     <span>- ₹{discountAmount}</span>
                   </div>
@@ -597,7 +592,7 @@ export default function CheckoutPage() {
                   <span>Delivery Charge</span>
                   <span className="font-bold text-slate-900">
                     {deliveryFee === 0 ? (
-                      <span className="text-[#39B54A] font-black uppercase text-[10px]">FREE</span>
+                      <span className="text-[#7FBA44] font-black uppercase text-[10px]">FREE</span>
                     ) : (
                       `₹${deliveryFee}`
                     )}
@@ -605,14 +600,14 @@ export default function CheckoutPage() {
                 </div>
                 <div className="pt-2 border-t border-slate-200 flex justify-between text-base font-black text-slate-900">
                   <span>Grand Total</span>
-                  <span className="text-[#39B54A]">₹{grandTotal}</span>
+                  <span className="text-[#7FBA44]">₹{grandTotal}</span>
                 </div>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 px-4 bg-[#39B54A] hover:bg-[#2ea03e] text-white font-extrabold rounded-xl text-sm shadow-md shadow-[#39B54A]/25 transition-all flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+                className="w-full py-3.5 px-4 bg-[#7FBA44] hover:bg-[#71A83A] text-white font-extrabold rounded-xl text-sm shadow-md shadow-[#7FBA44]/25 transition-all flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-50 active:scale-[0.98]"
               >
                 {loading ? (
                   <div className="flex items-center gap-2">
@@ -628,7 +623,7 @@ export default function CheckoutPage() {
               </button>
 
               <div className="text-[10px] text-slate-500 font-semibold text-center flex items-center justify-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#39B54A]" />
+                <ShieldCheck className="w-3.5 h-3.5 text-[#7FBA44]" />
                 <span>100% Safe & Secure Order Processing</span>
               </div>
             </div>

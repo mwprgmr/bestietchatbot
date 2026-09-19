@@ -128,15 +128,15 @@ export default function CategoryPage() {
         <div>
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0F172A]/70 hover:text-[#39B54A] transition-colors mb-3"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0F172A]/70 hover:text-[#7FBA44] transition-colors mb-3"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Storefront</span>
           </Link>
 
-          <div className="relative rounded-3xl overflow-hidden bg-[#0F172A] text-white p-6 sm:p-8 border border-[#39B54A]/30 shadow-md">
+          <div className="relative rounded-3xl overflow-hidden bg-[#0F172A] text-white p-6 sm:p-8 border border-[#7FBA44]/30 shadow-md">
             <div className="relative z-10 max-w-xl space-y-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#39B54A]">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#7FBA44]">
                 Fresh Category
               </span>
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white uppercase">
@@ -150,7 +150,7 @@ export default function CategoryPage() {
         {/* Filter Bar */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
           <span className="text-xs font-bold text-[#0F172A]/70 flex items-center gap-1 mr-2 shrink-0">
-            <Filter className="w-3.5 h-3.5 text-[#39B54A]" /> Filter:
+            <Filter className="w-3.5 h-3.5 text-[#7FBA44]" /> Filter:
           </span>
           {['ALL', 'Cleaned', 'Curry Cut', 'Boneless', 'In Stock Only'].map((f) => (
             <button
@@ -158,8 +158,8 @@ export default function CategoryPage() {
               onClick={() => setFilterCut(f)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 filterCut === f
-                  ? 'bg-[#39B54A] text-white shadow-xs'
-                  : 'bg-[#FFFFFF] text-[#0F172A] border border-[#E2E8F0] hover:border-[#39B54A]'
+                  ? 'bg-[#7FBA44] text-white shadow-xs'
+                  : 'bg-[#FFFFFF] text-[#0F172A] border border-[#E2E8F0] hover:border-[#7FBA44]'
               }`}
             >
               {f}
@@ -170,12 +170,12 @@ export default function CategoryPage() {
         {/* Product Grid */}
         {loading ? (
           <div className="py-16 text-center space-y-3">
-            <div className="w-8 h-8 border-4 border-[#39B54A] border-t-transparent rounded-full animate-spin mx-auto" />
+            <div className="w-8 h-8 border-4 border-[#7FBA44] border-t-transparent rounded-full animate-spin mx-auto" />
             <p className="text-xs font-bold text-[#0F172A]/70 uppercase">Loading {categoryObj.name}...</p>
           </div>
         ) : products.length === 0 ? (
           <div className="p-12 text-center bg-[#FFFFFF] rounded-3xl border border-[#E2E8F0] text-[#0F172A]/70 space-y-2">
-            <AlertCircle className="w-8 h-8 mx-auto text-[#39B54A]" />
+            <AlertCircle className="w-8 h-8 mx-auto text-[#7FBA44]" />
             <h3 className="text-sm font-extrabold text-[#0F172A]">No products found in this category</h3>
             <p className="text-xs">Try selecting another branch or category.</p>
           </div>

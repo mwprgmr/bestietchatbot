@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useCustomer } from '@/lib/context/CustomerContext'
 import StorefrontLayout from '@/components/customer/StorefrontLayout'
 import ProductCard, { ProductProps } from '@/components/customer/ProductCard'
-import { Search, ArrowLeft, AlertCircle, ShoppingBag } from 'lucide-react'
+import { Search, ArrowLeft, AlertCircle, ShoppingBag, X } from 'lucide-react'
 import Link from 'next/link'
 
 function SearchContent() {
@@ -115,15 +115,10 @@ function SearchContent() {
           setProducts(mapped)
         }
       } catch (err: any) {
-        console.error('[SEARCH_ERROR] Exception in search execution:', err)
-        if (isMounted) {
-          setSearchError('Something went wrong while searching. Please try again.')
-          setProducts([])
-        }
+        console.error('Search error:', err)
+        if (isMounted) setSearchError('An unexpected error occurred.')
       } finally {
-        if (isMounted) {
-          setLoading(false)
-        }
+        if (isMounted) setLoading(false)
       }
     }
 
@@ -132,34 +127,49 @@ function SearchContent() {
     return () => {
       isMounted = false
     }
-  }, [query, selectedBranch?.id])
+  }, [query, selectedBranch])
 
-  const branchDisplayName = selectedBranch?.name ? selectedBranch.name.replace(' Branch', '') : ''
+  const branchDisplayName = selectedBranch?.name
 
   return (
     <div className="space-y-6">
       {/* Back Link */}
       <Link
         href="/"
-        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0F172A]/70 hover:text-[#39B54A] transition-colors"
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0F172A]/70 hover:text-[#7FBA44] transition-colors"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         <span>Back to Storefront</span>
       </Link>
 
-      {/* Search Input Box */}
+      {/* Search Input Box (Capsule Pill Design) */}
       <div className="bg-white p-6 rounded-3xl border border-[#E2E8F0] shadow-xs space-y-4">
         <h1 className="text-xl font-black text-[#0F172A] uppercase">SEARCH FRESH PRODUCTS</h1>
 
-        <div className="relative">
+        <div className="relative flex items-center bg-slate-50 focus-within:bg-white border border-slate-200 rounded-full p-1 pl-4 transition-all focus-within:border-[#7FBA44] focus-within:ring-2 focus-within:ring-[#7FBA44]/20 shadow-2xs">
+          <Search className="w-5 h-5 text-slate-400 shrink-0" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Type fish or meat name e.g. Neymeen, Ayala, Prawns, Chicken, Mutton..."
-            className="w-full pl-11 pr-4 py-3 bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl text-sm font-semibold text-[#0F172A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A] shadow-inner"
+            className="w-full bg-transparent border-none outline-none text-slate-900 placeholder:text-slate-400 text-sm font-semibold px-3 py-2"
           />
-          <Search className="w-5 h-5 text-[#0F172A]/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-full transition-colors mr-1 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+          <button
+            type="button"
+            className="shrink-0 bg-[#7FBA44] hover:bg-[#71A83A] text-white font-extrabold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-2xs transition-all active:scale-[0.98] cursor-pointer"
+          >
+            Search
+          </button>
         </div>
 
         {/* Quick Search Chips */}
@@ -172,7 +182,7 @@ function SearchContent() {
               key={tag}
               type="button"
               onClick={() => setQuery(tag)}
-              className="px-3 py-1 bg-[#E2E8F0] hover:bg-[#39B54A]/20 hover:text-[#0F172A] text-[#0F172A] font-bold rounded-full text-xs transition-colors border border-[#E2E8F0] shrink-0 cursor-pointer"
+              className="px-3.5 py-1.5 bg-[#E2E8F0]/60 hover:bg-[#7FBA44] hover:text-white text-[#0F172A] font-bold rounded-full text-xs transition-colors border border-transparent shrink-0 cursor-pointer"
             >
               {tag}
             </button>
@@ -183,7 +193,7 @@ function SearchContent() {
       {/* Search Results / States */}
       {loading ? (
         <div className="py-12 text-center space-y-2">
-          <div className="w-8 h-8 border-4 border-[#39B54A] border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="w-8 h-8 border-4 border-[#7FBA44] border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-xs font-bold text-[#0F172A]/70 uppercase tracking-wider">
             Searching fresh inventory...
           </p>
@@ -194,20 +204,20 @@ function SearchContent() {
           <h3 className="text-base font-extrabold text-slate-900">{searchError}</h3>
           <button
             onClick={() => setQuery(query)}
-            className="px-4 py-2 bg-[#39B54A] text-white font-bold text-xs rounded-xl hover:bg-[#2EA03E] transition-colors"
+            className="px-4 py-2 bg-[#7FBA44] text-white font-bold text-xs rounded-xl hover:bg-[#71A83A] transition-colors"
           >
             Try Again
           </button>
         </div>
       ) : !query.trim() ? (
         <div className="p-12 text-center bg-white rounded-3xl border border-[#E2E8F0] text-[#0F172A]/70 space-y-2">
-          <ShoppingBag className="w-8 h-8 mx-auto text-[#39B54A]" />
+          <ShoppingBag className="w-8 h-8 mx-auto text-[#7FBA44]" />
           <h3 className="text-base font-extrabold text-[#0F172A]">Search for fresh fish, meat & seafood</h3>
           <p className="text-xs">Type a keyword above or select one of the popular search tags.</p>
         </div>
       ) : products.length === 0 ? (
         <div className="p-12 text-center bg-white rounded-3xl border border-[#E2E8F0] text-[#0F172A]/70 space-y-2">
-          <AlertCircle className="w-8 h-8 mx-auto text-[#39B54A]" />
+          <AlertCircle className="w-8 h-8 mx-auto text-[#7FBA44]" />
           <h3 className="text-base font-extrabold text-[#0F172A]">No products found for "{query}"</h3>
           <p className="text-xs">Try searching for alternative names like Neymeen, Chicken, or Prawns.</p>
         </div>

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --bg-sage: #39B54A;
+  --bg-sage: #7FBA44;
   --bg-cream: #FFFFFF;
   --bg-gray: #F1F5F9;
   --text-dark: #0F172A;
@@ -55,7 +55,7 @@ body {
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #39B54A;
+  background: #7FBA44;
 }
 
 /* Hide scrollbar utility for horizontal category slider */

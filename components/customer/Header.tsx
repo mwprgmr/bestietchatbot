@@ -41,24 +41,30 @@ export default function Header() {
 
           {/* 2. CENTER SEARCH BAR (Desktop Only) */}
           <form onSubmit={handleSearchSubmit} className="flex-1 max-w-xl hidden md:block">
-            <div className="relative group">
+            <div className="relative flex items-center bg-slate-50 hover:bg-white focus-within:bg-white border border-slate-200 rounded-full p-1 pl-5 shadow-2xs focus-within:ring-2 focus-within:ring-[#7FBA44]/30 focus-within:border-[#7FBA44] transition-all">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search fresh fish, chicken, mutton, prawns..."
-                className="w-full pl-11 pr-10 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/25 focus:border-[#39B54A] transition-all shadow-2xs"
+                className="w-full bg-transparent border-none outline-none text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 pr-2"
               />
-              <Search className="w-4 h-4 text-[#39B54A] absolute left-3.5 top-1/2 -translate-y-1/2" />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={clearSearch}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 transition-colors"
+                  className="p-1 text-slate-400 hover:text-slate-700 transition-colors mr-1"
                 >
                   <X className="w-4 h-4" />
                 </button>
               )}
+              <button
+                type="submit"
+                className="shrink-0 bg-[#7FBA44] hover:bg-[#71A83A] text-white font-extrabold text-xs sm:text-sm px-5 py-2 rounded-full shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span>Search</span>
+              </button>
             </div>
           </form>
 
@@ -67,11 +73,11 @@ export default function Header() {
             onClick={() => setIsLocationOpen(true)}
             className="flex items-center gap-2 text-left cursor-pointer px-3 py-1.5 bg-slate-50 hover:bg-slate-100 sm:bg-slate-50/80 rounded-xl border border-slate-200 shrink-0 max-w-[170px] sm:max-w-xs transition-all active:scale-[0.98]"
           >
-            <div className="w-7 h-7 rounded-lg bg-[#39B54A]/10 flex items-center justify-center shrink-0">
-              <MapPin className="w-4 h-4 text-[#39B54A]" />
+            <div className="w-7 h-7 rounded-lg bg-[#7FBA44]/10 flex items-center justify-center shrink-0">
+              <MapPin className="w-4 h-4 text-[#7FBA44]" />
             </div>
             <div className="flex flex-col leading-tight min-w-0">
-              <span className="text-[10px] font-black text-[#39B54A] uppercase tracking-wider hidden sm:block">
+              <span className="text-[10px] font-black text-[#7FBA44] uppercase tracking-wider hidden sm:block">
                 Express Delivery 15-30 Mins
               </span>
               <span className="text-xs sm:text-sm font-bold text-slate-800 truncate">
@@ -86,7 +92,7 @@ export default function Header() {
             {/* Account Link */}
             <Link
               href="/orders"
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:text-[#39B54A] hover:bg-slate-50 transition-all font-bold text-xs sm:text-sm"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-700 hover:text-[#7FBA44] hover:bg-slate-50 transition-all font-bold text-xs sm:text-sm"
             >
               <User className="w-4.5 h-4.5" />
               <span>Orders</span>
@@ -95,12 +101,12 @@ export default function Header() {
             {/* Cart Button */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#39B54A] hover:bg-[#2ea03e] text-white transition-all font-bold text-xs sm:text-sm shadow-xs cursor-pointer active:scale-[0.98]"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#7FBA44] hover:bg-[#71A83A] text-white transition-all font-bold text-xs sm:text-sm shadow-xs cursor-pointer active:scale-[0.98]"
             >
               <div className="relative">
                 <ShoppingBag className="w-4.5 h-4.5" />
                 {totalItemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-white text-[#39B54A] text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-2xs">
+                  <span className="absolute -top-2 -right-2 bg-white text-[#7FBA44] text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-2xs">
                     {totalItemCount}
                   </span>
                 )}
@@ -110,26 +116,32 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Upgraded Mobile Search Bar */}
+        {/* Upgraded Mobile Capsule Search Bar */}
         <form onSubmit={handleSearchSubmit} className="mt-2.5 md:hidden">
-          <div className="relative">
+          <div className="relative flex items-center bg-slate-50 focus-within:bg-white border border-slate-200 rounded-full p-1 pl-4 shadow-2xs focus-within:ring-2 focus-within:ring-[#7FBA44]/30 focus-within:border-[#7FBA44] transition-all">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search fresh fish, chicken, mutton..."
-              className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/25 focus:border-[#39B54A] transition-all shadow-2xs"
+              placeholder="Search ..."
+              className="w-full bg-transparent border-none outline-none text-xs font-semibold text-slate-900 placeholder-slate-400 pr-1"
             />
-            <Search className="w-4 h-4 text-[#39B54A] absolute left-3 top-1/2 -translate-y-1/2" />
             {searchQuery && (
               <button
                 type="button"
                 onClick={clearSearch}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700"
+                className="p-1 text-slate-400 hover:text-slate-700 mr-1"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
+            <button
+              type="submit"
+              className="shrink-0 bg-[#7FBA44] hover:bg-[#71A83A] text-white font-extrabold text-xs px-4 py-1.5 rounded-full shadow-2xs flex items-center gap-1 cursor-pointer active:scale-95"
+            >
+              <Search className="w-3 h-3" />
+              <span>Search</span>
+            </button>
           </div>
         </form>
       </div>

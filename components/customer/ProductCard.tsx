@@ -81,7 +81,7 @@ function ProductCardComponent({ product }: { product: ProductProps }) {
   }, [])
 
   return (
-    <div className="group relative bg-white border border-slate-200/90 hover:border-[#39B54A]/50 rounded-[20px] sm:rounded-[22px] p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all duration-200 overflow-hidden min-h-[125px] sm:min-h-[155px] flex flex-col justify-between h-full transform-gpu contain-render">
+    <div className="group relative bg-white border border-slate-200/90 hover:border-[#7FBA44]/50 rounded-[20px] sm:rounded-[22px] p-3 sm:p-3.5 shadow-2xs hover:shadow-md transition-all duration-200 overflow-hidden min-h-[125px] sm:min-h-[155px] flex flex-col justify-between h-full transform-gpu contain-render">
       <Link href={`/product/${product.id}`} className="flex flex-row gap-3 sm:gap-3.5 items-stretch h-full">
         
         {/* 1. PRODUCT IMAGE CONTAINER */}
@@ -101,7 +101,7 @@ function ProductCardComponent({ product }: { product: ProductProps }) {
 
           {/* STOCK BADGE */}
           {!isOutOfStock ? (
-            <div className="absolute top-1.5 left-1.5 z-10 bg-[#39B54A] text-white px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shadow-2xs">
+            <div className="absolute top-1.5 left-1.5 z-10 bg-[#7FBA44] text-white px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shadow-2xs">
               <Leaf className="w-2.5 h-2.5 sm:w-2.5 sm:h-2.5 text-white fill-white/40" />
               <span>{product.available_stock}kg</span>
             </div>
@@ -127,7 +127,7 @@ function ProductCardComponent({ product }: { product: ProductProps }) {
 
           {/* DISCOUNT BADGE OVERLAY */}
           {savings > 0 && !isOutOfStock && (
-            <div className="absolute bottom-1.5 left-1.5 z-10 bg-gradient-to-r from-[#39B54A] to-[#2EA03E] text-white font-black text-[8px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-md shadow-2xs uppercase tracking-tight">
+            <div className="absolute bottom-1.5 left-1.5 z-10 bg-gradient-to-r from-[#7FBA44] to-[#71A83A] text-white font-black text-[8px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-md shadow-2xs uppercase tracking-tight">
               SAVE ₹{savings}
             </div>
           )}
@@ -147,7 +147,7 @@ function ProductCardComponent({ product }: { product: ProductProps }) {
           
           <div className="space-y-1">
             {/* PRODUCT TITLE */}
-            <h3 className="font-extrabold text-[#142B27] text-xs sm:text-[15px] leading-snug tracking-tight line-clamp-1 group-hover:text-[#39B54A] transition-colors capitalize">
+            <h3 className="font-extrabold text-[#142B27] text-xs sm:text-[15px] leading-snug tracking-tight line-clamp-1 group-hover:text-[#7FBA44] transition-colors capitalize">
               {product.name}
             </h3>
 
@@ -159,7 +159,7 @@ function ProductCardComponent({ product }: { product: ProductProps }) {
               </div>
               <span className="text-slate-300">•</span>
               <div className="flex items-center gap-1 text-[#758681] font-semibold text-[9px] sm:text-[11px]">
-                <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#39B54A]" />
+                <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#7FBA44]" />
                 <span>20-35m</span>
               </div>
             </div>
@@ -169,7 +169,7 @@ function ProductCardComponent({ product }: { product: ProductProps }) {
               <span className="truncate">{product.category}</span>
               <span className="text-slate-300">•</span>
               <span className="shrink-0 flex items-center gap-0.5 text-slate-500">
-                <MapPin className="w-2.5 h-2.5 text-[#39B54A]" />
+                <MapPin className="w-2.5 h-2.5 text-[#7FBA44]" />
                 {branchName}
               </span>
             </div>
@@ -178,7 +178,7 @@ function ProductCardComponent({ product }: { product: ProductProps }) {
           {/* WEIGHT SELECTOR PILLS */}
           <div className="flex items-center justify-between gap-1 bg-slate-50 border border-slate-200/60 rounded-xl p-1">
             <div className="flex items-center gap-1 min-w-0 pl-0.5">
-              <Package className="w-3 h-3 text-[#39B54A] shrink-0" />
+              <Package className="w-3 h-3 text-[#7FBA44] shrink-0" />
               <span className="text-[10px] sm:text-[11px] font-bold text-[#142B27] truncate">
                 {selectedWeight === 0.5 ? '500g Pack' : '1kg Pack'}
               </span>
@@ -196,7 +196,7 @@ function ProductCardComponent({ product }: { product: ProductProps }) {
                   }}
                   className={`px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[11px] font-extrabold transition-all cursor-pointer ${
                     selectedWeight === w
-                      ? 'bg-[#39B54A] text-white shadow-2xs'
+                      ? 'bg-[#7FBA44] text-white shadow-2xs'
                       : 'text-[#758681] hover:text-[#142B27]'
                   }`}
                 >
@@ -232,12 +232,12 @@ function ProductCardComponent({ product }: { product: ProductProps }) {
                       e.preventDefault()
                       e.stopPropagation()
                     }}
-                    className="flex items-center gap-1 bg-white text-[#39B54A] border border-[#39B54A] rounded-full px-2 py-0.5 shadow-2xs h-[30px] sm:h-[34px]"
+                    className="flex items-center gap-1 bg-white text-[#7FBA44] border border-[#7FBA44] rounded-full px-2 py-0.5 shadow-2xs h-[30px] sm:h-[34px]"
                   >
                     <button
                       type="button"
                       onClick={(e) => handleQtyChange(e, -1)}
-                      className="w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full bg-slate-100 hover:bg-[#39B54A]/10 flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+                      className="w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full bg-slate-100 hover:bg-[#7FBA44]/10 flex items-center justify-center transition-colors cursor-pointer active:scale-95"
                     >
                       <Minus className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#142B27] stroke-[3]" />
                     </button>
@@ -247,7 +247,7 @@ function ProductCardComponent({ product }: { product: ProductProps }) {
                     <button
                       type="button"
                       onClick={(e) => handleQtyChange(e, 1)}
-                      className="w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full bg-[#39B54A] hover:bg-[#2EA03E] flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+                      className="w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full bg-[#7FBA44] hover:bg-[#71A83A] flex items-center justify-center transition-colors cursor-pointer active:scale-95"
                     >
                       <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white stroke-[3]" />
                     </button>
@@ -256,7 +256,7 @@ function ProductCardComponent({ product }: { product: ProductProps }) {
                   <button
                     type="button"
                     onClick={handleInitialAdd}
-                    className="bg-[#39B54A] hover:bg-[#2EA03E] text-white font-extrabold text-xs px-3 sm:px-3.5 py-1 h-[30px] sm:h-[34px] rounded-full shadow-2xs hover:shadow-md flex items-center gap-1 transition-all cursor-pointer active:scale-95"
+                    className="bg-[#7FBA44] hover:bg-[#71A83A] text-white font-extrabold text-xs px-3 sm:px-3.5 py-1 h-[30px] sm:h-[34px] rounded-full shadow-2xs hover:shadow-md flex items-center gap-1 transition-all cursor-pointer active:scale-95"
                   >
                     <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[3]" />
                     <span>ADD</span>

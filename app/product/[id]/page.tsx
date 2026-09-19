@@ -84,7 +84,7 @@ export default function ProductDetailsPage() {
     return (
       <StorefrontLayout>
         <div className="py-20 text-center space-y-3">
-          <div className="w-10 h-10 border-4 border-[#39B54A] border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="w-10 h-10 border-4 border-[#7FBA44] border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-xs font-bold text-[#0F172A]/70 uppercase tracking-wider">
             Loading Fresh Product Details...
           </p>
@@ -97,11 +97,11 @@ export default function ProductDetailsPage() {
     return (
       <StorefrontLayout>
         <div className="py-16 text-center space-y-4 max-w-md mx-auto">
-          <AlertCircle className="w-10 h-10 text-[#39B54A] mx-auto" />
+          <AlertCircle className="w-10 h-10 text-[#7FBA44] mx-auto" />
           <h2 className="text-lg font-extrabold text-[#0F172A]">Product Not Found</h2>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#39B54A] text-white font-extrabold text-xs hover:bg-[#2ea03e] transition-all"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#7FBA44] text-white font-extrabold text-xs hover:bg-[#71A83A] transition-all"
           >
             Return to Storefront
           </Link>
@@ -151,7 +151,7 @@ export default function ProductDetailsPage() {
         {/* Back Link */}
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0F172A]/70 hover:text-[#39B54A] transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0F172A]/70 hover:text-[#7FBA44] transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Storefront</span>
@@ -180,7 +180,7 @@ export default function ProductDetailsPage() {
             {/* Quality Guarantee Box */}
             <div className="p-4 rounded-2xl bg-white border border-[#E2E8F0] space-y-2 text-xs text-[#0F172A]/80">
               <div className="font-extrabold text-[#0F172A] flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-[#39B54A]" />
+                <ShieldCheck className="w-4 h-4 text-[#7FBA44]" />
                 <span>Bestiet Fresh Guarantee</span>
               </div>
               <ul className="space-y-1 text-[11px] text-[#0F172A]/70 list-disc list-inside">
@@ -194,7 +194,7 @@ export default function ProductDetailsPage() {
           {/* Right Column: Product Details & Controls */}
           <div className="space-y-6">
             <div>
-              <span className="text-xs font-extrabold uppercase tracking-wider text-[#39B54A]">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[#7FBA44]">
                 {product.category} • {selectedBranch?.name ? selectedBranch.name.replace(' Branch', '') : ''}
 
               </span>
@@ -212,7 +212,7 @@ export default function ProductDetailsPage() {
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-black text-[#0F172A]">₹{calculatedPackPrice}</span>
                   <span className="text-xs text-[#0F172A]/50 line-through">₹{originalPackPrice}</span>
-                  <span className="text-xs font-extrabold text-[#39B54A] bg-[#39B54A]/15 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-extrabold text-[#7FBA44] bg-[#7FBA44]/15 px-2 py-0.5 rounded-full">
                     Save 20%
                   </span>
                 </div>
@@ -226,7 +226,7 @@ export default function ProductDetailsPage() {
                 {isOutOfStock ? (
                   <span className="text-xs font-extrabold text-[#0F172A] uppercase">Out of Stock</span>
                 ) : (
-                  <span className="text-xs font-extrabold text-[#39B54A] uppercase flex items-center gap-1">
+                  <span className="text-xs font-extrabold text-[#7FBA44] uppercase flex items-center gap-1">
                     <Check className="w-3.5 h-3.5" /> In Stock ({availableStock} kg)
                   </span>
                 )}
@@ -246,8 +246,8 @@ export default function ProductDetailsPage() {
                     onClick={() => setSelectedWeight(w.value)}
                     className={`py-2 px-3 rounded-xl text-xs font-extrabold transition-all border ${
                       selectedWeight === w.value
-                        ? 'bg-[#39B54A] text-white border-[#39B54A] shadow-xs'
-                        : 'bg-white text-[#0F172A] border-[#E2E8F0] hover:border-[#39B54A]'
+                        ? 'bg-[#7FBA44] text-white border-[#7FBA44] shadow-xs'
+                        : 'bg-white text-[#0F172A] border-[#E2E8F0] hover:border-[#7FBA44]'
                     }`}
                   >
                     {w.label}
@@ -269,12 +269,12 @@ export default function ProductDetailsPage() {
                     onClick={() => setSelectedCut(cut)}
                     className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border flex items-center justify-between ${
                       selectedCut === cut
-                        ? 'bg-[#39B54A]/15 text-[#0F172A] border-[#39B54A] font-extrabold shadow-2xs'
-                        : 'bg-white text-[#0F172A] border-[#E2E8F0] hover:border-[#39B54A]'
+                        ? 'bg-[#7FBA44]/15 text-[#0F172A] border-[#7FBA44] font-extrabold shadow-2xs'
+                        : 'bg-white text-[#0F172A] border-[#E2E8F0] hover:border-[#7FBA44]'
                     }`}
                   >
                     <span>{cut}</span>
-                    {selectedCut === cut && <Check className="w-3.5 h-3.5 text-[#39B54A]" />}
+                    {selectedCut === cut && <Check className="w-3.5 h-3.5 text-[#7FBA44]" />}
                   </button>
                 ))}
               </div>
@@ -288,14 +288,14 @@ export default function ProductDetailsPage() {
               <div className="flex items-center gap-3 bg-white p-1.5 rounded-xl border border-[#E2E8F0]">
                 <button
                   onClick={() => setPackQuantity((q) => Math.max(1, q - 1))}
-                  className="w-7 h-7 rounded-lg bg-[#E2E8F0] hover:bg-[#39B54A]/20 flex items-center justify-center font-bold text-[#0F172A] shadow-2xs"
+                  className="w-7 h-7 rounded-lg bg-[#E2E8F0] hover:bg-[#7FBA44]/20 flex items-center justify-center font-bold text-[#0F172A] shadow-2xs"
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
                 <span className="text-sm font-extrabold px-2 text-[#0F172A]">{packQuantity}</span>
                 <button
                   onClick={() => setPackQuantity((q) => Math.min(10, q + 1))}
-                  className="w-7 h-7 rounded-lg bg-[#E2E8F0] hover:bg-[#39B54A]/20 flex items-center justify-center font-bold text-[#0F172A] shadow-2xs"
+                  className="w-7 h-7 rounded-lg bg-[#E2E8F0] hover:bg-[#7FBA44]/20 flex items-center justify-center font-bold text-[#0F172A] shadow-2xs"
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
@@ -307,7 +307,7 @@ export default function ProductDetailsPage() {
               <button
                 onClick={handleAddToCart}
                 disabled={isOutOfStock}
-                className="py-3 px-4 bg-[#39B54A] hover:bg-[#2EA03E] text-white font-extrabold rounded-xl text-xs shadow-md shadow-[#39B54A]/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="py-3 px-4 bg-[#7FBA44] hover:bg-[#71A83A] text-white font-extrabold rounded-xl text-xs shadow-md shadow-[#7FBA44]/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span>ADD TO CART (₹{totalItemPrice})</span>

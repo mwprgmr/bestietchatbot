@@ -68,7 +68,7 @@ export default function LocationModal() {
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-[#39B54A]/10 text-[#39B54A]">
+            <div className="p-2 rounded-xl bg-[#7FBA44]/10 text-[#7FBA44]">
               <MapPin className="w-5 h-5" />
             </div>
             <div>
@@ -91,7 +91,7 @@ export default function LocationModal() {
             disabled={detecting}
             className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-50 shadow-xs active:scale-[0.98]"
           >
-            <Navigation className="w-4 h-4 text-[#39B54A] group-hover:rotate-45 transition-transform" />
+            <Navigation className="w-4 h-4 text-[#7FBA44] group-hover:rotate-45 transition-transform" />
             <span>{detecting ? 'Detecting Location...' : 'Use Current GPS Location'}</span>
           </button>
 
@@ -109,14 +109,14 @@ export default function LocationModal() {
                     onClick={() => handleBranchSelect(b)}
                     className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
                       isSelected
-                        ? 'bg-[#39B54A]/10 border-[#39B54A] ring-2 ring-[#39B54A]/20 shadow-xs'
-                        : 'bg-white border-slate-200 hover:border-[#39B54A] hover:bg-slate-50'
+                        ? 'bg-[#7FBA44]/10 border-[#7FBA44] ring-2 ring-[#7FBA44]/20 shadow-xs'
+                        : 'bg-white border-slate-200 hover:border-[#7FBA44] hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div
                         className={`p-2 rounded-xl ${
-                          isSelected ? 'bg-[#39B54A] text-white' : 'bg-slate-100 border border-slate-200 text-slate-500'
+                          isSelected ? 'bg-[#7FBA44] text-white' : 'bg-slate-100 border border-slate-200 text-slate-500'
                         }`}
                       >
                         <Building2 className="w-4 h-4" />
@@ -127,7 +127,7 @@ export default function LocationModal() {
                       </div>
                     </div>
                     {isSelected && (
-                      <div className="w-6 h-6 rounded-full bg-[#39B54A] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                      <div className="w-6 h-6 rounded-full bg-[#7FBA44] text-white flex items-center justify-center shrink-0 shadow-2xs">
                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                       </div>
                     )}
@@ -147,11 +147,11 @@ export default function LocationModal() {
               value={inputAddress}
               onChange={(e) => setInputAddress(e.target.value)}
               placeholder="House Name, Flat No, Street, Landmark..."
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#39B54A]/20 focus:border-[#39B54A]"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#7FBA44]/20 focus:border-[#7FBA44]"
             />
             <button
               type="submit"
-              className="w-full py-3 bg-[#39B54A] hover:bg-[#2ea03e] text-white font-extrabold rounded-xl text-xs transition-all shadow-xs active:scale-[0.98]"
+              className="w-full py-3 bg-[#7FBA44] hover:bg-[#71A83A] text-white font-extrabold rounded-xl text-xs transition-all shadow-xs active:scale-[0.98]"
             >
               Confirm Delivery Address
             </button>

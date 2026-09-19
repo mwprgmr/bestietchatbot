@@ -152,7 +152,7 @@ export default function HomepageHero() {
                   onClick={() => setCurrentIndex(idx)}
                   className={`h-2 rounded-full transition-all cursor-pointer ${
                     currentIndex === idx
-                      ? 'w-6 bg-[#39B54A]'
+                      ? 'w-6 bg-[#7FBA44]'
                       : 'w-2 bg-white/50 hover:bg-white/80'
                   }`}
                   aria-label={`Go to poster ${idx + 1}`}
@@ -174,7 +174,7 @@ export default function HomepageHero() {
               Explore fresh ocean catch, tender meats, and value combos
             </p>
           </div>
-          <span className="text-[10px] font-extrabold uppercase text-[#39B54A] tracking-wider sm:hidden">
+          <span className="text-[10px] font-extrabold uppercase text-[#7FBA44] tracking-wider sm:hidden">
             Swipe →
           </span>
         </div>
@@ -187,14 +187,14 @@ export default function HomepageHero() {
               href={`/category/${cat.slug}`}
               className="category-circle category-item group flex flex-col items-center shrink-0 snap-start cursor-pointer transition-all active:scale-95 animate-fade-in-up"
             >
-              <div className="category-circle category-item w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shadow-md border-2 border-[#39B54A]/30 bg-[#F1F5F9] relative flex items-center justify-center">
+              <div className="category-circle category-item w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shadow-md border-2 border-[#7FBA44]/30 bg-[#F1F5F9] relative flex items-center justify-center">
                 <img
                   src={cat.image}
                   alt={cat.name}
                   className="category-circle category-item w-full h-full object-cover rounded-full"
                 />
               </div>
-              <span className="text-xs sm:text-sm font-black text-[#0F172A] group-hover:text-[#39B54A] transition-colors mt-2.5 text-center line-clamp-1 max-w-[100px] sm:max-w-[120px]">
+              <span className="text-xs sm:text-sm font-black text-[#0F172A] group-hover:text-[#7FBA44] transition-colors mt-2.5 text-center line-clamp-1 max-w-[100px] sm:max-w-[120px]">
                 {cat.name}
               </span>
             </Link>

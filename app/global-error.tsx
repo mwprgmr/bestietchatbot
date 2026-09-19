@@ -23,7 +23,7 @@ export default function RootGlobalError({
             <img src="/logo.png" alt="Bestiet Fresh" className="h-10 w-auto object-contain" />
           </div>
 
-          <div className="w-16 h-16 rounded-full bg-amber-50 text-[#39B54A] flex items-center justify-center mx-auto border border-[#39B54A]/30">
+          <div className="w-16 h-16 rounded-full bg-amber-50 text-[#7FBA44] flex items-center justify-center mx-auto border border-[#7FBA44]/30">
             <AlertCircle className="w-8 h-8" />
           </div>
 
@@ -39,7 +39,7 @@ export default function RootGlobalError({
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <button
               onClick={() => reset()}
-              className="w-full sm:w-auto px-5 py-2.5 bg-[#39B54A] hover:bg-[#2EA03E] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto px-5 py-2.5 bg-[#7FBA44] hover:bg-[#71A83A] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <RefreshCw className="w-4 h-4" />
               <span>Try Again</span>

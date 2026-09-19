@@ -19,7 +19,7 @@ export default function LoadingScreen({
       <div className="flex flex-col items-center justify-center space-y-4">
         {/* Simple Green Spinner */}
         <div className="relative w-12 h-12 flex items-center justify-center">
-          <div className="w-12 h-12 rounded-full border-4 border-slate-100 border-t-[#39B54A] animate-spin transform-gpu" />
+          <div className="w-12 h-12 rounded-full border-4 border-slate-100 border-t-[#7FBA44] animate-spin transform-gpu" />
         </div>
       </div>
     </div>
