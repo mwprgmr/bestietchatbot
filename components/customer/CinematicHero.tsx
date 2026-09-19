@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, ArrowDown, ShieldCheck, Flame } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { CATEGORIES } from '@/lib/data/ecommerce-data'
@@ -55,11 +55,6 @@ export default function CinematicHero() {
   // Mouse parallax motion coordinates
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
 
-  // Scroll parallax effects using Framer Motion
-  const { scrollY } = useScroll()
-  const heroY = useTransform(scrollY, [0, 500], [0, 80])
-  const heroScale = useTransform(scrollY, [0, 500], [1, 0.96])
-  const heroOpacity = useTransform(scrollY, [0, 450], [1, 0.35])
 
   useEffect(() => {
     async function loadData() {
@@ -137,11 +132,10 @@ export default function CinematicHero() {
       </div>
 
       {/* Main Cinematic Hero Banner Environment */}
-      <motion.div
-        style={{ y: heroY, scale: heroScale, opacity: heroOpacity }}
+      <div
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className="relative rounded-3xl overflow-hidden bg-slate-950 shadow-2xl border border-slate-800/80 h-[240px] xs:h-[280px] sm:h-[380px] md:h-[480px] lg:h-[520px] w-full group transition-all transform-gpu"
+        className="relative rounded-3xl overflow-hidden bg-slate-950 shadow-2xl border border-slate-800/80 h-[240px] xs:h-[280px] sm:h-[380px] md:h-[480px] lg:h-[520px] w-full group transition-all"
       >
         {/* Animated Media Layer */}
         <AnimatePresence mode="wait">
@@ -216,7 +210,7 @@ export default function CinematicHero() {
             </div>
           </>
         )}
-      </motion.div>
+      </div>
 
       {/* Interactive Category Showcase Section */}
       <section id="categories" className="space-y-4 pt-2 scroll-mt-24">
