@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCustomer } from '@/lib/context/CustomerContext'
-import { MapPin, Search, ShoppingBag, User, ChevronDown, Zap, X } from 'lucide-react'
+import { MapPin, Search, ShoppingBag, User, ChevronDown, X } from 'lucide-react'
 
 export default function Header() {
   const router = useRouter()
@@ -68,8 +68,7 @@ export default function Header() {
             className="flex items-center gap-2 text-left cursor-pointer px-3 py-1.5 bg-slate-50 hover:bg-slate-100 sm:bg-slate-50/80 rounded-xl border border-slate-200 shrink-0 max-w-[170px] sm:max-w-xs transition-all active:scale-[0.98]"
           >
             <div className="w-7 h-7 rounded-lg bg-[#39B54A]/10 flex items-center justify-center shrink-0">
-              <Zap className="w-4 h-4 text-[#39B54A] fill-[#39B54A] hidden sm:block" />
-              <MapPin className="w-4 h-4 text-[#39B54A] sm:hidden" />
+              <MapPin className="w-4 h-4 text-[#39B54A]" />
             </div>
             <div className="flex flex-col leading-tight min-w-0">
               <span className="text-[10px] font-black text-[#39B54A] uppercase tracking-wider hidden sm:block">
