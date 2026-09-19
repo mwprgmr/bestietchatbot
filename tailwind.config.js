@@ -29,7 +29,8 @@ module.exports = {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'Manrope', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-poppins)', 'Poppins', 'system-ui', 'sans-serif'],
+        poppins: ['var(--font-poppins)', 'Poppins', 'sans-serif'],
       },
     },
   },

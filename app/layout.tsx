@@ -3,10 +3,15 @@ export const revalidate = 0;
 
 import './globals.css'
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Poppins } from 'next/font/google'
 import Providers from './providers'
 
-const inter = Inter({ subsets: ['latin'] })
+const poppins = Poppins({
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-poppins',
+})
 
 export const metadata: Metadata = {
   title: 'BESTIET FRESH - Your Fresh Friend At The Door',
@@ -19,8 +24,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className={poppins.variable}>
+      <body className={poppins.className}>
         <Providers>{children}</Providers>
       </body>
     </html>
