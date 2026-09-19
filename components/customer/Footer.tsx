@@ -14,7 +14,7 @@ const DEFAULT_FOOTER_CATS = [
   { name: 'Fresh Family Combos', slug: 'combos' },
 ]
 
-export default function Footer() {
+function FooterComponent() {
   const [categories, setCategories] = useState<{ name: string; slug: string }[]>(DEFAULT_FOOTER_CATS)
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function Footer() {
   }, [])
 
   return (
-    <footer className="bg-slate-950 text-slate-100 pt-12 pb-24 md:pb-12 border-t border-slate-800">
+    <footer className="bg-slate-950 text-slate-100 pt-12 pb-24 md:pb-12 border-t border-slate-800 gpu-layer">
       <div className="max-w-7xl mx-auto px-4">
         {/* Top Trust Ribbon */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-12 border-b border-slate-800">
@@ -186,3 +186,6 @@ export default function Footer() {
     </footer>
   )
 }
+
+const Footer = React.memo(FooterComponent)
+export default Footer

@@ -10,7 +10,7 @@ import Link from 'next/link'
 import { ProductGridSkeleton } from '@/components/ui/Skeleton'
 
 // Helper component for Horizontal Section Slider
-function ProductSectionSlider({
+const ProductSectionSlider = React.memo(function ProductSectionSlider({
   subtitle,
   title,
   viewAllHref,
@@ -35,7 +35,7 @@ function ProductSectionSlider({
   if (!products || products.length === 0) return null
 
   return (
-    <section className="space-y-3 sm:space-y-4">
+    <section className="space-y-3 sm:space-y-4 gpu-layer">
       {/* Header with Title & Left/Right Slider Controls */}
       <div className="flex items-end justify-between pb-2 border-b border-[#E2ECE7]">
         <div>
@@ -93,7 +93,7 @@ function ProductSectionSlider({
       </div>
     </section>
   )
-}
+})
 
 export default function ProductGrid() {
   const { selectedBranch } = useCustomer()

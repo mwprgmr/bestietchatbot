@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useCustomer } from '@/lib/context/CustomerContext'
 import { Home, Grid, Search, ShoppingBag, User, ArrowRight } from 'lucide-react'
 
-export default function MobileNav() {
+function MobileNavComponent() {
   const pathname = usePathname()
   const { cart, grandTotal, cartSubtotal, deliveryFee, isCartOpen, setIsCartOpen } = useCustomer()
 
@@ -41,7 +41,7 @@ export default function MobileNav() {
   }
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-50 md:hidden flex flex-col pointer-events-auto">
+    <div className="fixed bottom-0 inset-x-0 z-50 md:hidden flex flex-col pointer-events-auto gpu-layer">
       {/* Sticky Cart Bar (only show if cart has items AND drawer is NOT open AND not on cart page) */}
       {totalItems > 0 && !isCartOpen && !isCartPage && (
         <div className="p-3 px-4 bg-[#39B54A] text-white shadow-2xl rounded-t-2xl flex items-center justify-between border-t border-[#39B54A]/50 animate-fade-in-up">
@@ -74,7 +74,7 @@ export default function MobileNav() {
       )}
 
       {/* Bottom Navigation Bar */}
-      <nav className="glass-surface border-t border-slate-200/80 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] px-2 flex items-center justify-around text-slate-600 shadow-2xl">
+      <nav className="bg-white/95 border-t border-slate-200/80 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] px-2 flex items-center justify-around text-slate-600 shadow-2xl">
         {/* HOME */}
         <Link
           href="/"
@@ -142,3 +142,6 @@ export default function MobileNav() {
     </div>
   )
 }
+
+const MobileNav = React.memo(MobileNavComponent)
+export default MobileNav

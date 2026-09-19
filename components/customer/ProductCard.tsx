@@ -21,7 +21,7 @@ export interface ProductProps {
   reviews_count?: string
 }
 
-export default function ProductCard({ product }: { product: ProductProps }) {
+function ProductCardComponent({ product }: { product: ProductProps }) {
   const { cart, addToCart, updateCartQuantity, selectedBranch } = useCustomer()
   const [selectedWeight, setSelectedWeight] = useState<number>(0.5) // 500g default pack
   const [isFavorite, setIsFavorite] = useState<boolean>(false)
@@ -83,7 +83,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
   }
 
   return (
-    <div className="group relative bg-white/80 backdrop-blur-xl border border-white/90 hover:border-[#39B54A]/50 rounded-[20px] sm:rounded-[22px] p-3 sm:p-3.5 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_rgba(57,181,74,0.12)] transition-all duration-300 overflow-hidden min-h-[125px] sm:min-h-[155px] flex flex-col justify-between h-full">
+    <div className="group relative bg-white/95 border border-slate-200/90 hover:border-[#39B54A]/50 rounded-[20px] sm:rounded-[22px] p-3 sm:p-3.5 shadow-2xs hover:shadow-[0_8px_24px_rgba(57,181,74,0.12)] transition-all duration-200 overflow-hidden min-h-[125px] sm:min-h-[155px] flex flex-col justify-between h-full gpu-layer">
       <Link href={`/product/${product.id}`} className="flex flex-row gap-3 sm:gap-3.5 items-stretch h-full">
         
         {/* 1. PRODUCT IMAGE CONTAINER (Increased size for mobile) */}
@@ -94,7 +94,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
             onError={(e) => {
               ;(e.currentTarget as HTMLImageElement).src = '/logo.png'
             }}
-            className={`w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105 ${
+            className={`w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105 ${
               isOutOfStock ? 'grayscale opacity-60 blur-[2px]' : ''
             }`}
             loading="lazy"
@@ -102,12 +102,12 @@ export default function ProductCard({ product }: { product: ProductProps }) {
 
           {/* STOCK BADGE */}
           {!isOutOfStock ? (
-            <div className="absolute top-1.5 left-1.5 z-10 bg-[#39B54A] text-white backdrop-blur-md px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shadow-xs">
+            <div className="absolute top-1.5 left-1.5 z-10 bg-[#39B54A] text-white px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shadow-xs">
               <Leaf className="w-2.5 h-2.5 sm:w-2.5 sm:h-2.5 text-white fill-white/40" />
               <span>{product.available_stock}kg</span>
             </div>
           ) : (
-            <div className="absolute top-1.5 left-1.5 z-10 bg-rose-600 text-white backdrop-blur-md px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold shadow-xs">
+            <div className="absolute top-1.5 left-1.5 z-10 bg-rose-600 text-white px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold shadow-xs">
               Sold Out
             </div>
           )}
@@ -116,7 +116,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
           <button
             type="button"
             onClick={toggleFavorite}
-            className="absolute top-1.5 right-1.5 z-10 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/80 hover:bg-white backdrop-blur-md border border-white/90 flex items-center justify-center text-slate-700 hover:text-rose-500 shadow-xs transition-all active:scale-90 cursor-pointer"
+            className="absolute top-1.5 right-1.5 z-10 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/90 hover:bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:text-rose-500 shadow-2xs transition-all active:scale-90 cursor-pointer"
             aria-label="Save to Wishlist"
           >
             <Heart
@@ -128,14 +128,14 @@ export default function ProductCard({ product }: { product: ProductProps }) {
 
           {/* DISCOUNT BADGE OVERLAY */}
           {savings > 0 && !isOutOfStock && (
-            <div className="absolute bottom-1.5 left-1.5 z-10 bg-gradient-to-r from-[#39B54A] to-[#2EA03E] text-white font-black text-[8px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-md shadow-xs uppercase tracking-tight">
+            <div className="absolute bottom-1.5 left-1.5 z-10 bg-[#39B54A] text-white font-black text-[8px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-md shadow-2xs uppercase tracking-tight">
               SAVE ₹{savings}
             </div>
           )}
 
           {/* Out of Stock Overlay */}
           {isOutOfStock && (
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center z-20 p-1 text-center">
+            <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center z-20 p-1 text-center">
               <span className="bg-rose-600 text-white text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-md border border-white/20">
                 OUT OF STOCK
               </span>
@@ -177,7 +177,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
           </div>
 
           {/* WEIGHT SELECTOR PILLS */}
-          <div className="flex items-center justify-between gap-1 bg-white/60 backdrop-blur-md border border-[#39B54A]/20 rounded-xl p-1">
+          <div className="flex items-center justify-between gap-1 bg-slate-50/80 border border-slate-200/80 rounded-xl p-1">
             <div className="flex items-center gap-1 min-w-0 pl-0.5">
               <Package className="w-3 h-3 text-[#39B54A] shrink-0" />
               <span className="text-[10px] sm:text-[11px] font-bold text-[#142B27] truncate">
@@ -185,7 +185,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
               </span>
             </div>
 
-            <div className="flex items-center gap-0.5 sm:gap-1 shrink-0 bg-white/90 p-0.5 rounded-lg border border-slate-200/60">
+            <div className="flex items-center gap-0.5 sm:gap-1 shrink-0 bg-white p-0.5 rounded-lg border border-slate-200/60">
               {[0.5, 1.0].map((w) => (
                 <button
                   key={w}
@@ -197,7 +197,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                   }}
                   className={`px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[11px] font-extrabold transition-all cursor-pointer ${
                     selectedWeight === w
-                      ? 'bg-[#39B54A] text-white shadow-xs'
+                      ? 'bg-[#39B54A] text-white shadow-2xs'
                       : 'text-[#758681] hover:text-[#142B27]'
                   }`}
                 >
@@ -257,7 +257,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                   <button
                     type="button"
                     onClick={handleInitialAdd}
-                    className="bg-[#39B54A] hover:bg-[#2EA03E] text-white font-extrabold text-xs px-3 sm:px-3.5 py-1 h-[30px] sm:h-[34px] rounded-full shadow-md shadow-[#39B54A]/25 flex items-center gap-1 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                    className="bg-[#39B54A] hover:bg-[#2EA03E] text-white font-extrabold text-xs px-3 sm:px-3.5 py-1 h-[30px] sm:h-[34px] rounded-full shadow-2xs flex items-center gap-1 transition-all cursor-pointer active:scale-95"
                   >
                     <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[3]" />
                     <span>ADD</span>
@@ -284,3 +284,14 @@ export default function ProductCard({ product }: { product: ProductProps }) {
     </div>
   )
 }
+
+const ProductCard = React.memo(ProductCardComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.product.id === nextProps.product.id &&
+    prevProps.product.available_stock === nextProps.product.available_stock &&
+    prevProps.product.price_per_kg === nextProps.product.price_per_kg &&
+    prevProps.product.name === nextProps.product.name
+  )
+})
+
+export default ProductCard
