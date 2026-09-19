@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     const supabase = getAdminSupabase()
     const cleanPhone = customerPhone.replace(/\D/g, '')
     const targetBranchId = selectedBranchId || 'b1111111-1111-1111-1111-111111111111'
-    const todayDate = new Date().toISOString().split('T')[0]
+    const todayDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
     const idempotencyKey = `web_chk_${cleanPhone}_${Date.now()}`
 
     let formattedPhone = cleanPhone

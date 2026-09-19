@@ -78,18 +78,24 @@ export default function CategoryPage() {
           .or(`category.ilike.%${queryCategory}%,category.ilike.%${slug}%`)
           .eq('active', true)
 
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
         const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
         const { data: rawInventory } = await supabase
           .from('inventory')
           .select('*')
           .eq('branch_id', targetBranchId)
+          .lte('inventory_date', todayStr)
           .order('inventory_date', { ascending: false })
 
-
         const mapped: ProductProps[] = (rawProducts || []).map((p) => {
-          const invMatch = (rawInventory || []).find((i) => i.product_id === p.id)
+          const todayInv = (rawInventory || []).find((i) => i.product_id === p.id && i.inventory_date === todayStr)
+          const fallbackInv = (rawInventory || []).find((i) => i.product_id === p.id)
+          const invMatch = todayInv || fallbackInv
+
           const price = invMatch?.price_per_kg ? Number(invMatch.price_per_kg) : (p.price_per_kg || 450)
-          const stock = invMatch?.available_stock !== undefined ? Math.max(0, Number(invMatch.available_stock)) : 0
+          const stock = invMatch && invMatch.available_stock !== undefined && invMatch.available_stock !== null
+            ? Math.max(0, Number(invMatch.available_stock))
+            : 0
 
           return {
             id: p.id,

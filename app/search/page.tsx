@@ -61,11 +61,14 @@ function SearchContent() {
         }
 
         // Fetch branch inventory
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
         const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
         const { data: rawInventory, error: iErr } = await supabase
           .from('inventory')
           .select('*')
           .eq('branch_id', targetBranchId)
+          .lte('inventory_date', todayStr)
+          .order('inventory_date', { ascending: false })
 
         if (iErr) {
           console.warn('[SEARCH_WARNING] Inventory fetch warning:', iErr.message)
@@ -85,11 +88,15 @@ function SearchContent() {
 
         // Map safely with fallbacks
         const mapped: ProductProps[] = filtered.map((p) => {
-          const invMatch = safeInventory.find((i) => i && i.product_id === p.id)
+          const todayInv = safeInventory.find((i) => i && i.product_id === p.id && i.inventory_date === todayStr)
+          const fallbackInv = safeInventory.find((i) => i && i.product_id === p.id)
+          const invMatch = todayInv || fallbackInv
+
           const rawPrice = invMatch?.price_per_kg ?? p.price_per_kg ?? 450
           const price = typeof rawPrice === 'number' && !isNaN(rawPrice) && rawPrice > 0 ? Number(rawPrice) : 450
-          const rawStock = invMatch?.available_stock ?? (invMatch ? 0 : 0)
-          const stock = typeof rawStock === 'number' && !isNaN(rawStock) ? Math.max(0, Number(rawStock)) : 0
+          const stock = invMatch && invMatch.available_stock !== undefined && invMatch.available_stock !== null
+            ? Math.max(0, Number(invMatch.available_stock))
+            : 0
 
           return {
             id: p.id || `prod-${Math.random()}`,

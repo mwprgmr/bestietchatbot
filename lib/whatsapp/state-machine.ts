@@ -1531,7 +1531,7 @@ async function handleCheckoutAction(phone: string, session: any, customer: any, 
   }
 
   // 1. Verify branch inventory for all cart items
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayDateIST()
   const activeStock = await getBranchInventory(supabase, branchId, today)
 
   for (const item of cart) {

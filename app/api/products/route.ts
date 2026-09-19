@@ -17,6 +17,8 @@ export async function GET(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || DEFAULT_SERVICE_KEY
     )
 
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+
     const { data: rawProducts, error: pErr } = await supabase
       .from('products')
       .select('*')
@@ -31,14 +33,20 @@ export async function GET(req: Request) {
       .from('inventory')
       .select('*')
       .eq('branch_id', branchId)
+      .lte('inventory_date', todayStr)
       .order('inventory_date', { ascending: false })
 
     if (iErr) console.warn('Inventory fetch warning:', iErr.message)
 
     const mapped = (rawProducts || []).map((p) => {
-      const invMatch = (rawInventory || []).find((i) => i.product_id === p.id)
+      const todayInv = (rawInventory || []).find((i) => i.product_id === p.id && i.inventory_date === todayStr)
+      const fallbackInv = (rawInventory || []).find((i) => i.product_id === p.id)
+      const invMatch = todayInv || fallbackInv
+
       const price = invMatch?.price_per_kg ? Number(invMatch.price_per_kg) : (p.price_per_kg || 250)
-      const stock = invMatch?.available_stock !== undefined ? Math.max(0, Number(invMatch.available_stock)) : 50
+      const stock = invMatch && invMatch.available_stock !== undefined && invMatch.available_stock !== null
+        ? Math.max(0, Number(invMatch.available_stock))
+        : 0
 
       return {
         id: p.id,

@@ -35,13 +35,18 @@ export default function ProductDetailsPage() {
           setSelectedCut(categoryCuts[0])
         }
 
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
         const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
-        const { data: inv } = await supabase
+        const { data: invList } = await supabase
           .from('inventory')
           .select('*')
           .eq('product_id', productId)
           .eq('branch_id', targetBranchId)
-          .maybeSingle()
+          .lte('inventory_date', todayStr)
+          .order('inventory_date', { ascending: false })
+
+        const todayInv = (invList || []).find((i) => i.inventory_date === todayStr)
+        const inv = todayInv || invList?.[0] || null
 
         setInventory(inv)
       } catch (err) {
@@ -73,10 +78,9 @@ export default function ProductDetailsPage() {
         <div className="py-16 text-center space-y-4 max-w-md mx-auto">
           <AlertCircle className="w-10 h-10 text-[#39B54A] mx-auto" />
           <h2 className="text-lg font-extrabold text-[#0F172A]">Product Not Found</h2>
-          <p className="text-xs text-[#0F172A]/70">The product you are looking for is unavailable.</p>
           <Link
             href="/"
-            className="inline-block px-5 py-2.5 bg-[#39B54A] text-white font-bold text-xs rounded-xl hover:bg-[#2EA03E]"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#39B54A] text-white font-extrabold text-xs hover:bg-[#2ea03e] transition-all"
           >
             Return to Storefront
           </Link>
@@ -86,7 +90,9 @@ export default function ProductDetailsPage() {
   }
 
   const pricePerKg = inventory?.price_per_kg ? Number(inventory.price_per_kg) : 450
-  const availableStock = inventory?.available_stock !== undefined ? Number(inventory.available_stock) : 20
+  const availableStock = inventory && inventory.available_stock !== undefined && inventory.available_stock !== null
+    ? Math.max(0, Number(inventory.available_stock))
+    : 0
   const isOutOfStock = availableStock <= 0
 
   const calculatedPackPrice = Math.round(pricePerKg * selectedWeight)
