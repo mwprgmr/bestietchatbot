@@ -71,19 +71,14 @@ export default function Header() {
           {/* 3. LOCATION SELECTOR */}
           <button
             onClick={() => setIsLocationOpen(true)}
-            className="flex items-center gap-2 text-left cursor-pointer px-3 py-1.5 bg-slate-50 hover:bg-slate-100 sm:bg-slate-50/80 rounded-xl border border-slate-200 shrink-0 max-w-[170px] sm:max-w-xs transition-all active:scale-[0.98]"
+            className="flex items-center gap-2 text-left cursor-pointer px-3 py-2 bg-slate-50 hover:bg-slate-100 sm:bg-slate-50/80 rounded-xl border border-slate-200 shrink-0 max-w-[170px] sm:max-w-xs transition-all active:scale-[0.98]"
           >
             <div className="w-7 h-7 rounded-lg bg-[#7FBA44]/10 flex items-center justify-center shrink-0">
               <MapPin className="w-4 h-4 text-[#7FBA44]" />
             </div>
-            <div className="flex flex-col leading-tight min-w-0">
-              <span className="text-[10px] font-black text-[#7FBA44] uppercase tracking-wider hidden sm:block">
-                Express Delivery 15-30 Mins
-              </span>
-              <span className="text-xs sm:text-sm font-bold text-slate-800 truncate">
-                {deliveryAddress || selectedBranch?.name || 'Select Location'}
-              </span>
-            </div>
+            <span className="text-xs sm:text-sm font-bold text-slate-800 truncate leading-tight min-w-0">
+              {deliveryAddress || selectedBranch?.name || 'Select Location'}
+            </span>
             <ChevronDown className="w-3.5 h-3.5 shrink-0 text-slate-400 ml-0.5" />
           </button>
 
