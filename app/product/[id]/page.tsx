@@ -143,12 +143,14 @@ export default function ProductDetailsPage() {
               <img
                 src={imageSrc}
                 alt={product.name}
-                className="w-full h-full object-cover object-center"
+                className={`w-full h-full object-cover object-center ${
+                  isOutOfStock ? 'grayscale opacity-60 blur-[2px]' : ''
+                }`}
               />
               {isOutOfStock && (
-                <div className="absolute inset-0 bg-[#0F172A]/50 backdrop-blur-xs flex items-center justify-center">
-                  <span className="bg-[#0F172A] text-white text-xs font-extrabold px-4 py-1.5 rounded-full uppercase tracking-wider">
-                    Currently Out of Stock
+                <div className="absolute inset-0 bg-[#0F172A]/60 backdrop-blur-[2px] flex items-center justify-center">
+                  <span className="bg-rose-600 text-white text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg border border-white/20">
+                    OUT OF STOCK
                   </span>
                 </div>
               )}

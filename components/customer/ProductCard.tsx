@@ -95,7 +95,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
               ;(e.currentTarget as HTMLImageElement).src = '/logo.png'
             }}
             className={`w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105 ${
-              isOutOfStock ? 'grayscale opacity-60' : ''
+              isOutOfStock ? 'grayscale opacity-60 blur-[2px]' : ''
             }`}
             loading="lazy"
           />
@@ -135,9 +135,9 @@ export default function ProductCard({ product }: { product: ProductProps }) {
 
           {/* Out of Stock Overlay */}
           {isOutOfStock && (
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center z-20">
-              <span className="bg-rose-600 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-md">
-                Out of Stock
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center z-20 p-1 text-center">
+              <span className="bg-rose-600 text-white text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-md border border-white/20">
+                OUT OF STOCK
               </span>
             </div>
           )}
@@ -225,7 +225,7 @@ export default function ProductCard({ product }: { product: ProductProps }) {
             </div>
 
             {/* Right: + ADD / Quantity Button */}
-            {!isOutOfStock && (
+            {!isOutOfStock ? (
               <div className="shrink-0">
                 {currentPackQty > 0 ? (
                   <div
@@ -263,6 +263,16 @@ export default function ProductCard({ product }: { product: ProductProps }) {
                     <span>ADD</span>
                   </button>
                 )}
+              </div>
+            ) : (
+              <div className="shrink-0">
+                <button
+                  type="button"
+                  disabled
+                  className="bg-slate-200 text-slate-400 font-extrabold text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 h-[30px] sm:h-[34px] rounded-full cursor-not-allowed uppercase"
+                >
+                  Out of Stock
+                </button>
               </div>
             )}
 
