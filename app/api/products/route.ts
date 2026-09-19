@@ -61,7 +61,16 @@ export async function GET(req: Request) {
       }
     })
 
-    return NextResponse.json({ success: true, products: mapped })
+    return NextResponse.json(
+      { success: true, products: mapped },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      }
+    )
   } catch (err: any) {
     console.error('API Products route error:', err)
     return NextResponse.json(

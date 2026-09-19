@@ -29,9 +29,11 @@ import { format, subDays } from 'date-fns'
 
 import { useBranchContext } from '../BranchContext'
 
+const getISTDateString = (d: Date = new Date()) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+
 export default function InventoryPage() {
   const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
+    getISTDateString()
   )
   const [inventoryList, setInventoryList] = useState<Inventory[]>([])
   const [products, setProducts] = useState<Product[]>([])
@@ -606,9 +608,9 @@ export default function InventoryPage() {
         <div className="flex items-center gap-2">
           {/* Quick Date Presets */}
           <button
-            onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+            onClick={() => setSelectedDate(getISTDateString())}
             className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-              selectedDate === new Date().toISOString().split('T')[0]
+              selectedDate === getISTDateString()
                 ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
             }`}
@@ -619,10 +621,10 @@ export default function InventoryPage() {
             onClick={() => {
               const tm = new Date()
               tm.setDate(tm.getDate() + 1)
-              setSelectedDate(tm.toISOString().split('T')[0])
+              setSelectedDate(getISTDateString(tm))
             }}
             className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-              selectedDate === new Date(Date.now() + 86400000).toISOString().split('T')[0]
+              selectedDate === getISTDateString(new Date(Date.now() + 86400000))
                 ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
             }`}

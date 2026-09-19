@@ -111,7 +111,12 @@ export default function ProductGrid() {
         // 1. Try secure API route first
         let fetchedProducts: ProductProps[] = []
         try {
-          const res = await fetch(`/api/products?branch_id=${targetBranchId}`)
+          const res = await fetch(`/api/products?branch_id=${targetBranchId}&t=${Date.now()}`, {
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache',
+            },
+          })
           const apiData = await res.json()
           if (apiData?.success && Array.isArray(apiData.products) && apiData.products.length > 0) {
             fetchedProducts = apiData.products
@@ -174,6 +179,12 @@ export default function ProductGrid() {
 
 
     loadBranchProducts()
+
+    const handleFocus = () => {
+      loadBranchProducts()
+    }
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
   }, [selectedBranch?.id])
 
   if (loading) {
