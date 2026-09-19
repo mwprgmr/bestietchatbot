@@ -78,6 +78,15 @@ export default function InventoryPage() {
 
   const supabase = createClient()
 
+  const getInventoryProductName = (item: any) => {
+    if (item?.product?.name) return item.product.name
+    if (item?.product_id) {
+      const matched = products.find((p) => p.id === item.product_id)
+      if (matched?.name) return matched.name
+    }
+    return 'Fresh Item'
+  }
+
   useEffect(() => {
     fetchProducts()
   }, [])
@@ -237,7 +246,7 @@ export default function InventoryPage() {
 
       const actualRemaining = Number(liveYest.available_stock || 0)
       if (actualRemaining <= 0) {
-        setCarryForwardNotice(`Remaining balance for ${item.product?.name} was already sold out. 0 kg carried forward.`)
+        setCarryForwardNotice(`Remaining balance for ${getInventoryProductName(item)} was already sold out. 0 kg carried forward.`)
         setCarryForwardDecisions((prev) => ({ ...prev, [item.product_id]: 'DECLINED' }))
         return
       }
@@ -300,7 +309,7 @@ export default function InventoryPage() {
       }
 
       setCarryForwardDecisions((prev) => ({ ...prev, [item.product_id]: 'ACCEPTED' }))
-      setCarryForwardNotice(`Successfully carried forward ${actualRemaining} kg of ${item.product?.name} to today's inventory.`)
+      setCarryForwardNotice(`Successfully carried forward ${actualRemaining} kg of ${getInventoryProductName(item)} to today's inventory.`)
       setTimeout(() => setCarryForwardNotice(null), 4000)
 
       await fetchInventory()
@@ -509,7 +518,7 @@ export default function InventoryPage() {
 
   const filteredInventory = inventoryList.filter((inv) => {
     const matchesBranch = inv.branch_id === selectedBranchId
-    const pName = inv.product?.name || ''
+    const pName = getInventoryProductName(inv)
     const matchesSearch = pName.toLowerCase().includes(search.toLowerCase())
     const status = calculateStatus(inv)
     const matchesStatus = statusFilter === 'ALL' || statusFilter === status
@@ -624,7 +633,7 @@ export default function InventoryPage() {
                   className="bg-white rounded-xl p-3.5 border border-amber-200/60 shadow-2xs flex items-center justify-between gap-3 text-xs"
                 >
                   <div>
-                    <p className="font-bold text-slate-900">{item.product?.name || 'Fresh Fish'}</p>
+                    <p className="font-bold text-slate-900">{getInventoryProductName(item)}</p>
                     <p className="text-[11px] text-amber-700 font-semibold mt-0.5">
                       <span className="font-extrabold text-sm">{item.available_stock} kg</span> remaining
                     </p>
@@ -760,10 +769,10 @@ export default function InventoryPage() {
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
-                            {inv.product?.image_url ? (
+                            {inv.product?.image_url || products.find((p) => p.id === inv.product_id)?.image_url ? (
                               <img
-                                src={inv.product.image_url}
-                                alt={inv.product.name}
+                                src={inv.product?.image_url || products.find((p) => p.id === inv.product_id)?.image_url || undefined}
+                                alt={getInventoryProductName(inv)}
                                 className="w-full h-full object-cover"
                               />
                             ) : (
@@ -771,9 +780,11 @@ export default function InventoryPage() {
                             )}
                           </div>
                           <div>
-                            <p className="font-bold text-slate-900 text-sm">{inv.product?.name}</p>
+                            <p className="font-bold text-slate-900 text-sm">{getInventoryProductName(inv)}</p>
                             <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[11px] text-slate-500">{inv.product?.category || 'Fish'}</span>
+                              <span className="text-[11px] text-slate-500">
+                                {inv.product?.category || products.find((p) => p.id === inv.product_id)?.category || 'Fish'}
+                              </span>
                               <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-blue-50 text-blue-700 border border-blue-100">
                                 <Store className="w-3 h-3 text-blue-600" />
                                 {branchObj?.name || 'Main Branch'}
@@ -983,7 +994,7 @@ export default function InventoryPage() {
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-slate-900 text-base">
-                  Adjust Stock: {selectedInventory.product?.name}
+                  Adjust Stock: {getInventoryProductName(selectedInventory)}
                 </h3>
                 <p className="text-xs text-slate-500">
                   Current Available Stock: <strong className="text-emerald-700">{selectedInventory.available_stock} kg</strong>
@@ -1078,7 +1089,7 @@ export default function InventoryPage() {
               <div>
                 <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
                   <History className="w-5 h-5 text-emerald-600" />
-                  Audit Log: {selectedInventory.product?.name}
+                  Audit Log: {getInventoryProductName(selectedInventory)}
                 </h3>
                 <p className="text-xs text-slate-500">
                   Date: {selectedInventory.inventory_date}
