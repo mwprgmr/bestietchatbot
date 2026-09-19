@@ -27,16 +27,37 @@ export default function ProductDetailsPage() {
     async function loadProductDetails() {
       setLoading(true)
       try {
+        const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
+        let fetchedProduct: any = null
+        let fetchedInv: any = null
+
+        // 1. Try secure API route first (service role)
+        try {
+          const res = await fetch(`/api/products?id=${productId}&branch_id=${targetBranchId}&t=${Date.now()}`, {
+            cache: 'no-store',
+          })
+          const apiData = await res.json()
+          if (apiData?.success && (apiData.product || (Array.isArray(apiData.products) && apiData.products[0]))) {
+            fetchedProduct = apiData.product || apiData.products[0]
+          }
+        } catch (apiErr) {
+          console.warn('API product details fetch warning:', apiErr)
+        }
+
+        // 2. Fallback to client query if API returned null
         const supabase = createClient()
-        const { data: p } = await supabase.from('products').select('*').eq('id', productId).single()
-        if (p) {
-          setProduct(p)
-          const categoryCuts = CLEANING_OPTIONS[p.category] || CLEANING_OPTIONS['Fish']
+        if (!fetchedProduct) {
+          const { data: p } = await supabase.from('products').select('*').eq('id', productId).single()
+          if (p) fetchedProduct = p
+        }
+
+        if (fetchedProduct) {
+          setProduct(fetchedProduct)
+          const categoryCuts = CLEANING_OPTIONS[fetchedProduct.category] || CLEANING_OPTIONS['Fish']
           setSelectedCut(categoryCuts[0])
         }
 
         const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
-        const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
         const { data: invList } = await supabase
           .from('inventory')
           .select('*')
@@ -46,9 +67,9 @@ export default function ProductDetailsPage() {
           .order('inventory_date', { ascending: false })
 
         const todayInv = (invList || []).find((i) => i.inventory_date === todayStr)
-        const inv = todayInv || invList?.[0] || null
+        fetchedInv = todayInv || invList?.[0] || null
 
-        setInventory(inv)
+        setInventory(fetchedInv)
       } catch (err) {
         console.error('Error loading product details:', err)
       } finally {

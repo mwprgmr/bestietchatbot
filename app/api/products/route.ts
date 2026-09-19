@@ -11,6 +11,7 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const branchId = searchParams.get('branch_id') || 'b1111111-1111-1111-1111-111111111111'
+    const productId = searchParams.get('id')
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_URL,
@@ -19,11 +20,14 @@ export async function GET(req: Request) {
 
     const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
 
-    const { data: rawProducts, error: pErr } = await supabase
-      .from('products')
-      .select('*')
-      .eq('active', true)
-      .order('name', { ascending: true })
+    let query = supabase.from('products').select('*')
+    if (productId) {
+      query = query.eq('id', productId)
+    } else {
+      query = query.eq('active', true).order('name', { ascending: true })
+    }
+
+    const { data: rawProducts, error: pErr } = await query
 
     if (pErr) {
       throw pErr
@@ -62,7 +66,7 @@ export async function GET(req: Request) {
     })
 
     return NextResponse.json(
-      { success: true, products: mapped },
+      { success: true, products: mapped, product: mapped[0] || null },
       {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
