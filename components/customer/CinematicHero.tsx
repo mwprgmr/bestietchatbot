@@ -42,39 +42,6 @@ const DEFAULT_POSTERS: PosterProps[] = [
   },
 ]
 
-// Floating 3D Seafood Product Badges for Hero Environment
-const FLOATING_SEAFOOD_ITEMS = [
-  {
-    id: 'hero-fish',
-    name: 'Ocean Fresh Fish',
-    tag: 'Net-to-Kitchen',
-    image: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?auto=format&fit=crop&w=400&q=80',
-    slug: 'fish',
-    depth: 0.15,
-    pos: 'top-6 left-4 sm:top-10 sm:left-8',
-    glowColor: 'rgba(127, 186, 68, 0.4)',
-  },
-  {
-    id: 'hero-prawns',
-    name: 'Tiger Prawns',
-    tag: 'Cleaned & Deveined',
-    image: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=400&q=80',
-    slug: 'seafood',
-    depth: 0.25,
-    pos: 'top-12 right-4 sm:top-16 sm:right-10',
-    glowColor: 'rgba(56, 189, 248, 0.35)',
-  },
-  {
-    id: 'hero-chicken',
-    name: 'Tender Chicken',
-    tag: '100% Antibiotic-Free',
-    image: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=400&q=80',
-    slug: 'chicken',
-    depth: 0.2,
-    pos: 'bottom-20 left-6 sm:bottom-24 sm:left-12',
-    glowColor: 'rgba(127, 186, 68, 0.35)',
-  },
-]
 
 export default function CinematicHero() {
   const [posters, setPosters] = useState<PosterProps[]>(DEFAULT_POSTERS)
@@ -209,52 +176,6 @@ export default function CinematicHero() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Ambient Glow & Floating Seafood Imagery Overlay */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-10 hidden sm:block">
-          {FLOATING_SEAFOOD_ITEMS.map((item) => {
-            const shiftX = mousePos.x * item.depth * 1.5
-            const shiftY = mousePos.y * item.depth * 1.5
-
-            return (
-              <motion.div
-                key={item.id}
-                animate={{
-                  y: [0, -8, 0],
-                  rotate: [0, 1.5, -1.5, 0],
-                }}
-                transition={{
-                  duration: 6 + item.depth * 10,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
-                style={{
-                  transform: `translate3d(${shiftX}px, ${shiftY}px, 0)`,
-                }}
-                className={`absolute ${item.pos} z-20 pointer-events-auto transform-gpu`}
-              >
-                <Link
-                  href={`/category/${item.slug}`}
-                  className="group/float flex items-center gap-3 p-2 pr-4 bg-slate-900/80 backdrop-blur-xl border border-white/15 rounded-2xl shadow-2xl hover:border-[#7FBA44] transition-all hover:scale-105 active:scale-95"
-                >
-                  <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-slate-800 shrink-0 border border-white/10">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                    {/* Depth Light Glow Behind Image */}
-                    <div
-                      className="absolute inset-0 blur-md opacity-40 group-hover/float:opacity-90 transition-opacity"
-                      style={{ backgroundColor: item.glowColor }}
-                    />
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-wider text-[#7FBA44]">
-                      {item.tag}
-                    </div>
-                    <div className="text-xs font-black text-white">{item.name}</div>
-                  </div>
-                </Link>
-              </motion.div>
-            )
-          })}
-        </div>
 
         {/* Slider Controls */}
         {posters.length > 1 && (
