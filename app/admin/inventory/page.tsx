@@ -462,34 +462,88 @@ export default function InventoryPage() {
 
   const handleAdjustStock = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedInventory) return
-    setSubmitting(true)
+    if (!selectedInventory || submitting) return
+
     setFormError(null)
 
+    // 1. Fix quantity input handling: trim, convert using Number(quantity), reject empty, NaN, zero, and negative values
+    const rawInput = adjustForm.adjustment_qty != null ? String(adjustForm.adjustment_qty).trim() : ''
+    if (!rawInput) {
+      setFormError('Please enter a valid quantity greater than 0 kg.')
+      return
+    }
+
+    const numericQty = Number(rawInput)
+    if (isNaN(numericQty) || !isFinite(numericQty) || numericQty <= 0) {
+      setFormError('Please enter a valid quantity greater than 0 kg.')
+      return
+    }
+
+    // 2. Correct movement type mapping:
+    // Restock -> RESTOCK
+    // Damaged / Spoiled -> DAMAGE
+    // Manual Correction / Removal -> WASTAGE
+    // Customer Return -> CUSTOMER_RETURN
+    let mappedMovementType = adjustForm.adjustment_type as string
+    if (mappedMovementType === 'DAMAGED') mappedMovementType = 'DAMAGE'
+    if (mappedMovementType === 'MANUAL_ADJUSTMENT') mappedMovementType = 'WASTAGE'
+    if (mappedMovementType === 'RETURN') mappedMovementType = 'CUSTOMER_RETURN'
+
+    const trimmedReason = adjustForm.reason && adjustForm.reason.trim()
+      ? adjustForm.reason.trim()
+      : `Adjusted stock (${mappedMovementType})`
+
+    // 3. Ensure correct inventory ID is passed (never use product_id instead of inventory.id)
+    if (!selectedInventory.id) {
+      setFormError('Invalid inventory record selected.')
+      return
+    }
+
+    // 4. Log payload in development mode before calling RPC
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Stock Adjustment Payload]:', {
+        inventory_id: selectedInventory.id,
+        movement_type: mappedMovementType,
+        adjustment_qty: numericQty,
+        reason: trimmedReason,
+      })
+    }
+
+    setSubmitting(true)
+
     try {
-      const rawQty = parseFloat(adjustForm.adjustment_qty)
-      if (isNaN(rawQty) || rawQty <= 0) throw new Error('Quantity must be greater than 0')
-
-      let changeQty = rawQty
-      if (['DAMAGED', 'MANUAL_ADJUSTMENT'].includes(adjustForm.adjustment_type)) {
-        changeQty = -Math.abs(rawQty)
-      } else {
-        changeQty = Math.abs(rawQty)
-      }
-
+      // 5. Correct RPC call: public.adjust_inventory_stock(p_inventory_id, p_movement_type, p_adjustment_qty, p_reason)
       const { data, error } = await supabase.rpc('adjust_inventory_stock', {
         p_inventory_id: selectedInventory.id,
-        p_adjustment_qty: changeQty,
-        p_movement_type: adjustForm.adjustment_type,
-        p_reason: adjustForm.reason || `Adjusted stock (${adjustForm.adjustment_type})`,
+        p_movement_type: mappedMovementType,
+        p_adjustment_qty: numericQty,
+        p_reason: trimmedReason,
       })
 
-      if (error) throw error
+      if (error) {
+        const errMsg = error.message || ''
+        if (errMsg.includes('INVALID_QUANTITY') || errMsg.includes('Adjustment quantity must be greater than zero')) {
+          setFormError('Please enter a valid quantity greater than 0 kg.')
+        } else if (errMsg.includes('UNAUTHENTICATED') || errMsg.includes('Admin/branch assignment required') || errMsg.includes('branch_assignment')) {
+          setFormError('Admin or branch assignment required to adjust stock.')
+        } else if (errMsg.includes('INSUFFICIENT_STOCK') || errMsg.includes('Insufficient stock')) {
+          setFormError('Insufficient stock available for this adjustment.')
+        } else if (errMsg.includes('PERMISSION_DENIED') || errMsg.includes('Permission denied')) {
+          setFormError('Permission denied. You do not have access to adjust stock.')
+        } else {
+          setFormError(errMsg || 'Failed to adjust stock. Please try again.')
+        }
+        return
+      }
 
+      // 6. After successful adjustment: close modal, refresh inventory data, show success toast
       setIsAdjustModalOpen(false)
-      fetchInventory()
+      setCarryForwardNotice(`Stock adjusted successfully for ${getInventoryProductName(selectedInventory)}!`)
+      setTimeout(() => setCarryForwardNotice(null), 4000)
+
+      await fetchInventory()
     } catch (err: any) {
-      setFormError(err.message || 'Failed to adjust stock')
+      setFormError(err.message || 'Failed to adjust stock. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -1026,9 +1080,9 @@ export default function InventoryPage() {
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 >
                   <option value="RESTOCK">+ Restock (Add Stock)</option>
-                  <option value="DAMAGED">- Damaged / Spoiled (Remove Stock)</option>
-                  <option value="MANUAL_ADJUSTMENT">- Manual Correction / Removal</option>
-                  <option value="RETURN">+ Customer Return</option>
+                  <option value="DAMAGE">- Damaged / Spoiled (Remove Stock)</option>
+                  <option value="WASTAGE">- Manual Correction / Removal</option>
+                  <option value="CUSTOMER_RETURN">+ Customer Return</option>
                 </select>
               </div>
 
@@ -1038,7 +1092,8 @@ export default function InventoryPage() {
                 </label>
                 <input
                   type="number"
-                  step="0.1"
+                  step="any"
+                  min="0.01"
                   required
                   value={adjustForm.adjustment_qty}
                   onChange={(e) => setAdjustForm({ ...adjustForm, adjustment_qty: e.target.value })}
@@ -1124,7 +1179,7 @@ export default function InventoryPage() {
                                 ? 'bg-blue-100 text-blue-700'
                                 : m.movement_type === 'SALE'
                                 ? 'bg-emerald-100 text-emerald-800'
-                                : m.movement_type === 'RESTOCK'
+                                : m.movement_type === 'RESTOCK' || m.movement_type === 'CUSTOMER_RETURN' || m.movement_type === 'RETURN'
                                 ? 'bg-emerald-100 text-emerald-700'
                                 : 'bg-red-100 text-red-700'
                             }`}

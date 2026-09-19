@@ -4,7 +4,7 @@ export type OrderStatus = 'PENDING' | 'ACCEPTED' | 'PREPARING' | 'PACKED' | 'OUT
 
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'CASH_ON_DELIVERY';
 
-export type MovementType = 'OPENING' | 'SALE' | 'RESTOCK' | 'DAMAGED' | 'MANUAL_ADJUSTMENT' | 'CANCELLATION' | 'RETURN';
+export type MovementType = 'OPENING' | 'SALE' | 'RESTOCK' | 'DAMAGED' | 'DAMAGE' | 'MANUAL_ADJUSTMENT' | 'WASTAGE' | 'CANCELLATION' | 'RETURN' | 'CUSTOMER_RETURN';
 
 export type InventoryStatus = 'AVAILABLE' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'INACTIVE';
 
