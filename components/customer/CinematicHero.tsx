@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Sparkles, ArrowDown, ShieldCheck, Flame } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ArrowDown, ShieldCheck, Flame } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { CATEGORIES } from '@/lib/data/ecommerce-data'
 import AmbientLightCanvas from '@/components/ui/AmbientLightCanvas'
@@ -126,11 +126,10 @@ export default function CinematicHero() {
   }
 
   return (
-    <motion.div
+    <div
       ref={heroRef}
       onMouseMove={handleMouseMove}
-      style={{ y: heroY, scale: heroScale, opacity: heroOpacity }}
-      className="relative space-y-8 mb-12 transform-gpu"
+      className="relative space-y-8 mb-12"
     >
       {/* Organic Fluid WebGL/Canvas Ambient Light */}
       <div className="absolute -inset-4 rounded-3xl overflow-hidden pointer-events-none -z-10 opacity-75">
@@ -138,10 +137,11 @@ export default function CinematicHero() {
       </div>
 
       {/* Main Cinematic Hero Banner Environment */}
-      <div
+      <motion.div
+        style={{ y: heroY, scale: heroScale, opacity: heroOpacity }}
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className="relative rounded-3xl overflow-hidden bg-slate-950 shadow-2xl border border-slate-800/80 h-[240px] xs:h-[280px] sm:h-[380px] md:h-[480px] lg:h-[520px] w-full group transition-all"
+        className="relative rounded-3xl overflow-hidden bg-slate-950 shadow-2xl border border-slate-800/80 h-[240px] xs:h-[280px] sm:h-[380px] md:h-[480px] lg:h-[520px] w-full group transition-all transform-gpu"
       >
         {/* Animated Media Layer */}
         <AnimatePresence mode="wait">
@@ -216,7 +216,7 @@ export default function CinematicHero() {
             </div>
           </>
         )}
-      </div>
+      </motion.div>
 
       {/* Interactive Category Showcase Section */}
       <section id="categories" className="space-y-4 pt-2 scroll-mt-24">
@@ -225,9 +225,6 @@ export default function CinematicHero() {
             <h2 className="text-lg sm:text-2xl font-black text-[#0F172A] tracking-tight uppercase">
               Shop by Category
             </h2>
-            <span className="p-1 px-2.5 rounded-full bg-[#7FBA44]/10 text-[#7FBA44] font-black text-[10px] tracking-wider uppercase border border-[#7FBA44]/20 hidden sm:inline-flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> Live Inventory
-            </span>
           </div>
           <span className="text-[10px] font-extrabold uppercase text-[#7FBA44] tracking-wider sm:hidden">
             Swipe →
@@ -276,6 +273,6 @@ export default function CinematicHero() {
           })}
         </div>
       </section>
-    </motion.div>
+    </div>
   )
 }
