@@ -1,277 +1,360 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { Anchor, Sparkles, ArrowRight, ShieldCheck, Clock, Flame } from 'lucide-react'
-import WebGLFluidGlow from './WebGLFluidGlow'
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
+import { ChevronLeft, ChevronRight, Sparkles, ArrowDown, ShieldCheck, Flame } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { CATEGORIES } from '@/lib/data/ecommerce-data'
+import AmbientLightCanvas from '@/components/ui/AmbientLightCanvas'
 
-export interface HeroPosterProps {
+export interface PosterProps {
   id: string
   title?: string | null
   image_url: string
   media_type?: 'image' | 'video'
   cta_link?: string | null
+  sort_order?: number
+  active?: boolean
 }
 
-const FEATURED_FLOATING_CARDS = [
+const DEFAULT_POSTERS: PosterProps[] = [
   {
-    id: 'card-1',
-    title: 'Ocean Neymeen (King Fish)',
-    category: 'Fresh Fish',
-    price: '₹550 / 500g',
-    image: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?auto=format&fit=crop&w=600&q=80',
-    badge: '100% Ammonia Free',
-    delay: 0,
-    link: '/category/fish',
+    id: 'default-1',
+    title: 'Fresh Catch Video Showcase',
+    image_url: 'https://assets.mixkit.co/videos/preview/mixkit-fresh-fish-and-seafood-in-a-market-display-42861-large.mp4',
+    media_type: 'video',
+    cta_link: '/category/fish',
   },
   {
-    id: 'card-2',
-    title: 'Jumbo Tiger Prawns',
-    category: 'Prawns & Crabs',
-    price: '₹420 / 500g',
-    image: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=600&q=80',
-    badge: 'Cleaned & Deveined',
-    delay: 0.2,
-    link: '/category/seafood',
+    id: 'default-2',
+    title: 'Farm Fresh Selection',
+    image_url: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?auto=format&fit=crop&w=1600&q=80',
+    media_type: 'image',
+    cta_link: '/category/fish',
   },
   {
-    id: 'card-3',
-    title: 'Tender Kerala Goat Mutton',
-    category: 'Fresh Meat',
-    price: '₹490 / 500g',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80',
-    badge: 'Hygienic Precision Cut',
-    delay: 0.4,
-    link: '/category/mutton',
+    id: 'default-3',
+    title: 'Tender Chicken Banner',
+    image_url: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=1600&q=80',
+    media_type: 'image',
+    cta_link: '/category/chicken',
+  },
+]
+
+// Floating 3D Seafood Product Badges for Hero Environment
+const FLOATING_SEAFOOD_ITEMS = [
+  {
+    id: 'hero-fish',
+    name: 'Ocean Fresh Fish',
+    tag: 'Net-to-Kitchen',
+    image: 'https://images.unsplash.com/photo-1534483509719-3feaee7c30da?auto=format&fit=crop&w=400&q=80',
+    slug: 'fish',
+    depth: 0.15,
+    pos: 'top-6 left-4 sm:top-10 sm:left-8',
+    glowColor: 'rgba(127, 186, 68, 0.4)',
+  },
+  {
+    id: 'hero-prawns',
+    name: 'Tiger Prawns',
+    tag: 'Cleaned & Deveined',
+    image: 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?auto=format&fit=crop&w=400&q=80',
+    slug: 'seafood',
+    depth: 0.25,
+    pos: 'top-12 right-4 sm:top-16 sm:right-10',
+    glowColor: 'rgba(56, 189, 248, 0.35)',
+  },
+  {
+    id: 'hero-chicken',
+    name: 'Tender Chicken',
+    tag: '100% Antibiotic-Free',
+    image: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?auto=format&fit=crop&w=400&q=80',
+    slug: 'chicken',
+    depth: 0.2,
+    pos: 'bottom-20 left-6 sm:bottom-24 sm:left-12',
+    glowColor: 'rgba(127, 186, 68, 0.35)',
   },
 ]
 
 export default function CinematicHero() {
-  const [posters, setPosters] = useState<HeroPosterProps[]>([])
-  const [activeTab, setActiveTab] = useState<'cinematic' | 'posters'>('cinematic')
+  const [posters, setPosters] = useState<PosterProps[]>(DEFAULT_POSTERS)
+  const [categories, setCategories] = useState<any[]>(CATEGORIES)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  const [activeCategoryHover, setActiveCategoryHover] = useState<string | null>(null)
+
+  const heroRef = useRef<HTMLDivElement>(null)
+
+  // Mouse parallax motion coordinates
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+
+  // Scroll parallax effects using Framer Motion
+  const { scrollY } = useScroll()
+  const heroY = useTransform(scrollY, [0, 500], [0, 80])
+  const heroScale = useTransform(scrollY, [0, 500], [1, 0.96])
+  const heroOpacity = useTransform(scrollY, [0, 450], [1, 0.35])
 
   useEffect(() => {
-    async function loadPosters() {
+    async function loadData() {
       try {
         const supabase = createClient()
-        const { data } = await supabase
+        
+        // 1. Fetch active posters
+        const { data: posterData } = await supabase
           .from('homepage_posters')
           .select('*')
           .eq('active', true)
           .order('sort_order', { ascending: true })
 
-        if (data && data.length > 0) {
-          setPosters(data)
+        if (posterData && posterData.length > 0) {
+          setPosters(posterData)
+        }
+
+        // 2. Fetch categories dynamically
+        const { data: catData } = await supabase
+          .from('homepage_categories')
+          .select('*')
+          .eq('active', true)
+          .order('sort_order', { ascending: true })
+
+        if (catData && catData.length > 0) {
+          setCategories(catData)
         }
       } catch (_) {}
     }
-    loadPosters()
+    loadData()
   }, [])
 
+  // Auto-play slider rotation
+  useEffect(() => {
+    if (isPaused || posters.length <= 1) return
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % posters.length)
+    }, 6000)
+    return () => clearInterval(timer)
+  }, [isPaused, posters.length])
+
+  // Mouse move handler for organic 3D parallax
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (window.innerWidth < 768) return // Disable mouse move on touch devices to conserve CPU
+    const { clientX, clientY } = e
+    const { innerWidth, innerHeight } = window
+    const x = (clientX / innerWidth - 0.5) * 20
+    const y = (clientY / innerHeight - 0.5) * 20
+    setMousePos({ x, y })
+  }
+
+  const nextSlide = () => setCurrentIndex((prev) => (prev + 1) % posters.length)
+  const prevSlide = () => setCurrentIndex((prev) => (prev - 1 + posters.length) % posters.length)
+
+  const currentPoster = posters[currentIndex] || DEFAULT_POSTERS[0]
+  const isVideo = currentPoster.media_type === 'video' ||
+    (currentPoster.image_url && /\.(mp4|webm|mov|ogg)($|\?)/i.test(currentPoster.image_url))
+
+  const handleCategorySelect = (e: React.MouseEvent, slug: string) => {
+    const productSection = document.getElementById('products-section') || document.getElementById('categories')
+    if (productSection) {
+      productSection.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
   return (
-    <section className="relative rounded-3xl overflow-hidden bg-[#0F172A] text-white my-4 border border-[#7FBA44]/30 shadow-2xl min-h-[540px] lg:min-h-[600px] flex flex-col justify-between p-6 sm:p-10 transition-all">
-      {/* WebGL Fluid Glow Background Shaders */}
-      <WebGLFluidGlow />
+    <motion.div
+      ref={heroRef}
+      onMouseMove={handleMouseMove}
+      style={{ y: heroY, scale: heroScale, opacity: heroOpacity }}
+      className="relative space-y-8 mb-12 transform-gpu"
+    >
+      {/* Organic Fluid WebGL/Canvas Ambient Light */}
+      <div className="absolute -inset-4 rounded-3xl overflow-hidden pointer-events-none -z-10 opacity-75">
+        <AmbientLightCanvas intensity={1.2} opacity={0.7} />
+      </div>
 
-      {/* Subtle Grid Pattern Overlay */}
+      {/* Main Cinematic Hero Banner Environment */}
       <div
-        className="absolute inset-0 opacity-[0.04] pointer-events-none z-0"
-        style={{
-          backgroundImage: `radial-gradient(circle, #FFFFFF 1px, transparent 1px)`,
-          backgroundSize: '24px 24px',
-        }}
-      />
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+        className="relative rounded-3xl overflow-hidden bg-slate-950 shadow-2xl border border-slate-800/80 h-[240px] xs:h-[280px] sm:h-[380px] md:h-[480px] lg:h-[520px] w-full group transition-all"
+      >
+        {/* Animated Media Layer */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentPoster.id}
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full h-full relative"
+          >
+            <Link href={currentPoster.cta_link || '/category/fish'} className="block w-full h-full relative">
+              {isVideo ? (
+                <video
+                  src={currentPoster.image_url}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="w-full h-full object-cover transition-opacity duration-700"
+                />
+              ) : (
+                <img
+                  src={currentPoster.image_url}
+                  alt={currentPoster.title || 'Bestiet Fresh Poster'}
+                  className="w-full h-full object-cover transition-opacity duration-700"
+                />
+              )}
+              {/* Subtle Gradient Overlay for Contrast */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent pointer-events-none" />
+            </Link>
+          </motion.div>
+        </AnimatePresence>
 
-      {/* Top Header Badge & Mode Switcher */}
-      <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#7FBA44]/15 border border-[#7FBA44]/40 text-[#7FBA44] text-xs font-black uppercase tracking-wider backdrop-blur-md shadow-xs"
-        >
-          <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-          <span>YOUR FRESH FRIEND AT THE DOOR • KERALA CATCH</span>
-        </motion.div>
+        {/* Ambient Glow & Floating Seafood Imagery Overlay */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-10 hidden sm:block">
+          {FLOATING_SEAFOOD_ITEMS.map((item) => {
+            const shiftX = mousePos.x * item.depth * 1.5
+            const shiftY = mousePos.y * item.depth * 1.5
 
-        {posters.length > 0 && (
-          <div className="inline-flex items-center p-1 bg-slate-900/80 backdrop-blur-md rounded-xl border border-white/10 text-xs font-bold text-slate-300 z-20">
+            return (
+              <motion.div
+                key={item.id}
+                animate={{
+                  y: [0, -8, 0],
+                  rotate: [0, 1.5, -1.5, 0],
+                }}
+                transition={{
+                  duration: 6 + item.depth * 10,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+                style={{
+                  transform: `translate3d(${shiftX}px, ${shiftY}px, 0)`,
+                }}
+                className={`absolute ${item.pos} z-20 pointer-events-auto transform-gpu`}
+              >
+                <Link
+                  href={`/category/${item.slug}`}
+                  className="group/float flex items-center gap-3 p-2 pr-4 bg-slate-900/80 backdrop-blur-xl border border-white/15 rounded-2xl shadow-2xl hover:border-[#7FBA44] transition-all hover:scale-105 active:scale-95"
+                >
+                  <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-slate-800 shrink-0 border border-white/10">
+                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    {/* Depth Light Glow Behind Image */}
+                    <div
+                      className="absolute inset-0 blur-md opacity-40 group-hover/float:opacity-90 transition-opacity"
+                      style={{ backgroundColor: item.glowColor }}
+                    />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-wider text-[#7FBA44]">
+                      {item.tag}
+                    </div>
+                    <div className="text-xs font-black text-white">{item.name}</div>
+                  </div>
+                </Link>
+              </motion.div>
+            )
+          })}
+        </div>
+
+        {/* Slider Controls */}
+        {posters.length > 1 && (
+          <>
             <button
-              onClick={() => setActiveTab('cinematic')}
-              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                activeTab === 'cinematic' ? 'bg-[#7FBA44] text-white font-extrabold shadow-2xs' : 'hover:text-white'
-              }`}
+              type="button"
+              onClick={prevSlide}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-slate-950/60 hover:bg-slate-950/90 text-white backdrop-blur-md border border-white/20 transition-all opacity-80 group-hover:opacity-100 cursor-pointer active:scale-95"
+              aria-label="Previous Poster"
             >
-              Cinematic Showcase
+              <ChevronLeft className="w-5 h-5" />
             </button>
+
             <button
-              onClick={() => setActiveTab('posters')}
-              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
-                activeTab === 'posters' ? 'bg-[#7FBA44] text-white font-extrabold shadow-2xs' : 'hover:text-white'
-              }`}
+              type="button"
+              onClick={nextSlide}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-slate-950/60 hover:bg-slate-950/90 text-white backdrop-blur-md border border-white/20 transition-all opacity-80 group-hover:opacity-100 cursor-pointer active:scale-95"
+              aria-label="Next Poster"
             >
-              Live Offers Banner ({posters.length})
+              <ChevronRight className="w-5 h-5" />
             </button>
-          </div>
+
+            {/* Pagination Indicators */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-slate-950/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+              {posters.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setCurrentIndex(idx)}
+                  className={`h-2 rounded-full transition-all cursor-pointer ${
+                    currentIndex === idx
+                      ? 'w-6 bg-[#7FBA44]'
+                      : 'w-2 bg-white/50 hover:bg-white/80'
+                  }`}
+                  aria-label={`Go to poster ${idx + 1}`}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 
-      {activeTab === 'cinematic' ? (
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center my-auto py-6">
-          {/* Left Hero Text Column */}
-          <div className="lg:col-span-6 space-y-6">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.1 }}
-              className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.1] text-white uppercase"
-            >
-              OCEAN FRESH FISH & <span className="text-[#7FBA44]">TENDER MEAT</span> DELIVERED IN ICE.
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-              className="text-xs sm:text-sm text-[#E2E8F0]/80 max-w-lg leading-relaxed font-normal"
-            >
-              Naturally preserved in ice, 100% chemical & ammonia free. Custom cleaned and precision cut right before express delivery to your kitchen.
-            </motion.p>
-
-            {/* Feature Pills */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.3 }}
-              className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-200 pt-1"
-            >
-              <div className="flex items-center gap-1.5 bg-slate-900/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
-                <ShieldCheck className="w-4 h-4 text-[#7FBA44]" />
-                <span>100% Chemical-Free</span>
-              </div>
-              <div className="flex items-center gap-1.5 bg-slate-900/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
-                <Clock className="w-4 h-4 text-[#7FBA44]" />
-                <span>Express Doorstep Delivery</span>
-              </div>
-            </motion.div>
-
-            {/* Action Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.4 }}
-              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2"
-            >
-              <Link
-                href="/#products"
-                className="py-3.5 px-6 bg-[#7FBA44] hover:bg-[#71A83A] text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-[#7FBA44]/30 transition-all flex items-center justify-center gap-2 group active:scale-[0.98] cursor-pointer"
-              >
-                <span>EXPLORE TODAY'S CATCH</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-
-              <a
-                href="https://wa.me/919656055969?text=Hi%20Bestiet%20Fresh%2C%20I%20want%20to%20order%20fresh%20fish%20and%20meat"
-                target="_blank"
-                rel="noreferrer"
-                className="py-3.5 px-6 bg-slate-900/80 hover:bg-slate-900 text-white font-extrabold text-xs uppercase tracking-wider rounded-2xl border border-white/20 backdrop-blur-md transition-all flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer"
-              >
-                <span>ORDER ON WHATSAPP</span>
-              </a>
-            </motion.div>
+      {/* Interactive Category Showcase Section */}
+      <section id="categories" className="space-y-4 pt-2 scroll-mt-24">
+        <div className="flex items-baseline justify-between px-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg sm:text-2xl font-black text-[#0F172A] tracking-tight uppercase">
+              Shop by Category
+            </h2>
+            <span className="p-1 px-2.5 rounded-full bg-[#7FBA44]/10 text-[#7FBA44] font-black text-[10px] tracking-wider uppercase border border-[#7FBA44]/20 hidden sm:inline-flex items-center gap-1">
+              <Sparkles className="w-3 h-3" /> Live Inventory
+            </span>
           </div>
+          <span className="text-[10px] font-extrabold uppercase text-[#7FBA44] tracking-wider sm:hidden">
+            Swipe →
+          </span>
+        </div>
 
-          {/* Right Floating Product Depth Showcase */}
-          <div className="lg:col-span-6 relative h-[280px] sm:h-[340px] w-full flex items-center justify-center">
-            {FEATURED_FLOATING_CARDS.map((card, idx) => (
+        {/* Horizontal Category Cards Slider */}
+        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar snap-x snap-mandatory py-3 px-1 justify-start sm:justify-around smooth-scroll-x gpu-layer">
+          {categories.map((cat, idx) => {
+            const isHovered = activeCategoryHover === cat.id
+
+            return (
               <motion.div
-                key={card.id}
-                initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                animate={{
-                  opacity: 1,
-                  scale: 1,
-                  y: [0, -10, 0],
-                }}
-                transition={{
-                  opacity: { duration: 0.8, delay: card.delay },
-                  scale: { duration: 0.8, delay: card.delay },
-                  y: {
-                    duration: 4 + idx * 0.8,
-                    repeat: Infinity,
-                    repeatType: 'reverse',
-                    ease: 'easeInOut',
-                  },
-                }}
-                style={{ willChange: 'transform' }}
-                className={`absolute w-64 sm:w-72 bg-slate-900/85 backdrop-blur-xl border border-white/15 rounded-3xl p-3.5 shadow-2xl transition-transform hover:scale-[1.03] cursor-pointer z-${
-                  10 + idx
-                }`}
-                onClick={() => (window.location.href = card.link)}
+                key={cat.id || idx}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: idx * 0.05 }}
+                onMouseEnter={() => setActiveCategoryHover(cat.id)}
+                onMouseLeave={() => setActiveCategoryHover(null)}
+                className="category-circle category-item shrink-0 snap-start"
               >
-                <div className="relative h-32 sm:h-36 w-full rounded-2xl overflow-hidden mb-3 bg-slate-800">
-                  <img
-                    src={card.image}
-                    alt={card.title}
-                    className="w-full h-full object-cover object-center transition-transform duration-500 hover:scale-105"
-                  />
-                  <span className="absolute top-2 left-2 bg-[#7FBA44] text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-xs">
-                    {card.badge}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-extrabold text-[#7FBA44] uppercase tracking-wider">
-                      {card.category}
-                    </span>
-                    <h4 className="text-xs font-extrabold text-white truncate">{card.title}</h4>
+                <Link
+                  href={`/category/${cat.slug}`}
+                  onClick={(e) => handleCategorySelect(e, cat.slug)}
+                  className="group flex flex-col items-center cursor-pointer transition-all active:scale-95"
+                >
+                  <div className="relative w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shadow-md border-2 border-[#7FBA44]/30 bg-[#F1F5F9] flex items-center justify-center transition-all duration-300 group-hover:border-[#7FBA44] group-hover:shadow-xl group-hover:shadow-[#7FBA44]/20">
+                    <img
+                      src={cat.image}
+                      alt={cat.name}
+                      className="w-full h-full object-cover rounded-full transition-transform duration-500 group-hover:scale-110"
+                    />
+                    {/* Glowing Light Overlay on Hover */}
+                    <div
+                      className={`absolute inset-0 bg-[#7FBA44]/20 blur-md transition-opacity duration-300 pointer-events-none ${
+                        isHovered ? 'opacity-100' : 'opacity-0'
+                      }`}
+                    />
                   </div>
-                  <span className="text-xs font-black text-white shrink-0 bg-slate-800 px-2 py-1 rounded-xl border border-white/10">
-                    {card.price}
+                  <span className="text-xs sm:text-sm font-black text-[#0F172A] group-hover:text-[#7FBA44] transition-colors mt-2.5 text-center line-clamp-1 max-w-[100px] sm:max-w-[120px]">
+                    {cat.name}
                   </span>
-                </div>
+                </Link>
               </motion.div>
-            ))}
-          </div>
+            )
+          })}
         </div>
-      ) : (
-        /* Poster Banner Tab */
-        <div className="relative z-10 py-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {posters.map((p) => (
-              <Link
-                key={p.id}
-                href={p.cta_link || '/category/fish'}
-                className="relative rounded-2xl overflow-hidden bg-slate-900 border border-white/15 aspect-[16/9] shadow-xl group hover:border-[#7FBA44] transition-all"
-              >
-                {p.media_type === 'video' || /\.(mp4|webm)($|\?)/i.test(p.image_url) ? (
-                  <video src={p.image_url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-                ) : (
-                  <img src={p.image_url} alt={p.title || 'Offer Poster'} className="w-full h-full object-cover" />
-                )}
-                {p.title && (
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 p-3 text-xs font-bold text-white">
-                    {p.title}
-                  </div>
-                )}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Bottom Guarantee Banner */}
-      <div className="relative z-10 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between text-[11px] text-slate-300 font-semibold gap-2">
-        <span className="flex items-center gap-1.5">
-          <Flame className="w-3.5 h-3.5 text-[#7FBA44]" /> Express Cold-Chain Packaged
-        </span>
-        <span>•</span>
-        <span>Super-Hygenic Cutting Standards</span>
-        <span>•</span>
-        <span>Trivandrum Doorstep Delivery</span>
-      </div>
-    </section>
+      </section>
+    </motion.div>
   )
 }

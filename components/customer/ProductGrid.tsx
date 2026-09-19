@@ -8,6 +8,7 @@ import AppPromoPoster from './AppPromoPoster'
 import { ArrowRight, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { ProductGridSkeleton } from '@/components/ui/Skeleton'
+import { ScrollReveal } from './ScrollTransitions'
 
 // Helper component for Horizontal Section Slider
 function ProductSectionSlider({
@@ -240,58 +241,70 @@ export default function ProductGrid() {
   })
 
   return (
-    <div className="space-y-12">
+    <div id="products-section" className="space-y-12 scroll-mt-24">
       {/* 1. TODAY'S FRESH PICKS SLIDER */}
-      <ProductSectionSlider
-        subtitle="Selected for You Today"
-        title="TODAY'S FRESH PICKS"
-        viewAllHref="/category/fish"
-        products={freshPicks}
-      />
+      <ScrollReveal direction="up" duration={0.6}>
+        <ProductSectionSlider
+          subtitle="Selected for You Today"
+          title="TODAY'S FRESH PICKS"
+          viewAllHref="/category/fish"
+          products={freshPicks}
+        />
+      </ScrollReveal>
 
       {/* 2. APP & WHATSAPP PROMOTIONAL POSTER BANNER */}
-      <AppPromoPoster />
+      <ScrollReveal direction="up" delay={0.1} duration={0.7}>
+        <AppPromoPoster />
+      </ScrollReveal>
 
       {/* 3. FRESH FISH & SEAFOOD SLIDER */}
-      <ProductSectionSlider
-        subtitle="Ocean & Backwater Catch"
-        title="FRESH FISH & SEAFOOD"
-        viewAllHref="/category/fish"
-        viewAllLabel={`Explore Fish (${fishProducts.length})`}
-        products={fishProducts.length > 0 ? fishProducts : freshPicks}
-      />
+      <ScrollReveal direction="up" duration={0.6}>
+        <ProductSectionSlider
+          subtitle="Ocean & Backwater Catch"
+          title="FRESH FISH & SEAFOOD"
+          viewAllHref="/category/fish"
+          viewAllLabel={`Explore Fish (${fishProducts.length})`}
+          products={fishProducts.length > 0 ? fishProducts : freshPicks}
+        />
+      </ScrollReveal>
 
       {/* 4. FRESH CHICKEN SLIDER */}
       {chickenProducts.length > 0 && (
-        <ProductSectionSlider
-          subtitle="Antibiotic-Free Farm Fresh"
-          title="FRESH TENDER CHICKEN"
-          viewAllHref="/category/chicken"
-          viewAllLabel={`Explore Chicken (${chickenProducts.length})`}
-          products={chickenProducts}
-        />
+        <ScrollReveal direction="up" duration={0.6}>
+          <ProductSectionSlider
+            subtitle="Antibiotic-Free Farm Fresh"
+            title="FRESH TENDER CHICKEN"
+            viewAllHref="/category/chicken"
+            viewAllLabel={`Explore Chicken (${chickenProducts.length})`}
+            products={chickenProducts}
+          />
+        </ScrollReveal>
       )}
 
       {/* 5. TENDER KERALA MUTTON SLIDER */}
       {muttonProducts.length > 0 && (
-        <ProductSectionSlider
-          subtitle="Pasture Raised Goat Meat"
-          title="TENDER KERALA MUTTON"
-          viewAllHref="/category/mutton"
-          viewAllLabel={`Explore Mutton (${muttonProducts.length})`}
-          products={muttonProducts}
-        />
+        <ScrollReveal direction="up" duration={0.6}>
+          <ProductSectionSlider
+            subtitle="Pasture Raised Goat Meat"
+            title="TENDER KERALA MUTTON"
+            viewAllHref="/category/mutton"
+            viewAllLabel={`Explore Mutton (${muttonProducts.length})`}
+            products={muttonProducts}
+          />
+        </ScrollReveal>
       )}
 
       {/* 6. COMBOS & READY TO COOK SLIDER */}
       {comboProducts.length > 0 && (
-        <ProductSectionSlider
-          subtitle="Marinated & Special Value"
-          title="COMBOS & READY TO COOK"
-          viewAllHref="/category/combos"
-          viewAllLabel={`Explore Combos (${comboProducts.length})`}
-          products={comboProducts}
-        />
+        <ScrollReveal direction="up" duration={0.6}>
+          <ProductSectionSlider
+            subtitle="Marinated & Special Value"
+            title="COMBOS & READY TO COOK"
+            viewAllHref="/category/combos"
+            viewAllLabel={`Explore Combos (${comboProducts.length})`}
+            products={comboProducts}
+          />
+        </ScrollReveal>
       )}
     </div>
   )
