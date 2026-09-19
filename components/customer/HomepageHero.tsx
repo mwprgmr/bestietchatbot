@@ -180,7 +180,7 @@ export default function HomepageHero() {
         </div>
 
         {/* Single-Line Horizontal Slider */}
-        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar snap-x snap-mandatory py-2 px-1 justify-start sm:justify-around">
+        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar snap-x snap-mandatory py-2 px-1 justify-start sm:justify-around smooth-scroll-x gpu-layer">
           {categories.map((cat) => (
             <Link
               key={cat.id}

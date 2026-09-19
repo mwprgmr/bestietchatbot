@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useCustomer } from '@/lib/context/CustomerContext'
 import { MapPin, Search, ShoppingBag, User, ChevronDown, X } from 'lucide-react'
 
-function HeaderComponent() {
+export default function Header() {
   const router = useRouter()
   const {
     selectedBranch,
@@ -29,7 +29,7 @@ function HeaderComponent() {
   const clearSearch = () => setSearchQuery('')
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs w-full max-w-full gpu-layer">
+    <header className="sticky top-0 z-40 bg-white/95 sm:bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-2xs w-full max-w-full transform-gpu gpu-layer">
       <div className="max-w-7xl mx-auto px-3.5 sm:px-6 py-2.5 sm:py-3.5">
         {/* Main Nav Row */}
         <div className="flex items-center justify-between gap-3 sm:gap-6 lg:gap-10">
@@ -136,6 +136,3 @@ function HeaderComponent() {
     </header>
   )
 }
-
-const Header = React.memo(HeaderComponent)
-export default Header

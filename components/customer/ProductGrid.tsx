@@ -10,7 +10,7 @@ import Link from 'next/link'
 import { ProductGridSkeleton } from '@/components/ui/Skeleton'
 
 // Helper component for Horizontal Section Slider
-const ProductSectionSlider = React.memo(function ProductSectionSlider({
+function ProductSectionSlider({
   subtitle,
   title,
   viewAllHref,
@@ -35,7 +35,7 @@ const ProductSectionSlider = React.memo(function ProductSectionSlider({
   if (!products || products.length === 0) return null
 
   return (
-    <section className="space-y-3 sm:space-y-4 gpu-layer">
+    <section className="space-y-3 sm:space-y-4">
       {/* Header with Title & Left/Right Slider Controls */}
       <div className="flex items-end justify-between pb-2 border-b border-[#E2ECE7]">
         <div>
@@ -80,12 +80,12 @@ const ProductSectionSlider = React.memo(function ProductSectionSlider({
       {/* HORIZONTAL SCROLL SLIDER CONTAINER */}
       <div
         ref={scrollRef}
-        className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory py-1 scroll-smooth"
+        className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory py-1 smooth-scroll-x gpu-layer"
       >
         {products.map((p) => (
           <div
             key={p.id}
-            className="w-[270px] sm:w-[330px] md:w-[370px] shrink-0 snap-start"
+            className="w-[270px] sm:w-[330px] md:w-[370px] shrink-0 snap-start transform-gpu"
           >
             <ProductCard product={p} />
           </div>
@@ -93,17 +93,22 @@ const ProductSectionSlider = React.memo(function ProductSectionSlider({
       </div>
     </section>
   )
-})
+}
 
 export default function ProductGrid() {
   const { selectedBranch } = useCustomer()
   const [products, setProducts] = useState<ProductProps[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const lastFetchRef = useRef<number>(0)
 
   useEffect(() => {
-    async function loadBranchProducts() {
-      setLoading(true)
+    async function loadBranchProducts(isFocusTrigger = false) {
+      if (isFocusTrigger && Date.now() - lastFetchRef.current < 30000) {
+        return // Skip redundant fetch if fetched within last 30s
+      }
+
+      if (!isFocusTrigger) setLoading(true)
       setError(null)
       try {
         const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
@@ -169,6 +174,7 @@ export default function ProductGrid() {
         }
 
         setProducts(fetchedProducts)
+        lastFetchRef.current = Date.now()
       } catch (err: any) {
         console.error('Error loading products:', err)
         setError(err.message || 'Failed to load products')
@@ -178,12 +184,12 @@ export default function ProductGrid() {
     }
 
 
-    loadBranchProducts()
+    loadBranchProducts(false)
 
     const handleFocus = () => {
-      loadBranchProducts()
+      loadBranchProducts(true)
     }
-    window.addEventListener('focus', handleFocus)
+    window.addEventListener('focus', handleFocus, { passive: true })
     return () => window.removeEventListener('focus', handleFocus)
   }, [selectedBranch?.id])
 
