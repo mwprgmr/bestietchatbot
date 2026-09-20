@@ -67,7 +67,7 @@ export default function ProductDetailsPage() {
           .order('inventory_date', { ascending: false })
 
         const todayInv = (invList || []).find((i) => i.inventory_date === todayStr)
-        fetchedInv = todayInv || invList?.[0] || null
+        fetchedInv = todayInv || null
 
         setInventory(fetchedInv)
       } catch (err) {

@@ -88,9 +88,7 @@ export default function CategoryPage() {
           .order('inventory_date', { ascending: false })
 
         const mapped: ProductProps[] = (rawProducts || []).map((p) => {
-          const todayInv = (rawInventory || []).find((i) => i.product_id === p.id && i.inventory_date === todayStr)
-          const fallbackInv = (rawInventory || []).find((i) => i.product_id === p.id)
-          const invMatch = todayInv || fallbackInv
+          const invMatch = (rawInventory || []).find((i) => i.product_id === p.id && i.inventory_date === todayStr)
 
           const price = invMatch?.price_per_kg ? Number(invMatch.price_per_kg) : (p.price_per_kg || 450)
           const stock = invMatch && invMatch.available_stock !== undefined && invMatch.available_stock !== null
