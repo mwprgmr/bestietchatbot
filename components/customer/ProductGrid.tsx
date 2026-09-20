@@ -86,7 +86,7 @@ function ProductSectionSlider({
         {products.map((p) => (
           <div
             key={p.id}
-            className="w-[230px] xs:w-[260px] sm:w-[290px] md:w-[320px] shrink-0 snap-start transform-gpu"
+            className="w-[170px] xs:w-[195px] sm:w-[230px] md:w-[260px] shrink-0 snap-start transform-gpu"
           >
             <ProductCard product={p} />
           </div>
