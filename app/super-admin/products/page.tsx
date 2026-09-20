@@ -49,8 +49,8 @@ function ProductsContent() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-        <RefreshCw className="w-8 h-8 animate-spin text-emerald-400" />
+      <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-500">
+        <RefreshCw className="w-8 h-8 animate-spin text-[#7FBA44]" />
         <p className="text-sm font-semibold">Aggregating Fish & Product Sales...</p>
       </div>
     )
@@ -61,36 +61,36 @@ function ProductsContent() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-wide">PRODUCT & FISH SALES ANALYTICS</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-2xl font-black text-slate-900 tracking-wide">PRODUCT & FISH SALES ANALYTICS</h1>
+          <p className="text-xs text-slate-500 mt-1">
             Top-selling fish varieties, total quantities sold, revenue & average selling price
           </p>
         </div>
         <button
           onClick={fetchProductSales}
-          className="flex items-center gap-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 transition-all"
+          className="flex items-center gap-2 bg-white border border-[#E2ECE7] hover:border-[#7FBA44] hover:bg-slate-50 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 transition-all cursor-pointer shadow-2xs"
         >
-          <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+          <RefreshCw className="w-3.5 h-3.5 text-[#7FBA44]" />
           <span>Refresh</span>
         </button>
       </div>
 
       {/* Product Table */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
-        <div className="p-5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-            <Award className="w-4 h-4 text-amber-400" />
+      <div className="bg-white border border-[#E2ECE7] rounded-2xl shadow-xs overflow-hidden">
+        <div className="p-5 border-b border-[#E2ECE7] flex flex-wrap items-center justify-between gap-4 bg-[#F8FAFC]">
+          <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <Award className="w-4 h-4 text-[#7FBA44]" />
             Product Sales Leaderboard
           </h3>
 
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search fish name or category..."
-              className="bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+              className="bg-white border border-[#E2ECE7] rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#7FBA44]"
             />
           </div>
         </div>
@@ -98,7 +98,7 @@ function ProductsContent() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-950/80 text-[11px] font-bold uppercase text-slate-400 border-b border-slate-800">
+              <tr className="bg-slate-50 text-[11px] font-bold uppercase text-slate-600 border-b border-[#E2ECE7]">
                 <th className="p-3.5">Rank / Fish Product</th>
                 <th className="p-3.5">Category</th>
                 <th className="p-3.5">Quantity Sold</th>
@@ -107,7 +107,7 @@ function ProductsContent() {
                 <th className="p-3.5">Avg Selling Price</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-xs text-slate-300">
+            <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
               {filteredProducts.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-slate-500 font-medium">
@@ -116,33 +116,33 @@ function ProductsContent() {
                 </tr>
               ) : (
                 filteredProducts.map((p, idx) => (
-                  <tr key={p.product_id || idx} className="hover:bg-slate-800/40 transition-colors">
+                  <tr key={p.product_id || idx} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3.5">
                       <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                        <span className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
                           #{idx + 1}
                         </span>
                         <div className="flex items-center gap-2">
-                          <Fish className="w-4 h-4 text-cyan-400 shrink-0" />
-                          <span className="font-bold text-white block">{p.product_name}</span>
+                          <Fish className="w-4 h-4 text-[#7FBA44] shrink-0" />
+                          <span className="font-bold text-slate-900 block">{p.product_name}</span>
                         </div>
                       </div>
                     </td>
                     <td className="p-3.5">
-                      <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[11px]">
+                      <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded text-[11px] font-semibold">
                         {p.category || 'Fresh Fish'}
                       </span>
                     </td>
-                    <td className="p-3.5 font-bold text-cyan-400">
+                    <td className="p-3.5 font-bold text-slate-900">
                       {Number(p.quantity_sold || 0).toLocaleString()} {p.unit || 'kg'}
                     </td>
-                    <td className="p-3.5 font-bold text-emerald-400 text-sm">
+                    <td className="p-3.5 font-bold text-[#7FBA44] text-sm">
                       {formatCurrency(p.revenue)}
                     </td>
-                    <td className="p-3.5 text-slate-300 font-medium">
+                    <td className="p-3.5 text-slate-700 font-medium">
                       {p.order_count || 0} orders
                     </td>
-                    <td className="p-3.5 text-slate-300 font-medium">
+                    <td className="p-3.5 text-slate-700 font-medium">
                       {formatCurrency(p.avg_selling_price)} / {p.unit || 'kg'}
                     </td>
                   </tr>

@@ -357,20 +357,20 @@ function PostersManager() {
       </div>
 
       {/* 1. APP & WHATSAPP PROMO POSTER MANAGER SECTION */}
-      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950 text-white p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="bg-white text-slate-900 p-6 sm:p-8 rounded-3xl border border-[#E2ECE7] shadow-xs space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E2ECE7] pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-2xl border border-emerald-500/30">
+            <div className="p-3 bg-[#F0FDF4] text-[#7FBA44] rounded-2xl border border-[#7FBA44]/30">
               <Smartphone className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-white flex items-center gap-2">
+              <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
                 <span>App & WhatsApp Promo Poster Section</span>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-[#F0FDF4] text-[#71A83A] border border-[#7FBA44]/30">
                   Swiggy Style
                 </span>
               </h2>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
                 Displays on storefront homepage after Today's Fresh Picks section.
               </p>
             </div>
@@ -381,17 +381,17 @@ function PostersManager() {
               onClick={handleToggleAppPromoActive}
               className={`px-3 py-1.5 rounded-full font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
                 appPromo.active
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                  : 'bg-slate-800 text-slate-400 border border-slate-700'
+                  ? 'bg-[#F0FDF4] text-[#71A83A] border border-[#7FBA44]/40'
+                  : 'bg-slate-100 text-slate-500 border border-slate-200'
               }`}
             >
-              {appPromo.active ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <XCircle className="w-4 h-4" />}
+              {appPromo.active ? <CheckCircle2 className="w-4 h-4 text-[#7FBA44]" /> : <XCircle className="w-4 h-4" />}
               <span>{appPromo.active ? 'SECTION ACTIVE' : 'SECTION HIDDEN'}</span>
             </button>
 
             <button
               onClick={() => setShowAppPromoModal(true)}
-              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 bg-[#7FBA44] hover:bg-[#71A83A] text-white font-black text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Edit className="w-4 h-4" />
               <span>EDIT PROMO POSTER</span>
@@ -400,31 +400,31 @@ function PostersManager() {
         </div>
 
         {/* Live Preview Card */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+        <div className="bg-[#F8FAFC] border border-[#E2ECE7] rounded-2xl p-5 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
           <div className="md:col-span-8 space-y-2">
-            <div className="inline-flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">
+            <div className="inline-flex items-center gap-1.5 bg-[#F0FDF4] border border-[#7FBA44]/30 text-[#71A83A] text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">
               <span>🐟</span>
               <span>{appPromo.badge_text}</span>
             </div>
-            <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
               {appPromo.title}
             </h3>
-            <p className="text-xs text-slate-300 font-medium leading-relaxed">
+            <p className="text-xs text-slate-600 font-medium leading-relaxed">
               {appPromo.subtitle}
             </p>
-            <div className="pt-2 flex items-center gap-3 text-xs text-emerald-400 font-bold">
+            <div className="pt-2 flex items-center gap-3 text-xs text-[#7FBA44] font-bold">
               <MessageSquare className="w-4 h-4" />
               <span>WhatsApp Number: +{appPromo.whatsapp_number}</span>
             </div>
           </div>
 
-          <div className="md:col-span-4 flex flex-col items-center justify-center p-3 bg-white text-slate-900 rounded-2xl space-y-2">
+          <div className="md:col-span-4 flex flex-col items-center justify-center p-3 bg-white text-slate-900 rounded-2xl space-y-2 border border-[#E2ECE7]">
             <img
               src={appPromo.qr_code_url || appPromo.image_url}
               alt="QR Code Preview"
               className="w-28 h-28 object-contain"
             />
-            <span className="text-[10px] font-black uppercase text-emerald-700 tracking-wider flex items-center gap-1">
+            <span className="text-[10px] font-black uppercase text-[#71A83A] tracking-wider flex items-center gap-1">
               <QrCode className="w-3 h-3" /> Live QR Code Preview
             </span>
           </div>

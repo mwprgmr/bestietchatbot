@@ -73,73 +73,73 @@ function RevenueContent() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-wide">REVENUE & FINANCIAL ANALYTICS</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-2xl font-black text-slate-900 tracking-wide">REVENUE & FINANCIAL ANALYTICS</h1>
+          <p className="text-xs text-slate-500 mt-1">
             Financial breakdown, net sales, delivery fees and cancelled value
           </p>
         </div>
         <button
           onClick={fetchRevenueData}
-          className="flex items-center gap-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 transition-all"
+          className="flex items-center gap-2 bg-white border border-[#E2ECE7] hover:border-[#7FBA44] hover:bg-slate-50 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 transition-all cursor-pointer shadow-2xs"
         >
-          <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+          <RefreshCw className="w-3.5 h-3.5 text-[#7FBA44]" />
           <span>Refresh</span>
         </button>
       </div>
 
       {/* Main Revenue Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gross Sales</span>
-          <p className="text-3xl font-black text-emerald-400 mt-2">{formatCurrency(grossSales)}</p>
+        <div className="bg-white border border-[#E2ECE7] rounded-2xl p-5 shadow-xs">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Gross Sales</span>
+          <p className="text-3xl font-black text-[#7FBA44] mt-2">{formatCurrency(grossSales)}</p>
           <p className="text-[11px] text-slate-500 mt-2">All completed & non-cancelled orders</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Net Fish Sales</span>
-          <p className="text-3xl font-black text-cyan-400 mt-2">{formatCurrency(netSales)}</p>
+        <div className="bg-white border border-[#E2ECE7] rounded-2xl p-5 shadow-xs">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Net Fish Sales</span>
+          <p className="text-3xl font-black text-cyan-600 mt-2">{formatCurrency(netSales)}</p>
           <p className="text-[11px] text-slate-500 mt-2">Gross sales minus delivery charges</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Delivery Charges Collected</span>
-          <p className="text-3xl font-black text-blue-400 mt-2">{formatCurrency(deliveryFees)}</p>
+        <div className="bg-white border border-[#E2ECE7] rounded-2xl p-5 shadow-xs">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Delivery Charges Collected</span>
+          <p className="text-3xl font-black text-blue-600 mt-2">{formatCurrency(deliveryFees)}</p>
           <p className="text-[11px] text-slate-500 mt-2">Standard ₹30 delivery per order</p>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cancelled Orders Value</span>
-          <p className="text-3xl font-black text-red-400 mt-2">{formatCurrency(cancelledValue)}</p>
+        <div className="bg-white border border-[#E2ECE7] rounded-2xl p-5 shadow-xs">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cancelled Orders Value</span>
+          <p className="text-3xl font-black text-red-600 mt-2">{formatCurrency(cancelledValue)}</p>
           <p className="text-[11px] text-slate-500 mt-2">Lost revenue from cancellations</p>
         </div>
       </div>
 
       {/* Financial Split Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Payment Method Breakdown</h3>
+        <div className="bg-white border border-[#E2ECE7] rounded-2xl p-6 shadow-xs space-y-4">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Payment Method Breakdown</h3>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3.5 bg-slate-950/60 rounded-xl border border-slate-800">
-              <span className="text-xs font-semibold text-slate-300">Cash on Delivery (COD)</span>
-              <span className="text-sm font-bold text-purple-400">{formatCurrency(r.cod_revenue)}</span>
+            <div className="flex items-center justify-between p-3.5 bg-[#F8FAFC] rounded-xl border border-[#E2ECE7]">
+              <span className="text-xs font-bold text-slate-700">Cash on Delivery (COD)</span>
+              <span className="text-sm font-black text-purple-600">{formatCurrency(r.cod_revenue)}</span>
             </div>
-            <div className="flex items-center justify-between p-3.5 bg-slate-950/60 rounded-xl border border-slate-800">
-              <span className="text-xs font-semibold text-slate-300">Online Payments</span>
-              <span className="text-sm font-bold text-emerald-400">{formatCurrency(r.online_revenue)}</span>
+            <div className="flex items-center justify-between p-3.5 bg-[#F8FAFC] rounded-xl border border-[#E2ECE7]">
+              <span className="text-xs font-bold text-slate-700">Online Payments</span>
+              <span className="text-sm font-black text-[#7FBA44]">{formatCurrency(r.online_revenue)}</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Key Performance Metric</h3>
+        <div className="bg-white border border-[#E2ECE7] rounded-2xl p-6 shadow-xs space-y-4">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Key Performance Metric</h3>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3.5 bg-slate-950/60 rounded-xl border border-slate-800">
-              <span className="text-xs font-semibold text-slate-300">Average Order Value (AOV)</span>
-              <span className="text-sm font-bold text-emerald-400">{formatCurrency(r.avg_order_value)}</span>
+            <div className="flex items-center justify-between p-3.5 bg-[#F8FAFC] rounded-xl border border-[#E2ECE7]">
+              <span className="text-xs font-bold text-slate-700">Average Order Value (AOV)</span>
+              <span className="text-sm font-black text-[#7FBA44]">{formatCurrency(r.avg_order_value)}</span>
             </div>
-            <div className="flex items-center justify-between p-3.5 bg-slate-950/60 rounded-xl border border-slate-800">
-              <span className="text-xs font-semibold text-slate-300">Total Non-Cancelled Orders</span>
-              <span className="text-sm font-bold text-white">{r.total_orders || 0}</span>
+            <div className="flex items-center justify-between p-3.5 bg-[#F8FAFC] rounded-xl border border-[#E2ECE7]">
+              <span className="text-xs font-bold text-slate-700">Total Non-Cancelled Orders</span>
+              <span className="text-sm font-black text-slate-900">{r.total_orders || 0}</span>
             </div>
           </div>
         </div>

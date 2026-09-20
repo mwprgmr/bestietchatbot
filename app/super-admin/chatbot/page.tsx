@@ -96,47 +96,47 @@ function ChatbotContent() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-        <RefreshCw className="w-8 h-8 animate-spin text-emerald-400" />
-        <p className="text-sm font-semibold">Loading Chatbot Analytics...</p>
+      <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-500">
+        <RefreshCw className="w-8 h-8 animate-spin text-[#7FBA44]" />
+        <p className="text-sm font-semibold">Loading WhatsApp Chatbot Analytics...</p>
       </div>
     )
   }
 
   return (
     <div className="space-y-8">
-      {/* Page Title */}
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-wide">WHATSAPP CHATBOT ANALYTICS</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-2xl font-black text-slate-900 tracking-wide">WHATSAPP CHATBOT ANALYTICS</h1>
+          <p className="text-xs text-slate-500 mt-1">
             Real customer interaction events & conversion metrics
           </p>
         </div>
         <button
           onClick={fetchChatbotData}
-          className="flex items-center gap-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 transition-all"
+          className="flex items-center gap-2 bg-white border border-[#E2ECE7] hover:border-[#7FBA44] hover:bg-slate-50 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 transition-all cursor-pointer shadow-2xs"
         >
-          <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+          <RefreshCw className="w-3.5 h-3.5 text-[#7FBA44]" />
           <span>Refresh</span>
         </button>
       </div>
 
       {/* Opening Message Widget */}
       {openingConfig && (
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+        <div className="bg-white border border-[#E2ECE7] rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4 shadow-xs">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-[#F0FDF4] border border-[#7FBA44]/30 flex items-center justify-center text-[#7FBA44] shrink-0">
               <Megaphone className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-white">Chatbot Greeting Tagline</h3>
-                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                <h3 className="text-sm font-bold text-slate-900">Chatbot Greeting Tagline</h3>
+                <span className="bg-[#F0FDF4] text-[#71A83A] border border-[#7FBA44]/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
                   Active
                 </span>
               </div>
-              <p className="text-xs text-slate-300 font-medium mt-1">
+              <p className="text-xs text-slate-700 font-medium mt-1">
                 "{openingConfig.tagline || 'Your Fresh Friend At The Door'}"
               </p>
               <p className="text-[11px] text-slate-500 mt-1">
@@ -149,76 +149,76 @@ function ChatbotContent() {
 
       {/* Primary Event Metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Conversations</p>
-          <p className="text-2xl font-black text-white mt-1">{stats.total_conversations || 0}</p>
+        <div className="bg-white border border-[#E2ECE7] p-4 rounded-2xl shadow-2xs">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Conversations</p>
+          <p className="text-2xl font-black text-slate-900 mt-1">{stats.total_conversations || 0}</p>
         </div>
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cart Created</p>
-          <p className="text-2xl font-black text-cyan-400 mt-1">{stats.cart_created || 0}</p>
+        <div className="bg-white border border-[#E2ECE7] p-4 rounded-2xl shadow-2xs">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cart Created</p>
+          <p className="text-2xl font-black text-cyan-600 mt-1">{stats.cart_created || 0}</p>
         </div>
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Checkout Started</p>
-          <p className="text-2xl font-black text-blue-400 mt-1">{stats.checkout_started || 0}</p>
+        <div className="bg-white border border-[#E2ECE7] p-4 rounded-2xl shadow-2xs">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Checkout Started</p>
+          <p className="text-2xl font-black text-blue-600 mt-1">{stats.checkout_started || 0}</p>
         </div>
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Orders Confirmed</p>
-          <p className="text-2xl font-black text-emerald-400 mt-1">{stats.orders_created || 0}</p>
+        <div className="bg-white border border-[#E2ECE7] p-4 rounded-2xl shadow-2xs">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Orders Confirmed</p>
+          <p className="text-2xl font-black text-[#7FBA44] mt-1">{stats.orders_created || 0}</p>
         </div>
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">No Stock Events</p>
-          <p className="text-2xl font-black text-amber-400 mt-1">{stats.no_inventory_events || 0}</p>
+        <div className="bg-white border border-[#E2ECE7] p-4 rounded-2xl shadow-2xs">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">No Stock Events</p>
+          <p className="text-2xl font-black text-amber-600 mt-1">{stats.no_inventory_events || 0}</p>
         </div>
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cart Clears</p>
-          <p className="text-2xl font-black text-purple-400 mt-1">{stats.cart_clears || 0}</p>
+        <div className="bg-white border border-[#E2ECE7] p-4 rounded-2xl shadow-2xs">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Cart Clears</p>
+          <p className="text-2xl font-black text-purple-600 mt-1">{stats.cart_clears || 0}</p>
         </div>
       </div>
 
       {/* Conversion Funnel */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
-        <h3 className="text-sm font-bold text-white uppercase tracking-wider">Chatbot Conversion Funnel</h3>
+      <div className="bg-white border border-[#E2ECE7] rounded-2xl p-6 shadow-xs space-y-6">
+        <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Chatbot Conversion Funnel</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 relative">
-            <div className="text-[11px] font-bold text-slate-400">Step 1: Start → Cart</div>
-            <div className="text-2xl font-black text-cyan-400 mt-1">{convToCart}%</div>
+          <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#E2ECE7] relative">
+            <div className="text-[11px] font-bold text-slate-600">Step 1: Start → Cart</div>
+            <div className="text-2xl font-black text-cyan-600 mt-1">{convToCart}%</div>
             <p className="text-[10px] text-slate-500 mt-1">{cartCreated} of {stats.total_conversations || 0} users added items</p>
           </div>
 
-          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 relative">
-            <div className="text-[11px] font-bold text-slate-400">Step 2: Cart → Checkout</div>
-            <div className="text-2xl font-black text-blue-400 mt-1">{cartToCheckout}%</div>
+          <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#E2ECE7] relative">
+            <div className="text-[11px] font-bold text-slate-600">Step 2: Cart → Checkout</div>
+            <div className="text-2xl font-black text-blue-600 mt-1">{cartToCheckout}%</div>
             <p className="text-[10px] text-slate-500 mt-1">{checkoutStarted} of {cartCreated} carts proceeded</p>
           </div>
 
-          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 relative">
-            <div className="text-[11px] font-bold text-slate-400">Step 3: Checkout → Order</div>
-            <div className="text-2xl font-black text-amber-400 mt-1">{checkoutToOrder}%</div>
+          <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#E2ECE7] relative">
+            <div className="text-[11px] font-bold text-slate-600">Step 3: Checkout → Order</div>
+            <div className="text-2xl font-black text-amber-600 mt-1">{checkoutToOrder}%</div>
             <p className="text-[10px] text-slate-500 mt-1">{ordersCreated} of {checkoutStarted} checkouts confirmed</p>
           </div>
 
-          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 relative">
-            <div className="text-[11px] font-bold text-slate-400">Step 4: Order → Delivered</div>
-            <div className="text-2xl font-black text-emerald-400 mt-1">{orderToCompletion}%</div>
+          <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#E2ECE7] relative">
+            <div className="text-[11px] font-bold text-slate-600">Step 4: Order → Delivered</div>
+            <div className="text-2xl font-black text-[#7FBA44] mt-1">{orderToCompletion}%</div>
             <p className="text-[10px] text-slate-500 mt-1">{completedOrders} of {ordersCreated} completed</p>
           </div>
         </div>
       </div>
 
       {/* Chatbot Session Table */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
-        <div className="p-5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Active Chatbot Sessions</h3>
+      <div className="bg-white border border-[#E2ECE7] rounded-2xl shadow-xs overflow-hidden">
+        <div className="p-5 border-b border-[#E2ECE7] flex flex-wrap items-center justify-between gap-4 bg-[#F8FAFC]">
+          <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">Active Chatbot Sessions</h3>
 
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search phone or state..."
-              className="bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+              className="bg-white border border-[#E2ECE7] rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#7FBA44]"
             />
           </div>
         </div>
@@ -226,7 +226,7 @@ function ChatbotContent() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-950/80 text-[11px] font-bold uppercase text-slate-400 border-b border-slate-800">
+              <tr className="bg-slate-50 text-[11px] font-bold uppercase text-slate-600 border-b border-[#E2ECE7]">
                 <th className="p-3.5">Customer / Phone</th>
                 <th className="p-3.5">Branch</th>
                 <th className="p-3.5">Current State</th>
@@ -234,7 +234,7 @@ function ChatbotContent() {
                 <th className="p-3.5">Last Activity</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-xs text-slate-300">
+            <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
               {filteredSessions.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-slate-500 font-medium">
@@ -243,27 +243,27 @@ function ChatbotContent() {
                 </tr>
               ) : (
                 filteredSessions.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-800/40 transition-colors">
+                  <tr key={s.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3.5">
-                      <div className="font-semibold text-white">{s.customer?.name || 'Customer'}</div>
-                      <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                      <div className="font-bold text-slate-900">{s.customer?.name || 'Customer'}</div>
+                      <div className="text-[11px] text-slate-500 font-mono mt-0.5">
                         +{s.customer?.phone || s.phone}
                       </div>
                     </td>
                     <td className="p-3.5">
-                      <span className="bg-slate-800 border border-slate-700 px-2 py-1 rounded-lg text-[11px] font-medium text-slate-300">
+                      <span className="bg-slate-100 border border-slate-200 px-2 py-1 rounded-lg text-[11px] font-semibold text-slate-700">
                         {s.branch?.name || 'Default Branch'}
                       </span>
                     </td>
                     <td className="p-3.5">
-                      <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono font-bold px-2 py-0.5 rounded text-[10px]">
+                      <span className="bg-[#F0FDF4] border border-[#7FBA44]/30 text-[#71A83A] font-mono font-bold px-2 py-0.5 rounded text-[10px]">
                         {s.state}
                       </span>
                     </td>
-                    <td className="p-3.5 font-bold text-slate-200">
+                    <td className="p-3.5 font-bold text-slate-900">
                       {Array.isArray(s.cart) ? s.cart.length : 0} items
                     </td>
-                    <td className="p-3.5 text-slate-400">
+                    <td className="p-3.5 text-slate-500">
                       {s.updated_at ? new Date(s.updated_at).toLocaleString() : 'N/A'}
                     </td>
                   </tr>

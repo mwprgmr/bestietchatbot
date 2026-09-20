@@ -93,36 +93,36 @@ function SettingsContent() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-wide">STORE & SYSTEM SETTINGS</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-2xl font-black text-slate-900 tracking-wide">STORE & SYSTEM SETTINGS</h1>
+          <p className="text-xs text-slate-500 mt-1">
             Configure global brand name, chatbot tagline, delivery charges & stock thresholds
           </p>
         </div>
       </div>
 
       {successMsg && (
-        <div className="p-4 rounded-xl bg-emerald-950/80 border border-emerald-800 flex items-center gap-3 text-emerald-300 text-sm">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+        <div className="p-4 rounded-xl bg-[#F0FDF4] border border-[#7FBA44]/40 flex items-center gap-3 text-[#71A83A] text-sm font-semibold">
+          <CheckCircle2 className="w-5 h-5 text-[#7FBA44] shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {errorMsg && (
-        <div className="p-4 rounded-xl bg-red-950/80 border border-red-800 flex items-center gap-3 text-red-300 text-sm">
-          <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-center gap-3 text-red-600 text-sm font-semibold">
+          <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
-      <form onSubmit={handleSaveSettings} className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+      <form onSubmit={handleSaveSettings} className="bg-white border border-[#E2ECE7] rounded-2xl p-6 shadow-xs space-y-6">
         <div className="space-y-4">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
-            <Store className="w-4 h-4 text-emerald-400" />
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-[#E2ECE7] pb-3">
+            <Store className="w-4 h-4 text-[#7FBA44]" />
             Brand & Greeting Configuration
           </h3>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
               Brand Name
             </label>
             <input
@@ -130,12 +130,12 @@ function SettingsContent() {
               required
               value={brandName}
               onChange={(e) => setBrandName(e.target.value)}
-              className="block w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+              className="block w-full px-3.5 py-2.5 bg-white border border-[#E2ECE7] rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#7FBA44]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
               Chatbot Opening Tagline
             </label>
             <input
@@ -143,7 +143,7 @@ function SettingsContent() {
               required
               value={tagline}
               onChange={(e) => setTagline(e.target.value)}
-              className="block w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+              className="block w-full px-3.5 py-2.5 bg-white border border-[#E2ECE7] rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#7FBA44]"
             />
             <p className="text-[11px] text-slate-500 mt-1">
               Sent automatically to WhatsApp customers in opening greeting
@@ -151,15 +151,15 @@ function SettingsContent() {
           </div>
         </div>
 
-        <div className="space-y-4 pt-4 border-t border-slate-800">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
-            <Settings className="w-4 h-4 text-cyan-400" />
+        <div className="space-y-4 pt-4 border-t border-[#E2ECE7]">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-[#E2ECE7] pb-3">
+            <Settings className="w-4 h-4 text-cyan-600" />
             Financial & Stock Parameters
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                 Standard Delivery Charge (₹)
               </label>
               <input
@@ -169,12 +169,12 @@ function SettingsContent() {
                 required
                 value={deliveryCharge}
                 onChange={(e) => setDeliveryCharge(Number(e.target.value))}
-                className="block w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                className="block w-full px-3.5 py-2.5 bg-white border border-[#E2ECE7] rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#7FBA44]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                 Low Stock Threshold (kg)
               </label>
               <input
@@ -184,7 +184,7 @@ function SettingsContent() {
                 required
                 value={lowStockThreshold}
                 onChange={(e) => setLowStockThreshold(Number(e.target.value))}
-                className="block w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                className="block w-full px-3.5 py-2.5 bg-white border border-[#E2ECE7] rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#7FBA44]"
               />
             </div>
           </div>
@@ -194,10 +194,10 @@ function SettingsContent() {
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-2 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-slate-950 font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 disabled:opacity-50 transition-all"
+            className="flex items-center gap-2 bg-[#7FBA44] hover:bg-[#71A83A] text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs disabled:opacity-50 transition-all cursor-pointer"
           >
             {saving ? (
-              <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
+              <RefreshCw className="w-4 h-4 animate-spin text-white" />
             ) : (
               <Save className="w-4 h-4" />
             )}
