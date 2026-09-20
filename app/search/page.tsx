@@ -109,6 +109,14 @@ function SearchContent() {
           }
         })
 
+        // Strict sorting: IN STOCK (available_stock > 0) ALWAYS FIRST, OUT OF STOCK ALWAYS LAST
+        mapped.sort((a, b) => {
+          const aStock = a.available_stock > 0 ? 1 : 0
+          const bStock = b.available_stock > 0 ? 1 : 0
+          if (aStock !== bStock) return bStock - aStock
+          return a.name.localeCompare(b.name)
+        })
+
         if (isMounted) {
           setProducts(mapped)
         }

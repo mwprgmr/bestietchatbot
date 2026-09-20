@@ -172,6 +172,14 @@ export default function ProductGrid() {
           })
         }
 
+        // Strict sorting: IN STOCK (available_stock > 0) ALWAYS FIRST, OUT OF STOCK ALWAYS LAST
+        fetchedProducts.sort((a, b) => {
+          const aStock = a.available_stock > 0 ? 1 : 0
+          const bStock = b.available_stock > 0 ? 1 : 0
+          if (aStock !== bStock) return bStock - aStock
+          return a.name.localeCompare(b.name)
+        })
+
         setProducts(fetchedProducts)
         lastFetchRef.current = Date.now()
       } catch (err: any) {
@@ -239,7 +247,7 @@ export default function ProductGrid() {
   })
 
   return (
-    <div id="products-section" className="space-y-12 scroll-mt-24">
+    <div id="products-section" className="space-y-6 sm:space-y-8 scroll-mt-24">
       {/* 1. TODAY'S FRESH PICKS SLIDER */}
       <ScrollReveal direction="up" duration={0.6}>
         <ProductSectionSlider

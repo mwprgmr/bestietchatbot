@@ -202,6 +202,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem('bestiet_selected_branch', JSON.stringify(branch))
     } catch (e) {}
+    clearCart()
   }
 
   const setDeliveryAddress = (addr: string) => {

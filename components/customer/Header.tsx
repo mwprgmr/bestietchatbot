@@ -112,7 +112,7 @@ export default function Header() {
         </div>
 
         {/* Upgraded Mobile Capsule Search Bar */}
-        <form onSubmit={handleSearchSubmit} className="mt-2.5 md:hidden">
+        <form onSubmit={handleSearchSubmit} className="mt-1.5 md:hidden">
           <div className="relative flex items-center bg-slate-50 focus-within:bg-white border border-slate-200 rounded-full p-1 pl-4 shadow-2xs focus-within:ring-2 focus-within:ring-[#7FBA44]/30 focus-within:border-[#7FBA44] transition-all">
             <input
               type="text"

@@ -79,12 +79,12 @@ function ProductCardComponent({ product }: { product: ProductProps }) {
   }, [])
 
   return (
-    <div className="group relative bg-white border border-slate-100 hover:border-[#7FBA44]/40 rounded-3xl p-3.5 sm:p-4 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full transform-gpu contain-render">
-      <Link href={`/product/${product.id}`} className="flex flex-col h-full justify-between">
+    <div className="group relative bg-white border border-slate-100 hover:border-[#7FBA44]/40 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3.5 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col h-full transform-gpu contain-render">
+      <Link href={`/product/${product.id}`} className="flex flex-col h-full">
         
         <div>
           {/* 1. PRODUCT IMAGE CONTAINER */}
-          <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 border border-slate-100/80 mb-3 sm:mb-3.5 group-hover:shadow-xs transition-shadow">
+          <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 border border-slate-100/80 mb-2 sm:mb-2.5 group-hover:shadow-xs transition-shadow">
             <img
               src={imageSrc}
               alt={product.name}
@@ -142,7 +142,7 @@ function ProductCardComponent({ product }: { product: ProductProps }) {
           </div>
 
           {/* 2. TITLE & PRICE BADGE ROW */}
-          <div className="flex items-start justify-between gap-2 mb-1.5">
+          <div className="flex items-start justify-between gap-2 mb-1">
             <h3 className="font-bold text-[#0F172A] text-sm sm:text-base leading-tight tracking-tight line-clamp-1 group-hover:text-[#7FBA44] transition-colors capitalize">
               {product.name}
             </h3>
@@ -152,12 +152,12 @@ function ProductCardComponent({ product }: { product: ProductProps }) {
           </div>
 
           {/* 3. DESCRIPTION / SUBTITLE */}
-          <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed line-clamp-2 mb-3">
+          <p className="text-[11px] sm:text-xs text-slate-500 leading-relaxed line-clamp-2 mb-2">
             {descriptionText}
           </p>
 
           {/* 4. PILL BADGES ROW (PACK SELECTOR & STOCK) */}
-          <div className="flex items-center gap-1.5 flex-wrap mb-4">
+          <div className="flex items-center gap-1.5 flex-wrap mb-2">
             {/* 500g / 1kg Pack Pill Toggle */}
             <div className="flex items-center bg-[#7FBA44]/10 border border-[#7FBA44]/20 rounded-full p-0.5">
               {[0.5, 1.0].map((w) => (
@@ -189,7 +189,7 @@ function ProductCardComponent({ product }: { product: ProductProps }) {
         </div>
 
         {/* 5. FULL-WIDTH "ADD TO CART" PILL BUTTON */}
-        <div className="mt-1">
+        <div className="mt-auto pt-1">
           {!isOutOfStock ? (
             currentPackQty > 0 ? (
               <div

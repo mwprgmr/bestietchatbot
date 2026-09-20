@@ -4,10 +4,14 @@ import { createAdminClient } from '@/lib/supabase/admin'
 const MARINE_DRIVE_ID = 'b1111111-1111-1111-1111-111111111111'
 const FORT_KOCHI_ID = 'b2222222-2222-2222-2222-222222222222'
 
+function getTodayDateIST(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
-    const date = searchParams.get('date') || new Date().toISOString().split('T')[0]
+    const date = searchParams.get('date') || getTodayDateIST()
     const rawBranchId = searchParams.get('branch_id') || MARINE_DRIVE_ID
     const targetBranchId = rawBranchId === FORT_KOCHI_ID ? FORT_KOCHI_ID : MARINE_DRIVE_ID
 

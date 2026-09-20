@@ -30,40 +30,40 @@ export default function FlashSale({ products }: { products: ProductProps[] }) {
   const formatNum = (num: number) => String(num).padStart(2, '0')
 
   return (
-    <section className="bg-[#0F172A] rounded-3xl p-6 text-[#E2E8F0] shadow-xl my-8 overflow-hidden relative border border-[#7FBA44]/30">
+    <section className="bg-[#F8FAFC] rounded-3xl p-6 text-slate-800 shadow-sm my-8 overflow-hidden relative border border-slate-200">
       {/* Decorative Accent */}
       <div className="absolute top-0 right-0 w-80 h-80 bg-[#7FBA44]/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Flash Sale Header & Timer */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#7FBA44]/40 mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-[#7FBA44] text-white font-black shadow-lg shadow-[#7FBA44]/30 flex items-center justify-center animate-bounce">
+          <div className="p-2.5 rounded-2xl bg-[#7FBA44] text-white font-black shadow-xs flex items-center justify-center animate-bounce">
             <Flame className="w-6 h-6 fill-white" />
           </div>
           <div>
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#7FBA44]">
               Limited Time Deals
             </span>
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-800">
               TODAY'S FLASH SALE
             </h2>
           </div>
         </div>
 
         {/* Countdown Timer */}
-        <div className="flex items-center gap-2 bg-[#FFFFFF]/10 px-4 py-2 rounded-2xl border border-[#7FBA44]/40 shadow-inner">
+        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-xs">
           <Clock className="w-4 h-4 text-[#7FBA44] shrink-0" />
-          <span className="text-[11px] font-bold text-[#E2E8F0] uppercase mr-1">Ends In:</span>
+          <span className="text-[11px] font-bold text-slate-600 uppercase mr-1">Ends In:</span>
           <div className="flex items-center gap-1 font-mono text-sm font-black text-[#7FBA44]">
-            <span className="bg-[#0F172A] px-2 py-0.5 rounded-lg border border-[#7FBA44]/40 text-white">
+            <span className="bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200 text-slate-800">
               {formatNum(timeLeft.hours)}
             </span>
-            <span className="text-white">:</span>
-            <span className="bg-[#0F172A] px-2 py-0.5 rounded-lg border border-[#7FBA44]/40 text-white">
+            <span className="text-slate-800">:</span>
+            <span className="bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200 text-slate-800">
               {formatNum(timeLeft.minutes)}
             </span>
-            <span className="text-white">:</span>
-            <span className="bg-[#0F172A] px-2 py-0.5 rounded-lg border border-[#7FBA44]/40 text-white">
+            <span className="text-slate-800">:</span>
+            <span className="bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200 text-slate-800">
               {formatNum(timeLeft.seconds)}
             </span>
           </div>

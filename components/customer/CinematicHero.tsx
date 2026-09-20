@@ -124,7 +124,7 @@ export default function CinematicHero() {
     <div
       ref={heroRef}
       onMouseMove={handleMouseMove}
-      className="relative space-y-6 sm:space-y-8 mb-8 sm:mb-12 mt-0"
+      className="relative space-y-4 sm:space-y-5 mb-4 sm:mb-6 mt-0"
     >
       {/* Organic Fluid WebGL/Canvas Ambient Light */}
       <div className="absolute -inset-4 rounded-3xl overflow-hidden pointer-events-none -z-10 opacity-75">
@@ -135,7 +135,7 @@ export default function CinematicHero() {
       <div
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className="relative rounded-2xl sm:rounded-3xl overflow-hidden bg-slate-950 shadow-xl border border-slate-800/80 w-full aspect-[16/9] group transition-all"
+        className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-slate-100 shadow-sm border border-slate-200/80 w-full aspect-[16/9] sm:aspect-[2.4/1] md:aspect-[2.8/1] lg:aspect-[3.1/1] max-h-[190px] xs:max-h-[220px] sm:max-h-[260px] md:max-h-[280px] lg:max-h-[310px] group transition-all mx-auto"
       >
         {/* Animated Media Layer */}
         <AnimatePresence mode="wait">
@@ -164,8 +164,8 @@ export default function CinematicHero() {
                   className="w-full h-full object-cover transition-opacity duration-700"
                 />
               )}
-              {/* Subtle Gradient Overlay for Contrast */}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent pointer-events-none" />
+              {/* Subtle Soft Gradient Overlay for Contrast */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
             </Link>
           </motion.div>
         </AnimatePresence>
@@ -177,23 +177,23 @@ export default function CinematicHero() {
             <button
               type="button"
               onClick={prevSlide}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-slate-950/60 hover:bg-slate-950/90 text-white backdrop-blur-md border border-white/20 transition-all opacity-80 group-hover:opacity-100 cursor-pointer active:scale-95"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-white/90 hover:bg-white text-slate-800 backdrop-blur-md border border-slate-200 shadow-sm transition-all opacity-80 group-hover:opacity-100 cursor-pointer active:scale-95"
               aria-label="Previous Poster"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5 text-slate-800" />
             </button>
 
             <button
               type="button"
               onClick={nextSlide}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-slate-950/60 hover:bg-slate-950/90 text-white backdrop-blur-md border border-white/20 transition-all opacity-80 group-hover:opacity-100 cursor-pointer active:scale-95"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-white/90 hover:bg-white text-slate-800 backdrop-blur-md border border-slate-200 shadow-sm transition-all opacity-80 group-hover:opacity-100 cursor-pointer active:scale-95"
               aria-label="Next Poster"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-5 h-5 text-slate-800" />
             </button>
 
             {/* Pagination Indicators */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-slate-950/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-200 shadow-xs">
               {posters.map((_, idx) => (
                 <button
                   key={idx}
@@ -202,7 +202,7 @@ export default function CinematicHero() {
                   className={`h-2 rounded-full transition-all cursor-pointer ${
                     currentIndex === idx
                       ? 'w-6 bg-[#7FBA44]'
-                      : 'w-2 bg-white/50 hover:bg-white/80'
+                      : 'w-2 bg-slate-300 hover:bg-slate-400'
                   }`}
                   aria-label={`Go to poster ${idx + 1}`}
                 />
@@ -213,10 +213,10 @@ export default function CinematicHero() {
       </div>
 
       {/* Interactive Category Showcase Section */}
-      <section id="categories" className="space-y-4 pt-2 scroll-mt-24">
+      <section id="categories" className="space-y-2 pt-1 scroll-mt-24">
         <div className="flex items-baseline justify-between px-1">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg sm:text-2xl font-black text-[#0F172A] tracking-tight uppercase">
+            <h2 className="text-lg sm:text-2xl font-black text-slate-800 tracking-tight uppercase">
               Shop by Category
             </h2>
           </div>
@@ -226,7 +226,7 @@ export default function CinematicHero() {
         </div>
 
         {/* Horizontal Category Cards Slider */}
-        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar snap-x snap-mandatory py-3 px-1 justify-start sm:justify-around smooth-scroll-x gpu-layer">
+        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar snap-x snap-mandatory py-1.5 px-1 justify-start sm:justify-around smooth-scroll-x gpu-layer">
           {categories.map((cat, idx) => {
             const isHovered = activeCategoryHover === cat.id
 
@@ -258,7 +258,7 @@ export default function CinematicHero() {
                       }`}
                     />
                   </div>
-                  <span className="text-xs sm:text-sm font-black text-[#0F172A] group-hover:text-[#7FBA44] transition-colors mt-2.5 text-center line-clamp-1 max-w-[100px] sm:max-w-[120px]">
+                  <span className="text-xs sm:text-sm font-black text-slate-800 group-hover:text-[#7FBA44] transition-colors mt-2.5 text-center line-clamp-1 max-w-[100px] sm:max-w-[120px]">
                     {cat.name}
                   </span>
                 </Link>
