@@ -131,11 +131,67 @@ export default function CinematicHero() {
         <AmbientLightCanvas intensity={1.2} opacity={0.7} />
       </div>
 
-      {/* Main Cinematic Hero Banner Environment */}
+      {/* 1. Interactive Category Showcase Section (Placed Above Hero Slider like Freshtohome) */}
+      <section id="categories" className="space-y-2 pt-0 scroll-mt-24">
+        <div className="flex items-baseline justify-between px-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg sm:text-2xl font-black text-slate-800 tracking-tight uppercase">
+              Shop by Category
+            </h2>
+          </div>
+          <span className="text-[10px] font-extrabold uppercase text-[#7FBA44] tracking-wider sm:hidden">
+            Swipe →
+          </span>
+        </div>
+
+        {/* Horizontal Category Cards Slider */}
+        <div className="flex items-center gap-3 sm:gap-6 overflow-x-auto no-scrollbar snap-x snap-mandatory py-1 px-1 justify-start sm:justify-around smooth-scroll-x gpu-layer">
+          {categories.map((cat, idx) => {
+            const isHovered = activeCategoryHover === cat.id
+
+            return (
+              <motion.div
+                key={cat.id || idx}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: idx * 0.05 }}
+                onMouseEnter={() => setActiveCategoryHover(cat.id)}
+                onMouseLeave={() => setActiveCategoryHover(null)}
+                className="category-circle category-item shrink-0 snap-start"
+              >
+                <Link
+                  href={`/category/${cat.slug}`}
+                  onClick={(e) => handleCategorySelect(e, cat.slug)}
+                  className="group flex flex-col items-center cursor-pointer transition-all active:scale-95"
+                >
+                  <div className="relative w-16 h-16 xs:w-20 xs:h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shadow-sm border-2 border-[#7FBA44]/30 bg-[#F1F5F9] flex items-center justify-center transition-all duration-300 group-hover:border-[#7FBA44] group-hover:shadow-lg group-hover:shadow-[#7FBA44]/20">
+                    <img
+                      src={cat.image}
+                      alt={cat.name}
+                      className="w-full h-full object-cover rounded-full transition-transform duration-500 group-hover:scale-110"
+                    />
+                    {/* Glowing Light Overlay on Hover */}
+                    <div
+                      className={`absolute inset-0 bg-[#7FBA44]/20 blur-md transition-opacity duration-300 pointer-events-none ${
+                        isHovered ? 'opacity-100' : 'opacity-0'
+                      }`}
+                    />
+                  </div>
+                  <span className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-[#7FBA44] transition-colors mt-2 text-center line-clamp-1 max-w-[90px] sm:max-w-[110px]">
+                    {cat.name}
+                  </span>
+                </Link>
+              </motion.div>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* 2. Main Cinematic Hero Banner Environment */}
       <div
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-slate-100 shadow-sm border border-slate-200/80 w-full aspect-[16/9] sm:aspect-[2.4/1] md:aspect-[2.8/1] lg:aspect-[3.1/1] max-h-[190px] xs:max-h-[220px] sm:max-h-[260px] md:max-h-[280px] lg:max-h-[310px] group transition-all mx-auto"
+        className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-slate-100 shadow-sm border border-slate-200/80 w-full aspect-[16/9] sm:aspect-[2.5/1] md:aspect-[2.85/1] lg:aspect-[3.1/1] max-h-[200px] xs:max-h-[230px] sm:max-h-[280px] md:max-h-[320px] lg:max-h-[360px] group transition-all mx-auto"
       >
         {/* Animated Media Layer */}
         <AnimatePresence mode="wait">
@@ -169,7 +225,6 @@ export default function CinematicHero() {
             </Link>
           </motion.div>
         </AnimatePresence>
-
 
         {/* Slider Controls */}
         {posters.length > 1 && (
@@ -211,62 +266,6 @@ export default function CinematicHero() {
           </>
         )}
       </div>
-
-      {/* Interactive Category Showcase Section */}
-      <section id="categories" className="space-y-2 pt-1 scroll-mt-24">
-        <div className="flex items-baseline justify-between px-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg sm:text-2xl font-black text-slate-800 tracking-tight uppercase">
-              Shop by Category
-            </h2>
-          </div>
-          <span className="text-[10px] font-extrabold uppercase text-[#7FBA44] tracking-wider sm:hidden">
-            Swipe →
-          </span>
-        </div>
-
-        {/* Horizontal Category Cards Slider */}
-        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar snap-x snap-mandatory py-1.5 px-1 justify-start sm:justify-around smooth-scroll-x gpu-layer">
-          {categories.map((cat, idx) => {
-            const isHovered = activeCategoryHover === cat.id
-
-            return (
-              <motion.div
-                key={cat.id || idx}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: idx * 0.05 }}
-                onMouseEnter={() => setActiveCategoryHover(cat.id)}
-                onMouseLeave={() => setActiveCategoryHover(null)}
-                className="category-circle category-item shrink-0 snap-start"
-              >
-                <Link
-                  href={`/category/${cat.slug}`}
-                  onClick={(e) => handleCategorySelect(e, cat.slug)}
-                  className="group flex flex-col items-center cursor-pointer transition-all active:scale-95"
-                >
-                  <div className="relative w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shadow-md border-2 border-[#7FBA44]/30 bg-[#F1F5F9] flex items-center justify-center transition-all duration-300 group-hover:border-[#7FBA44] group-hover:shadow-xl group-hover:shadow-[#7FBA44]/20">
-                    <img
-                      src={cat.image}
-                      alt={cat.name}
-                      className="w-full h-full object-cover rounded-full transition-transform duration-500 group-hover:scale-110"
-                    />
-                    {/* Glowing Light Overlay on Hover */}
-                    <div
-                      className={`absolute inset-0 bg-[#7FBA44]/20 blur-md transition-opacity duration-300 pointer-events-none ${
-                        isHovered ? 'opacity-100' : 'opacity-0'
-                      }`}
-                    />
-                  </div>
-                  <span className="text-xs sm:text-sm font-black text-slate-800 group-hover:text-[#7FBA44] transition-colors mt-2.5 text-center line-clamp-1 max-w-[100px] sm:max-w-[120px]">
-                    {cat.name}
-                  </span>
-                </Link>
-              </motion.div>
-            )
-          })}
-        </div>
-      </section>
     </div>
   )
 }
