@@ -103,7 +103,8 @@ function SearchContent() {
 
           // Map safely with fallbacks
           mapped = filtered.map((p) => {
-            const invMatch = safeInventory.find((i) => i && i.product_id === p.id && i.inventory_date === todayStr)
+            const invMatch = safeInventory.find((i) => i && i.product_id === p.id && i.inventory_date === todayStr) ||
+                             safeInventory.find((i) => i && i.product_id === p.id)
 
             const rawPrice = invMatch?.price_per_kg ?? p.price_per_kg ?? 450
             const price = typeof rawPrice === 'number' && !isNaN(rawPrice) && rawPrice > 0 ? Number(rawPrice) : 450

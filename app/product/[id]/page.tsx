@@ -66,7 +66,7 @@ export default function ProductDetailsPage() {
           .lte('inventory_date', todayStr)
           .order('inventory_date', { ascending: false })
 
-        const todayInv = (invList || []).find((i) => i.inventory_date === todayStr)
+        const todayInv = (invList || []).find((i) => i.inventory_date === todayStr) || (invList || [])[0]
         fetchedInv = todayInv || null
 
         setInventory(fetchedInv)
