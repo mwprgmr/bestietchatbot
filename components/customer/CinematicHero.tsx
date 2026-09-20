@@ -124,7 +124,7 @@ export default function CinematicHero() {
     <div
       ref={heroRef}
       onMouseMove={handleMouseMove}
-      className="relative space-y-8 mb-12"
+      className="relative space-y-6 sm:space-y-8 mb-8 sm:mb-12 mt-0"
     >
       {/* Organic Fluid WebGL/Canvas Ambient Light */}
       <div className="absolute -inset-4 rounded-3xl overflow-hidden pointer-events-none -z-10 opacity-75">
@@ -135,7 +135,7 @@ export default function CinematicHero() {
       <div
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
-        className="relative rounded-3xl overflow-hidden bg-slate-950 shadow-2xl border border-slate-800/80 h-[240px] xs:h-[280px] sm:h-[380px] md:h-[480px] lg:h-[520px] w-full group transition-all"
+        className="relative rounded-2xl sm:rounded-3xl overflow-hidden bg-slate-950 shadow-xl border border-slate-800/80 w-full aspect-[16/9] group transition-all"
       >
         {/* Animated Media Layer */}
         <AnimatePresence mode="wait">
