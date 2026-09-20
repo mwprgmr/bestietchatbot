@@ -110,10 +110,12 @@ export default function ProductDetailsPage() {
     )
   }
 
-  const pricePerKg = inventory?.price_per_kg ? Number(inventory.price_per_kg) : 450
-  const availableStock = inventory && inventory.available_stock !== undefined && inventory.available_stock !== null
-    ? Math.max(0, Number(inventory.available_stock))
-    : 0
+  const pricePerKg = product?.price_per_kg ? Number(product.price_per_kg) : (inventory?.price_per_kg ? Number(inventory.price_per_kg) : 450)
+  const availableStock = product && product.available_stock !== undefined && product.available_stock !== null
+    ? Math.max(0, Number(product.available_stock))
+    : (inventory && inventory.available_stock !== undefined && inventory.available_stock !== null
+        ? Math.max(0, Number(inventory.available_stock))
+        : 0)
   const isOutOfStock = availableStock <= 0
 
   const calculatedPackPrice = Math.round(pricePerKg * selectedWeight)

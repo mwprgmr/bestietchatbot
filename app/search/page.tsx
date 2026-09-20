@@ -42,72 +42,88 @@ function SearchContent() {
       setSearchError(null)
 
       try {
-        const supabase = createClient()
-        const searchTerm = trimmedQuery.toLowerCase()
-
-        // Fetch active products
-        const { data: rawProducts, error: pErr } = await supabase
-          .from('products')
-          .select('*')
-          .eq('active', true)
-
-        if (pErr) {
-          console.error('[SEARCH_ERROR] Products fetch error:', pErr.message)
-          if (isMounted) {
-            setSearchError('Something went wrong while searching. Please try again.')
-            setProducts([])
-          }
-          return
-        }
-
-        // Fetch branch inventory
-        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
         const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
-        const { data: rawInventory, error: iErr } = await supabase
-          .from('inventory')
-          .select('*')
-          .eq('branch_id', targetBranchId)
-          .lte('inventory_date', todayStr)
-          .order('inventory_date', { ascending: false })
+        let mapped: ProductProps[] = []
 
-        if (iErr) {
-          console.warn('[SEARCH_WARNING] Inventory fetch warning:', iErr.message)
+        try {
+          const res = await fetch(`/api/products?branch_id=${targetBranchId}&q=${encodeURIComponent(trimmedQuery)}&t=${Date.now()}`, {
+            cache: 'no-store',
+          })
+          const apiData = await res.json()
+          if (apiData?.success && Array.isArray(apiData.products)) {
+            mapped = apiData.products
+          }
+        } catch (apiErr) {
+          console.warn('API search products fetch warning, falling back to client:', apiErr)
         }
 
-        const safeProducts = Array.isArray(rawProducts) ? rawProducts : []
-        const safeInventory = Array.isArray(rawInventory) ? rawInventory : []
+        if (mapped.length === 0) {
+          const supabase = createClient()
+          const searchTerm = trimmedQuery.toLowerCase()
 
-        // Filter by name, category, or description safely
-        const filtered = safeProducts.filter((p) => {
-          if (!p) return false
-          const nameMatch = (p.name || '').toLowerCase().includes(searchTerm)
-          const catMatch = (p.category || '').toLowerCase().includes(searchTerm)
-          const descMatch = (p.description || '').toLowerCase().includes(searchTerm)
-          return nameMatch || catMatch || descMatch
-        })
+          // Fetch active products
+          const { data: rawProducts, error: pErr } = await supabase
+            .from('products')
+            .select('*')
+            .eq('active', true)
 
-        // Map safely with fallbacks
-        const mapped: ProductProps[] = filtered.map((p) => {
-          const invMatch = safeInventory.find((i) => i && i.product_id === p.id && i.inventory_date === todayStr)
-
-          const rawPrice = invMatch?.price_per_kg ?? p.price_per_kg ?? 450
-          const price = typeof rawPrice === 'number' && !isNaN(rawPrice) && rawPrice > 0 ? Number(rawPrice) : 450
-          const stock = invMatch && invMatch.available_stock !== undefined && invMatch.available_stock !== null
-            ? Math.max(0, Number(invMatch.available_stock))
-            : 0
-
-          return {
-            id: p.id || `prod-${Math.random()}`,
-            name: p.name || 'Fresh Product',
-            description: p.description || '',
-            category: p.category || 'Fish',
-            unit: p.unit || 'kg',
-            price_per_kg: price,
-            original_price_per_kg: Math.round(price * 1.25),
-            available_stock: stock,
-            image_url: p.image_url || null,
+          if (pErr) {
+            console.error('[SEARCH_ERROR] Products fetch error:', pErr.message)
+            if (isMounted) {
+              setSearchError('Something went wrong while searching. Please try again.')
+              setProducts([])
+            }
+            return
           }
-        })
+
+          // Fetch branch inventory
+          const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+          const { data: rawInventory, error: iErr } = await supabase
+            .from('inventory')
+            .select('*')
+            .eq('branch_id', targetBranchId)
+            .lte('inventory_date', todayStr)
+            .order('inventory_date', { ascending: false })
+
+          if (iErr) {
+            console.warn('[SEARCH_WARNING] Inventory fetch warning:', iErr.message)
+          }
+
+          const safeProducts = Array.isArray(rawProducts) ? rawProducts : []
+          const safeInventory = Array.isArray(rawInventory) ? rawInventory : []
+
+          // Filter by name, category, or description safely
+          const filtered = safeProducts.filter((p) => {
+            if (!p) return false
+            const nameMatch = (p.name || '').toLowerCase().includes(searchTerm)
+            const catMatch = (p.category || '').toLowerCase().includes(searchTerm)
+            const descMatch = (p.description || '').toLowerCase().includes(searchTerm)
+            return nameMatch || catMatch || descMatch
+          })
+
+          // Map safely with fallbacks
+          mapped = filtered.map((p) => {
+            const invMatch = safeInventory.find((i) => i && i.product_id === p.id && i.inventory_date === todayStr)
+
+            const rawPrice = invMatch?.price_per_kg ?? p.price_per_kg ?? 450
+            const price = typeof rawPrice === 'number' && !isNaN(rawPrice) && rawPrice > 0 ? Number(rawPrice) : 450
+            const stock = invMatch && invMatch.available_stock !== undefined && invMatch.available_stock !== null
+              ? Math.max(0, Number(invMatch.available_stock))
+              : 0
+
+            return {
+              id: p.id || `prod-${Math.random()}`,
+              name: p.name || 'Fresh Product',
+              description: p.description || '',
+              category: p.category || 'Fish',
+              unit: p.unit || 'kg',
+              price_per_kg: price,
+              original_price_per_kg: Math.round(price * 1.25),
+              available_stock: stock,
+              image_url: p.image_url || null,
+            }
+          })
+        }
 
         // Strict sorting: IN STOCK (available_stock > 0) ALWAYS FIRST, OUT OF STOCK ALWAYS LAST
         mapped.sort((a, b) => {

@@ -63,50 +63,66 @@ export default function CategoryPage() {
           }
         }
 
-        // Determine query string for products
-        let queryCategory = catName || slug
-        if (slug === 'fish') queryCategory = 'Fish'
-        else if (slug === 'chicken') queryCategory = 'Chicken'
-        else if (slug === 'mutton') queryCategory = 'Mutton'
-        else if (slug === 'seafood') queryCategory = 'Seafood'
-        else if (slug === 'ready-to-cook') queryCategory = 'Ready to Cook'
-        else if (slug === 'combos') queryCategory = 'Combos'
-
-        const { data: rawProducts } = await supabase
-          .from('products')
-          .select('*')
-          .or(`category.ilike.%${queryCategory}%,category.ilike.%${slug}%`)
-          .eq('active', true)
-
-        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+        // 2. Fetch products via secure /api/products API
         const targetBranchId = selectedBranch?.id || 'b1111111-1111-1111-1111-111111111111'
-        const { data: rawInventory } = await supabase
-          .from('inventory')
-          .select('*')
-          .eq('branch_id', targetBranchId)
-          .lte('inventory_date', todayStr)
-          .order('inventory_date', { ascending: false })
-
-        const mapped: ProductProps[] = (rawProducts || []).map((p) => {
-          const invMatch = (rawInventory || []).find((i) => i.product_id === p.id && i.inventory_date === todayStr)
-
-          const price = invMatch?.price_per_kg ? Number(invMatch.price_per_kg) : (p.price_per_kg || 450)
-          const stock = invMatch && invMatch.available_stock !== undefined && invMatch.available_stock !== null
-            ? Math.max(0, Number(invMatch.available_stock))
-            : 0
-
-          return {
-            id: p.id,
-            name: p.name,
-            description: p.description,
-            category: p.category || 'Fish',
-            unit: p.unit || 'kg',
-            price_per_kg: price,
-            original_price_per_kg: Math.round(price * 1.25),
-            available_stock: stock,
-            image_url: p.image_url,
+        let mapped: ProductProps[] = []
+        try {
+          const res = await fetch(`/api/products?branch_id=${targetBranchId}&category=${slug}&t=${Date.now()}`, {
+            cache: 'no-store',
+          })
+          const apiData = await res.json()
+          if (apiData?.success && Array.isArray(apiData.products)) {
+            mapped = apiData.products
           }
-        })
+        } catch (apiErr) {
+          console.warn('API category products fetch warning, falling back to client:', apiErr)
+        }
+
+        // Fallback to client query if API returned empty
+        if (mapped.length === 0) {
+          let queryCategory = catName || slug
+          if (slug === 'fish') queryCategory = 'Fish'
+          else if (slug === 'chicken') queryCategory = 'Chicken'
+          else if (slug === 'mutton') queryCategory = 'Mutton'
+          else if (slug === 'seafood') queryCategory = 'Seafood'
+          else if (slug === 'ready-to-cook') queryCategory = 'Ready to Cook'
+          else if (slug === 'combos') queryCategory = 'Combos'
+
+          const { data: rawProducts } = await supabase
+            .from('products')
+            .select('*')
+            .or(`category.ilike.%${queryCategory}%,category.ilike.%${slug}%`)
+            .eq('active', true)
+
+          const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+          const { data: rawInventory } = await supabase
+            .from('inventory')
+            .select('*')
+            .eq('branch_id', targetBranchId)
+            .lte('inventory_date', todayStr)
+            .order('inventory_date', { ascending: false })
+
+          mapped = (rawProducts || []).map((p) => {
+            const invMatch = (rawInventory || []).find((i) => i.product_id === p.id && i.inventory_date === todayStr)
+
+            const price = invMatch?.price_per_kg ? Number(invMatch.price_per_kg) : (p.price_per_kg || 450)
+            const stock = invMatch && invMatch.available_stock !== undefined && invMatch.available_stock !== null
+              ? Math.max(0, Number(invMatch.available_stock))
+              : 0
+
+            return {
+              id: p.id,
+              name: p.name,
+              description: p.description,
+              category: p.category || 'Fish',
+              unit: p.unit || 'kg',
+              price_per_kg: price,
+              original_price_per_kg: Math.round(price * 1.25),
+              available_stock: stock,
+              image_url: p.image_url,
+            }
+          })
+        }
 
         // Strict sorting: IN STOCK (available_stock > 0) ALWAYS FIRST, OUT OF STOCK ALWAYS LAST
         mapped.sort((a, b) => {

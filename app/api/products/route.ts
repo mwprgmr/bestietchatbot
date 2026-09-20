@@ -42,7 +42,10 @@ export async function GET(req: Request) {
 
     if (iErr) console.warn('Inventory fetch warning:', iErr.message)
 
-    const mapped = (rawProducts || []).map((p) => {
+    const categoryParam = searchParams.get('category')
+    const qParam = searchParams.get('q')
+
+    let mapped = (rawProducts || []).map((p) => {
       const invMatch = (rawInventory || []).find((i) => i.product_id === p.id && i.inventory_date === todayStr)
 
       const price = invMatch?.price_per_kg ? Number(invMatch.price_per_kg) : (p.price_per_kg || 250)
@@ -62,6 +65,27 @@ export async function GET(req: Request) {
         image_url: p.image_url,
       }
     })
+
+    if (categoryParam) {
+      const catLower = categoryParam.toLowerCase()
+      mapped = mapped.filter((p) => {
+        const pCat = p.category.toLowerCase()
+        if (catLower === 'fish') return pCat.includes('fish') || pCat.includes('seafood') || pCat.includes('specialty') || pCat.includes('prawn')
+        if (catLower === 'chicken') return pCat.includes('chicken')
+        if (catLower === 'mutton') return pCat.includes('mutton') || pCat.includes('meat') || pCat.includes('goat')
+        if (catLower === 'combos' || catLower === 'ready-to-cook') return pCat.includes('combo') || pCat.includes('ready') || pCat.includes('marinated')
+        return pCat.includes(catLower)
+      })
+    }
+
+    if (qParam) {
+      const sLower = qParam.toLowerCase()
+      mapped = mapped.filter((p) =>
+        p.name.toLowerCase().includes(sLower) ||
+        p.category.toLowerCase().includes(sLower) ||
+        (p.description && p.description.toLowerCase().includes(sLower))
+      )
+    }
 
     // Strict sorting: IN STOCK (available_stock > 0) ALWAYS FIRST, OUT OF STOCK ALWAYS LAST
     mapped.sort((a, b) => {
